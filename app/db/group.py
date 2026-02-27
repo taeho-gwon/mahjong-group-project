@@ -1,0 +1,74 @@
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models.group import Group, GroupMember
+from app.schemas.group import GroupCreate, GroupUpdate
+
+
+async def create(db: AsyncSession, owner_id: int, data: GroupCreate) -> Group:
+    group = Group(
+        name=data.name,
+        description=data.description,
+        owner_id=owner_id,
+    )
+    db.add(group)
+    await db.commit()
+    await db.refresh(group)
+    return group
+
+
+async def get_by_id(db: AsyncSession, group_id: int) -> Group | None:
+    result = await db.execute(select(Group).where(Group.id == group_id))
+    return result.scalar_one_or_none()
+
+
+async def get_by_id_with_members(db: AsyncSession, group_id: int) -> Group | None:
+    result = await db.execute(
+        select(Group).where(Group.id == group_id).options(selectinload(Group.members))
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_all(db: AsyncSession) -> list[Group]:
+    result = await db.execute(select(Group))
+    return list(result.scalars().all())
+
+
+async def update(db: AsyncSession, group: Group, data: GroupUpdate) -> Group:
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(group, field, value)
+    await db.commit()
+    await db.refresh(group)
+    return group
+
+
+async def delete(db: AsyncSession, group: Group) -> None:
+    await db.delete(group)
+    await db.commit()
+
+
+async def get_member(
+    db: AsyncSession, group_id: int, user_id: int
+) -> GroupMember | None:
+    result = await db.execute(
+        select(GroupMember).where(
+            GroupMember.group_id == group_id, GroupMember.user_id == user_id
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def add_member(db: AsyncSession, group_id: int, user_id: int) -> GroupMember:
+    member = GroupMember(group_id=group_id, user_id=user_id)
+    db.add(member)
+    await db.commit()
+    await db.refresh(member)
+    return member
+
+
+async def remove_member(db: AsyncSession, group_id: int, user_id: int) -> None:
+    member = await get_member(db, group_id, user_id)
+    if member:
+        await db.delete(member)
+        await db.commit()
