@@ -17,7 +17,7 @@ build/
 !.env.example
 
 # Alembic
-alembic/versions/*.py
+# Migration files are committed to the repo
 
 # Node
 node_modules/
