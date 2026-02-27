@@ -1,7 +1,10 @@
-import { useEffect, useState, FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getMe, UserResponse } from '../api/auth'
-import { getGroups, createGroup, GroupResponse } from '../api/groups'
+import { getMe } from '../api/auth'
+import type { UserResponse } from '../api/auth'
+import { getGroups, createGroup } from '../api/groups'
+import type { GroupResponse } from '../api/groups'
 
 export default function MainPage() {
   const [user, setUser] = useState<UserResponse | null>(null)
