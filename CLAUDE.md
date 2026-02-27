@@ -31,6 +31,20 @@ project-root/
 
 **Reference structure:** taeho-gwon/mahjong-qna-be
 
+## Development Workflow
+
+When working on this project:
+
+1. **Navigate to the specific service directory** before running claude code:
+   - For backend work: `cd app/`
+   - For frontend work: `cd frontend/`
+
+2. **Service-specific details** are documented in:
+   - Backend: `app/CLAUDE.md`
+   - Frontend: `frontend/CLAUDE.md`
+
+3. **Root-level tasks** (project setup, documentation, CI/CD) can be done from this directory.
+
 ## Current Progress
 
 - [x] Tech stack decided
