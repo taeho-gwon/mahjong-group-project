@@ -45,26 +45,3 @@ When working on this project:
 
 3. **Root-level tasks** (project setup, documentation, CI/CD) can be done from this directory.
 
-## Current Progress
-
-- [x] Tech stack decided
-- [x] Project structure designed
-- [x] Initial setup (directories, config files)
-- [x] User model & authentication
-- [x] Group model & API
-- [ ] Frontend structure
-- [ ] Game records feature (future)
-
-## Key Decisions
-
-- **Monorepo**: Easier backend/frontend management
-- **Argon2**: Modern security standard, GPU attack resistant
-- **Layer separation**: Testability, maintainability
-- **Async**: Maximize FastAPI performance
-- **uv**: Fast dependency management
-
-**Future considerations:** game record model, statistics & ranking, real-time (WebSocket)
-
----
-
-**References:** [FastAPI docs](https://fastapi.tiangolo.com/), [SQLAlchemy docs](https://docs.sqlalchemy.org/), [uv docs](https://docs.astral.sh/uv/)
