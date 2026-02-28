@@ -92,15 +92,15 @@ class GroupRepository(BaseRepository):
     async def update_member_role(
         self, member: GroupMember, role: MemberRole
     ) -> GroupMember:
+        group_id = member.group_id
+        user_id = member.user_id
         member.role = role
         await self.db.commit()
         stmt = (
             select(GroupMember)
-            .where(
-                GroupMember.group_id == member.group_id,
-                GroupMember.user_id == member.user_id,
-            )
+            .where(GroupMember.group_id == group_id, GroupMember.user_id == user_id)
             .options(selectinload(GroupMember.user))
+            .execution_options(populate_existing=True)
         )
         result = await self.db.execute(stmt)
         return result.scalar_one()

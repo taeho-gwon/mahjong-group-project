@@ -5,9 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.user import User
+from app.repositories.game_record import GameRecordRepository
 from app.repositories.group import GroupRepository
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
+from app.services.game_record import GameRecordService
 from app.services.group import GroupService
 from app.utils.security import decode_token
 
@@ -32,6 +34,18 @@ def get_group_service(
     group_repo: GroupRepository = Depends(get_group_repository),
 ) -> GroupService:
     return GroupService(group_repo)
+
+
+def get_game_record_repository(
+    db: AsyncSession = Depends(get_db),
+) -> GameRecordRepository:
+    return GameRecordRepository(db)
+
+
+def get_game_record_service(
+    game_record_repo: GameRecordRepository = Depends(get_game_record_repository),
+) -> GameRecordService:
+    return GameRecordService(game_record_repo)
 
 
 async def get_current_user(

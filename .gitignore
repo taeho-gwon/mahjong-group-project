@@ -28,5 +28,6 @@ frontend/.vite/
 .vscode/
 .idea/
 
-# Docker
+# Logs
+logs/
 *.log
