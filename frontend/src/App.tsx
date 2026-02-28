@@ -6,6 +6,7 @@ import MainPage from './pages/MainPage'
 import MyPage from './pages/MyPage'
 import GroupDetailPage from './pages/GroupDetailPage'
 import GroupManagePage from './pages/GroupManagePage'
+import JoinPage from './pages/JoinPage'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/join" element={<JoinPage />} />
         <Route element={<AuthGuard />}>
           <Route path="/" element={<MainPage />} />
           <Route path="/mypage" element={<MyPage />} />

@@ -81,6 +81,20 @@ export async function generateInviteLink(groupId: number): Promise<{ invite_toke
   return res.json()
 }
 
+export async function leaveGroup(groupId: number): Promise<void> {
+  const res = await apiFetch(`/groups/${groupId}/leave`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Failed to leave group')
+}
+
+export async function joinByInvite(token: string): Promise<GroupResponse> {
+  const res = await apiFetch('/groups/join-by-invite', {
+    method: 'POST',
+    body: JSON.stringify({ invite_token: token }),
+  })
+  if (!res.ok) throw res
+  return res.json()
+}
+
 export async function createGroup(
   name: string,
   description?: string,

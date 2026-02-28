@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getGroup, updateGroup, removeMember, updateMemberRole, generateInviteLink } from '../api/groups'
+import { getGroup, updateGroup, removeMember, updateMemberRole, generateInviteLink, leaveGroup } from '../api/groups'
 import type { GroupDetailResponse } from '../api/groups'
 import { getMe } from '../api/auth'
 import type { UserResponse } from '../api/auth'
@@ -136,6 +136,16 @@ export default function GroupManagePage() {
     }
   }
 
+  async function handleLeave() {
+    if (!group) return
+    try {
+      await leaveGroup(group.id)
+      navigate('/', { replace: true })
+    } catch {
+      alert('Failed to leave group')
+    }
+  }
+
   const myRole = group && me ? group.members.find((m) => m.id === me.id)?.role : undefined
 
   return (
@@ -236,10 +246,11 @@ export default function GroupManagePage() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {group.members.map((m) => {
                 const isMe = m.id === me?.id
-                const isOwner = m.role === 'owner'
-                const canManage = !isMe && !isOwner && (
+                const isMemberOwner = m.role === 'owner'
+                const canKick = !isMe && !isMemberOwner && (
                   myRole === 'owner' || (myRole === 'admin' && m.role === 'member')
                 )
+                const canChangeRole = !isMe && !isMemberOwner && myRole === 'owner'
 
                 return (
                   <li
@@ -254,30 +265,34 @@ export default function GroupManagePage() {
                       fontSize: '14px',
                     }}
                   >
-                    <span style={{ fontWeight: isOwner ? 'bold' : 'normal' }}>
+                    <span style={{ fontWeight: isMemberOwner ? 'bold' : 'normal' }}>
                       {m.username}{isMe && <span style={{ color: '#888', fontSize: '12px' }}> (me)</span>}
                     </span>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      {canManage && myRole === 'owner' ? (
-                        <select
-                          value={m.role}
-                          onChange={(e) => handleRoleChange(m.id, e.target.value as 'admin' | 'member')}
-                          style={{ fontSize: '12px', padding: '3px 6px', cursor: 'pointer', borderRadius: '4px' }}
+                      <span style={{
+                        fontSize: '12px',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        ...ROLE_STYLE[m.role],
+                      }}>
+                        {ROLE_LABEL[m.role] ?? m.role}
+                      </span>
+                      {canChangeRole && (
+                        <button
+                          onClick={() => handleRoleChange(m.id, m.role === 'member' ? 'admin' : 'member')}
+                          style={{
+                            fontSize: '12px',
+                            padding: '3px 8px',
+                            cursor: 'pointer',
+                            background: 'none',
+                            border: '1px solid #555',
+                            borderRadius: '4px',
+                          }}
                         >
-                          <option value="admin">Admin</option>
-                          <option value="member">Member</option>
-                        </select>
-                      ) : (
-                        <span style={{
-                          fontSize: '12px',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          ...ROLE_STYLE[m.role],
-                        }}>
-                          {ROLE_LABEL[m.role] ?? m.role}
-                        </span>
+                          {m.role === 'member' ? 'Make Admin' : 'Make Member'}
+                        </button>
                       )}
-                      {canManage && (
+                      {canKick && (
                         <button
                           onClick={() => handleRemoveMember(m.id)}
                           style={{
@@ -290,7 +305,23 @@ export default function GroupManagePage() {
                             borderRadius: '4px',
                           }}
                         >
-                          Remove
+                          강퇴
+                        </button>
+                      )}
+                      {isMe && myRole !== 'owner' && (
+                        <button
+                          onClick={handleLeave}
+                          style={{
+                            fontSize: '12px',
+                            padding: '3px 8px',
+                            cursor: 'pointer',
+                            color: '#c0392b',
+                            background: 'none',
+                            border: '1px solid #c0392b',
+                            borderRadius: '4px',
+                          }}
+                        >
+                          탈퇴
                         </button>
                       )}
                     </div>
