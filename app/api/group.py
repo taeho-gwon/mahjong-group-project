@@ -11,6 +11,8 @@ from app.schemas.group import (
     GroupUpdate,
     InviteLinkResponse,
     JoinByInviteRequest,
+    MemberInfo,
+    MemberRoleUpdate,
     PaginatedGroupResponse,
 )
 from app.services import group as group_service
@@ -115,3 +117,16 @@ async def remove_member(
     current_user: User = Depends(get_current_user),
 ) -> None:
     await group_service.remove_member(db, group_id, current_user.id, user_id)
+
+
+@router.put("/{group_id}/members/{user_id}/role", response_model=MemberInfo)
+async def update_member_role(
+    group_id: int,
+    user_id: int,
+    data: MemberRoleUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> MemberInfo:
+    return await group_service.update_member_role(
+        db, group_id, current_user.id, user_id, data
+    )

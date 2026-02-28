@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.models.group import JoinPolicy
+from app.models.group import JoinPolicy, MemberRole
 
 
 class MemberInfo(BaseModel):
@@ -10,6 +10,11 @@ class MemberInfo(BaseModel):
 
     id: int
     username: str
+    role: MemberRole
+
+
+class MemberRoleUpdate(BaseModel):
+    role: MemberRole
 
 
 class GroupCreate(BaseModel):

@@ -14,6 +14,12 @@ class JoinPolicy(StrEnum):
     private = "private"
 
 
+class MemberRole(StrEnum):
+    owner = "owner"
+    admin = "admin"
+    member = "member"
+
+
 class GroupMember(Base):
     __tablename__ = "group_members"
 
@@ -23,9 +29,25 @@ class GroupMember(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
+    role: Mapped[MemberRole] = mapped_column(
+        SAEnum(MemberRole, name="memberrole"),
+        default=MemberRole.member,
+        server_default="member",
+        nullable=False,
+    )
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+    user: Mapped[User] = relationship(lazy="noload")
+
+    @property
+    def id(self) -> int:
+        return self.user.id
+
+    @property
+    def username(self) -> str:
+        return self.user.username
 
 
 class Group(Base):
@@ -60,8 +82,8 @@ class Group(Base):
         nullable=False,
     )
 
-    members: Mapped[list[User]] = relationship(
-        User,
-        secondary=GroupMember.__table__,
+    members: Mapped[list[GroupMember]] = relationship(
+        GroupMember,
         lazy="noload",
+        foreign_keys=[GroupMember.group_id],
     )

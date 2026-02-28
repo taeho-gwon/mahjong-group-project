@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.group import Group, GroupMember, JoinPolicy
+from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
 from app.schemas.group import GroupCreate, GroupUpdate
 
 
@@ -27,7 +27,9 @@ async def get_by_id(db: AsyncSession, group_id: int) -> Group | None:
 
 async def get_by_id_with_members(db: AsyncSession, group_id: int) -> Group | None:
     result = await db.execute(
-        select(Group).where(Group.id == group_id).options(selectinload(Group.members))
+        select(Group)
+        .where(Group.id == group_id)
+        .options(selectinload(Group.members).selectinload(GroupMember.user))
     )
     return result.scalar_one_or_none()
 
@@ -89,9 +91,23 @@ async def get_member(
     return result.scalar_one_or_none()
 
 
-async def add_member(db: AsyncSession, group_id: int, user_id: int) -> GroupMember:
-    member = GroupMember(group_id=group_id, user_id=user_id)
+async def add_member(
+    db: AsyncSession,
+    group_id: int,
+    user_id: int,
+    role: MemberRole = MemberRole.member,
+) -> GroupMember:
+    member = GroupMember(group_id=group_id, user_id=user_id, role=role)
     db.add(member)
+    await db.commit()
+    await db.refresh(member)
+    return member
+
+
+async def update_member_role(
+    db: AsyncSession, member: GroupMember, role: MemberRole
+) -> GroupMember:
+    member.role = role
     await db.commit()
     await db.refresh(member)
     return member

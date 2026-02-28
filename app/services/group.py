@@ -5,18 +5,29 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import group as group_db
-from app.models.group import Group, JoinPolicy
+from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
 from app.schemas.group import (
     GroupCreate,
     GroupUpdate,
     InviteLinkResponse,
+    MemberRoleUpdate,
     PaginatedGroupResponse,
 )
 
 
+async def _require_member(db: AsyncSession, group_id: int, user_id: int) -> GroupMember:
+    member = await group_db.get_member(db, group_id, user_id)
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not a member of this group",
+        )
+    return member
+
+
 async def create_group(db: AsyncSession, owner_id: int, data: GroupCreate) -> Group:
     group = await group_db.create(db, owner_id, data)
-    await group_db.add_member(db, group.id, owner_id)
+    await group_db.add_member(db, group.id, owner_id, role=MemberRole.owner)
     return group
 
 
@@ -55,9 +66,11 @@ async def update_group(
     db: AsyncSession, group_id: int, current_user_id: int, data: GroupUpdate
 ) -> Group:
     group = await get_group(db, group_id)
-    if group.owner_id != current_user_id:
+    member = await _require_member(db, group_id, current_user_id)
+    if member.role not in (MemberRole.owner, MemberRole.admin):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not the group owner"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owner or admin can update group",
         )
     return await group_db.update(db, group, data)
 
@@ -116,9 +129,11 @@ async def generate_invite_token(
     db: AsyncSession, group_id: int, user_id: int
 ) -> InviteLinkResponse:
     group = await get_group(db, group_id)
-    if group.owner_id != user_id:
+    member = await _require_member(db, group_id, user_id)
+    if member.role not in (MemberRole.owner, MemberRole.admin):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not the group owner"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owner or admin can generate invite link",
         )
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(UTC) + timedelta(days=INVITE_TOKEN_TTL_DAYS)
@@ -149,14 +164,54 @@ async def join_via_invite(db: AsyncSession, token: str, user_id: int) -> Group:
 async def remove_member(
     db: AsyncSession, group_id: int, current_user_id: int, target_user_id: int
 ) -> None:
-    group = await group_db.get_by_id(db, group_id)
-    if not group:
+    await get_group(db, group_id)
+    requester = await _require_member(db, group_id, current_user_id)
+    if requester.role not in (MemberRole.owner, MemberRole.admin):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Group not found"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owner or admin can remove members",
         )
+    target = await group_db.get_member(db, group_id, target_user_id)
+    if not target:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target user is not a member",
+        )
+    if target.role == MemberRole.owner:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot remove the group owner",
+        )
+    if target.role == MemberRole.admin and requester.role != MemberRole.owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the owner can remove an admin",
+        )
+    await group_db.remove_member(db, group_id, target_user_id)
+
+
+async def update_member_role(
+    db: AsyncSession,
+    group_id: int,
+    current_user_id: int,
+    target_user_id: int,
+    data: MemberRoleUpdate,
+) -> GroupMember:
+    group = await get_group(db, group_id)
     if group.owner_id != current_user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not the group owner"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the owner can change roles",
+        )
+    if data.role == MemberRole.owner:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot assign owner role",
+        )
+    if target_user_id == current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change your own role",
         )
     member = await group_db.get_member(db, group_id, target_user_id)
     if not member:
@@ -164,4 +219,4 @@ async def remove_member(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Target user is not a member",
         )
-    await group_db.remove_member(db, group_id, target_user_id)
+    return await group_db.update_member_role(db, member, data.role)
