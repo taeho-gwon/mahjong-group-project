@@ -25,17 +25,31 @@ Mahjong game management backend API server
 
 ```
 app/
-├── api/        # HTTP layer: routing, validation, status codes
-├── services/   # Business logic, permissions, HTTPException
-├── db/         # Pure data access (CRUD only)
-├── models/     # SQLAlchemy models
-├── schemas/    # Pydantic schemas
-└── utils/      # Utilities
+├── api/           # HTTP layer: routing, validation, status codes
+├── services/      # Business logic, permissions, HTTPException
+├── repositories/  # Pure data access (CRUD only, class-based)
+├── db/            # DB session + engine (session.py)
+├── models/        # SQLAlchemy models
+├── schemas/       # Pydantic schemas
+└── utils/         # Utilities
 ```
 
 **Architecture Flow:**
 ```
-API → Service → DB → Database
+API → Service → Repository → Database
+```
+
+**DI Chain:**
+```
+get_db() [AsyncSession]
+  → get_user_repository(db) → UserRepository
+    → get_auth_service(user_repo) → AuthService
+      → route handler
+
+get_db() [AsyncSession]
+  → get_group_repository(db) → GroupRepository
+    → get_group_service(group_repo) → GroupService
+      → route handler
 ```
 
 ---
@@ -90,86 +104,108 @@ class GameRecordResponse(BaseModel):
 - Response: `from_attributes = True` required
 - Update: All fields `T | None`, use `model_dump(exclude_unset=True)`
 
-### 3. DB Layer (`app/db/<resource>.py`)
+### 3. Repository (`app/repositories/<resource>.py`)
 
 ```python
-async def get_by_id(db: AsyncSession, id: int) -> Model | None:
-    result = await db.execute(select(Model).where(Model.id == id))
-    return result.scalar_one_or_none()
+from app.repositories.base import BaseRepository
 
-async def list_all(db: AsyncSession) -> list[Model]:
-    result = await db.execute(select(Model))
-    return list(result.scalars().all())
+class GameRecordRepository(BaseRepository):
+    async def get_by_id(self, id: int) -> GameRecord | None:
+        result = await self.db.execute(select(GameRecord).where(GameRecord.id == id))
+        return result.scalar_one_or_none()
 
-async def create(db: AsyncSession, data: CreateSchema) -> Model:
-    obj = Model(**data.model_dump())
-    db.add(obj)
-    await db.commit()
-    await db.refresh(obj)
-    return obj
+    async def list_all(self) -> list[GameRecord]:
+        result = await self.db.execute(select(GameRecord))
+        return list(result.scalars().all())
+
+    async def create(self, data: GameRecordCreate) -> GameRecord:
+        obj = GameRecord(**data.model_dump())
+        self.db.add(obj)
+        await self.db.commit()
+        await self.db.refresh(obj)
+        return obj
 ```
 
 **Rules:**
-- Module-level async functions (no class wrapper)
+- Inherit from `BaseRepository` (`self.db` 사용)
 - Single row: `scalar_one_or_none()` → `Model | None`
 - Multiple rows: `list(scalars().all())` → `list[Model]`
-- Relationship loading: Separate function with `selectinload()`
+- Relationship loading: Separate method with `selectinload()`
 - **NO HTTPException** (pure data access only)
 
 ### 4. Service Layer (`app/services/<resource>.py`)
 
 ```python
-from app.db import game_record as game_record_db
+from app.repositories.game_record import GameRecordRepository
 
-async def get_game_record(db: AsyncSession, id: int) -> GameRecord:
-    obj = await game_record_db.get_by_id(db, id)
-    if not obj:
-        raise HTTPException(404, "Not found")
-    return obj
+class GameRecordService:
+    def __init__(self, game_record_repo: GameRecordRepository) -> None:
+        self.game_record_repo = game_record_repo
 
-async def create_game_record(
-    db: AsyncSession, 
-    user_id: int, 
-    data: GameRecordCreate
-) -> GameRecord:
-    # Business logic, permission checks, etc.
-    return await game_record_db.create(db, data)
+    async def get_game_record(self, id: int) -> GameRecord:
+        obj = await self.game_record_repo.get_by_id(id)
+        if not obj:
+            raise HTTPException(404, "Not found")
+        return obj
+
+    async def create_game_record(
+        self, user_id: int, data: GameRecordCreate
+    ) -> GameRecord:
+        # Business logic, permission checks, etc.
+        return await self.game_record_repo.create(data)
 ```
 
 **Rules:**
-- Import DB module as `<resource>_db`
+- Class with `__init__(self, <resource>_repo: <Resource>Repository)`
 - **All HTTPException raised ONLY here**
 - Permission checks after resource retrieval
 - Return model object (serialization in API layer)
 
-### 5. API Layer (`app/api/<resource>.py`)
+### 5. DI Factory (`app/api/deps.py`)
+
+Add DI factory functions:
+```python
+def get_game_record_repository(db: AsyncSession = Depends(get_db)) -> GameRecordRepository:
+    return GameRecordRepository(db)
+
+def get_game_record_service(
+    game_record_repo: GameRecordRepository = Depends(get_game_record_repository),
+) -> GameRecordService:
+    return GameRecordService(game_record_repo)
+```
+
+### 6. API Layer (`app/api/<resource>.py`)
 
 ```python
-from app.services import game_record as game_record_service
+from app.api.deps import get_current_user, get_game_record_service
+from app.services.game_record import GameRecordService
 
 router = APIRouter(prefix="/game-records", tags=["game-records"])
 
 @router.post("", response_model=Response, status_code=201)
 async def create(
     data: Create,
-    db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    game_record_service: GameRecordService = Depends(get_game_record_service),
 ):
-    return await game_record_service.create_game_record(db, user.id, data)
+    return await game_record_service.create_game_record(user.id, data)
 
 @router.get("/{id}", response_model=Response)
-async def get(id: int, db: AsyncSession = Depends(get_db)):
-    return await game_record_service.get_game_record(db, id)
+async def get(
+    id: int,
+    game_record_service: GameRecordService = Depends(get_game_record_service),
+):
+    return await game_record_service.get_game_record(id)
 ```
 
 **Rules:**
-- Import service as `<resource>_service`
+- Inject service via `Depends(get_<resource>_service)`
 - Prefix uses kebab-case
 - POST→201, DELETE→204, GET/PUT→200
 - `get_current_user` only on protected endpoints
 - **No business logic** (delegate to service)
 
-### 6. Register Router
+### 7. Register Router
 
 Add to `app/api/router.py`:
 ```python
@@ -177,7 +213,7 @@ from app.api.game_record import router as game_record_router
 router.include_router(game_record_router)
 ```
 
-### 7. Migration
+### 8. Migration
 
 ```bash
 uv run alembic revision --autogenerate -m "add game_records"
@@ -236,7 +272,7 @@ uv add --group dev <package>
 - **Naming**: `snake_case` (variables/functions), `PascalCase` (classes)
 - **Async**: Always `async def` for DB-touching functions
 - **Formatting**: Use Ruff
-- **Import order**: DB module as `<resource>_db`, Service as `<resource>_service`
+- **Import order**: Repository class from `app.repositories.<resource>`, Service class from `app.services.<resource>`
 
 ---
 
