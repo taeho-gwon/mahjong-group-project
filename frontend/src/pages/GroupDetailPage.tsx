@@ -36,14 +36,24 @@ export default function GroupDetailPage() {
           onClick={() => navigate(-1)}
           style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit' }}
         >← Back</button>
-        {(myRole === 'owner' || myRole === 'admin') && (
-          <button
-            onClick={() => navigate(`/groups/${id}/manage`)}
-            style={{ fontSize: '14px', padding: '6px 14px', cursor: 'pointer' }}
-          >
-            Manage
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {myRole !== null && (
+            <button
+              onClick={() => navigate(`/groups/${id}/games/new`)}
+              style={{ fontSize: '14px', padding: '6px 14px', cursor: 'pointer' }}
+            >
+              게임 등록
+            </button>
+          )}
+          {(myRole === 'owner' || myRole === 'admin') && (
+            <button
+              onClick={() => navigate(`/groups/${id}/manage`)}
+              style={{ fontSize: '14px', padding: '6px 14px', cursor: 'pointer' }}
+            >
+              Manage
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (

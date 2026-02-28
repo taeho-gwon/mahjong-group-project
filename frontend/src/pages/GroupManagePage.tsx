@@ -247,9 +247,7 @@ export default function GroupManagePage() {
               {group.members.map((m) => {
                 const isMe = m.id === me?.id
                 const isMemberOwner = m.role === 'owner'
-                const canKick = !isMe && !isMemberOwner && (
-                  myRole === 'owner' || (myRole === 'admin' && m.role === 'member')
-                )
+                const canKick = !isMe && m.role === 'member' && (myRole === 'owner' || myRole === 'admin')
                 const canChangeRole = !isMe && !isMemberOwner && myRole === 'owner'
 
                 return (
