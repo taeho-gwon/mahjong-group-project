@@ -22,7 +22,7 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)) -> User
 async def login(
     data: LoginRequest, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
-    return await auth_service.login(db, data.email, data.password)
+    return await auth_service.login(db, data.username, data.password)
 
 
 @router.post("/refresh", response_model=TokenResponse)

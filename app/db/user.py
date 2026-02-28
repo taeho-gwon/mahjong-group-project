@@ -24,7 +24,6 @@ async def get_by_username(db: AsyncSession, username: str) -> User | None:
 async def create(db: AsyncSession, data: UserCreate) -> User:
     user = User(
         username=data.username,
-        email=data.email,
         hashed_password=hash_password(data.password),
     )
     db.add(user)

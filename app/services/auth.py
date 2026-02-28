@@ -15,11 +15,6 @@ from app.utils.security import (
 
 
 async def register(db: AsyncSession, data: UserCreate) -> User:
-    if await user_db.get_by_email(db, data.email):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered",
-        )
     if await user_db.get_by_username(db, data.username):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -28,8 +23,8 @@ async def register(db: AsyncSession, data: UserCreate) -> User:
     return await user_db.create(db, data)
 
 
-async def login(db: AsyncSession, email: str, password: str) -> TokenResponse:
-    user = await user_db.get_by_email(db, email)
+async def login(db: AsyncSession, username: str, password: str) -> TokenResponse:
+    user = await user_db.get_by_username(db, username)
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
