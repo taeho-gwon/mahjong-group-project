@@ -1,0 +1,121 @@
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { getGroup } from '../api/groups'
+import type { GroupDetailResponse } from '../api/groups'
+import { getMe } from '../api/auth'
+
+const ROLE_LABEL: Record<string, string> = {
+  owner: 'Owner',
+  admin: 'Admin',
+  member: 'Member',
+}
+
+export default function GroupDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [group, setGroup] = useState<GroupDetailResponse | null>(null)
+  const [myRole, setMyRole] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!id) return
+    Promise.all([getGroup(Number(id)), getMe()])
+      .then(([g, user]) => {
+        setGroup(g)
+        setMyRole(g.members.find((m) => m.id === user.id)?.role ?? null)
+      })
+      .catch(() => setError('Failed to load group'))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  return (
+    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button
+          onClick={() => navigate(-1)}
+          style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit' }}
+        >← Back</button>
+        {(myRole === 'owner' || myRole === 'admin') && (
+          <button
+            onClick={() => navigate(`/groups/${id}/manage`)}
+            style={{ fontSize: '14px', padding: '6px 14px', cursor: 'pointer' }}
+          >
+            Manage
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <p style={{ marginTop: '24px' }}>Loading...</p>
+      ) : error ? (
+        <p style={{ marginTop: '24px', color: 'red' }}>{error}</p>
+      ) : group ? (
+        <>
+          {/* Group Info */}
+          <section style={{ marginTop: '24px', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <h2 style={{ margin: 0 }}>{group.name}</h2>
+              {!group.is_active && (
+                <span style={{ fontSize: '12px', color: '#fff', background: '#aaa', borderRadius: '4px', padding: '2px 8px' }}>Inactive</span>
+              )}
+            </div>
+            {group.description && (
+              <p style={{ margin: '0 0 16px', color: '#555', fontSize: '14px' }}>{group.description}</p>
+            )}
+            <div style={{ fontSize: '13px', color: '#666', lineHeight: '2', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+              <div>
+                <strong>Join Policy:</strong>{' '}
+                <span style={{
+                  display: 'inline-block',
+                  fontSize: '12px',
+                  padding: '1px 8px',
+                  borderRadius: '4px',
+                  background: group.join_policy === 'public' ? '#e6f4ea' : '#fce8e8',
+                  color: group.join_policy === 'public' ? '#2d7a3a' : '#c0392b',
+                }}>
+                  {group.join_policy === 'public' ? 'Public' : 'Private'}
+                </span>
+              </div>
+              <div><strong>Owner:</strong> {group.members.find((m) => m.role === 'owner')?.username ?? '-'}</div>
+              <div><strong>Members:</strong> {group.members.length}</div>
+              <div><strong>Created:</strong> {new Date(group.created_at).toLocaleDateString()}</div>
+            </div>
+          </section>
+
+          {/* Members */}
+          <section>
+            <h3 style={{ margin: '0 0 12px' }}>Members</h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {group.members.map((m) => (
+                <li
+                  key={m.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    border: '1px solid #ccc',
+                    borderRadius: '6px',
+                    padding: '10px 14px',
+                    fontSize: '14px',
+                  }}
+                >
+                  <span style={{ fontWeight: m.role === 'owner' ? 'bold' : 'normal' }}>{m.username}</span>
+                  <span style={{
+                    fontSize: '12px',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    background: m.role === 'owner' ? '#fff3cd' : m.role === 'admin' ? '#e8f0fe' : '#f1f3f4',
+                    color: m.role === 'owner' ? '#856404' : m.role === 'admin' ? '#1a56db' : '#555',
+                  }}>
+                    {ROLE_LABEL[m.role] ?? m.role}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      ) : null}
+    </div>
+  )
+}
