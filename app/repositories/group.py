@@ -94,8 +94,16 @@ class GroupRepository(BaseRepository):
     ) -> GroupMember:
         member.role = role
         await self.db.commit()
-        await self.db.refresh(member)
-        return member
+        stmt = (
+            select(GroupMember)
+            .where(
+                GroupMember.group_id == member.group_id,
+                GroupMember.user_id == member.user_id,
+            )
+            .options(selectinload(GroupMember.user))
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one()
 
     async def remove_member(self, group_id: int, user_id: int) -> None:
         member = await self.get_member(group_id, user_id)
