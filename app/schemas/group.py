@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.models.group import JoinPolicy
+
 
 class MemberInfo(BaseModel):
     model_config = {"from_attributes": True}
@@ -13,11 +15,13 @@ class MemberInfo(BaseModel):
 class GroupCreate(BaseModel):
     name: str
     description: str | None = None
+    join_policy: JoinPolicy = JoinPolicy.public
 
 
 class GroupUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
+    join_policy: JoinPolicy | None = None
 
 
 class GroupResponse(BaseModel):
@@ -27,9 +31,18 @@ class GroupResponse(BaseModel):
     name: str
     description: str | None
     owner_id: int
+    join_policy: JoinPolicy
     is_active: bool
     created_at: datetime
 
 
 class GroupDetailResponse(GroupResponse):
     members: list[MemberInfo]
+
+
+class InviteLinkResponse(BaseModel):
+    invite_token: str
+
+
+class JoinByInviteRequest(BaseModel):
+    invite_token: str

@@ -1,10 +1,17 @@
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.user import User
+
+
+class JoinPolicy(StrEnum):
+    public = "public"
+    private = "private"
 
 
 class GroupMember(Base):
@@ -29,6 +36,15 @@ class Group(Base):
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     owner_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    join_policy: Mapped[JoinPolicy] = mapped_column(
+        SAEnum(JoinPolicy, name="joinpolicy"),
+        default=JoinPolicy.public,
+        server_default="public",
+        nullable=False,
+    )
+    invite_token: Mapped[str | None] = mapped_column(
+        unique=True, index=True, nullable=True
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

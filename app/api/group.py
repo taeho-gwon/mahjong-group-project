@@ -9,6 +9,8 @@ from app.schemas.group import (
     GroupDetailResponse,
     GroupResponse,
     GroupUpdate,
+    InviteLinkResponse,
+    JoinByInviteRequest,
 )
 from app.services import group as group_service
 
@@ -27,6 +29,15 @@ async def create_group(
 @router.get("", response_model=list[GroupResponse])
 async def list_groups(db: AsyncSession = Depends(get_db)) -> list[GroupResponse]:
     return await group_service.list_groups(db)
+
+
+@router.post("/join-by-invite", response_model=GroupResponse)
+async def join_by_invite(
+    data: JoinByInviteRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> GroupResponse:
+    return await group_service.join_via_invite(db, data.invite_token, current_user.id)
 
 
 @router.get("/{group_id}", response_model=GroupDetailResponse)
@@ -53,6 +64,15 @@ async def delete_group(
     current_user: User = Depends(get_current_user),
 ) -> None:
     await group_service.delete_group(db, group_id, current_user.id)
+
+
+@router.post("/{group_id}/invite-link", response_model=InviteLinkResponse)
+async def generate_invite_link(
+    group_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> InviteLinkResponse:
+    return await group_service.generate_invite_token(db, group_id, current_user.id)
 
 
 @router.post("/{group_id}/join", response_model=GroupResponse)

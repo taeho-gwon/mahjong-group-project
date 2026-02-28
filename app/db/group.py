@@ -72,3 +72,15 @@ async def remove_member(db: AsyncSession, group_id: int, user_id: int) -> None:
     if member:
         await db.delete(member)
         await db.commit()
+
+
+async def get_by_invite_token(db: AsyncSession, token: str) -> Group | None:
+    result = await db.execute(select(Group).where(Group.invite_token == token))
+    return result.scalar_one_or_none()
+
+
+async def set_invite_token(db: AsyncSession, group: Group, token: str | None) -> Group:
+    group.invite_token = token
+    await db.commit()
+    await db.refresh(group)
+    return group
