@@ -38,6 +38,10 @@ async def get_group_detail(db: AsyncSession, group_id: int) -> Group:
     return group
 
 
+async def list_my_groups(db: AsyncSession, user_id: int) -> list[Group]:
+    return await group_db.list_by_user(db, user_id)
+
+
 async def list_public_groups(
     db: AsyncSession, page: int, size: int
 ) -> PaginatedGroupResponse:

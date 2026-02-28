@@ -36,6 +36,14 @@ async def list_groups(
     return await group_service.list_public_groups(db, page, size)
 
 
+@router.get("/me", response_model=list[GroupResponse])
+async def list_my_groups(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[GroupResponse]:
+    return await group_service.list_my_groups(db, current_user.id)
+
+
 @router.post("/join-by-invite", response_model=GroupResponse)
 async def join_by_invite(
     data: JoinByInviteRequest,

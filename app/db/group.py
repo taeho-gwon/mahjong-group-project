@@ -55,6 +55,16 @@ async def count_public(db: AsyncSession) -> int:
     return result.scalar_one()
 
 
+async def list_by_user(db: AsyncSession, user_id: int) -> list[Group]:
+    result = await db.execute(
+        select(Group)
+        .join(GroupMember, GroupMember.group_id == Group.id)
+        .where(GroupMember.user_id == user_id)
+        .order_by(Group.id)
+    )
+    return list(result.scalars().all())
+
+
 async def update(db: AsyncSession, group: Group, data: GroupUpdate) -> Group:
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(group, field, value)
