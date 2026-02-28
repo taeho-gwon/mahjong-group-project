@@ -170,10 +170,10 @@ class GroupService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot remove the group owner",
             )
-        if target.role == MemberRole.admin and requester.role != MemberRole.owner:
+        if target.role == MemberRole.admin:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the owner can remove an admin",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot remove an admin",
             )
         await self.group_repo.remove_member(group_id, target_user_id)
 
