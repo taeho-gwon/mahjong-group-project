@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getGroup, updateGroup, removeMember, updateMemberRole } from '../api/groups'
+import { getGroup, updateGroup, removeMember, updateMemberRole, generateInviteLink } from '../api/groups'
 import type { GroupDetailResponse } from '../api/groups'
 import { getMe } from '../api/auth'
 import type { UserResponse } from '../api/auth'
@@ -33,6 +33,10 @@ export default function GroupManagePage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
+
+  const [inviteToken, setInviteToken] = useState<string | null>(null)
+  const [generatingInvite, setGeneratingInvite] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -72,6 +76,41 @@ export default function GroupManagePage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleGenerateInvite() {
+    if (!group) return
+    setGeneratingInvite(true)
+    try {
+      const { invite_token } = await generateInviteLink(group.id)
+      setInviteToken(invite_token)
+      setCopied(false)
+    } catch {
+      alert('Failed to generate invite link')
+    } finally {
+      setGeneratingInvite(false)
+    }
+  }
+
+  async function handleCopyInvite() {
+    if (!group) return
+    let token = inviteToken
+    if (!token) {
+      setGeneratingInvite(true)
+      try {
+        const res = await generateInviteLink(group.id)
+        token = res.invite_token
+        setInviteToken(token)
+      } catch {
+        alert('Failed to generate invite link')
+        return
+      } finally {
+        setGeneratingInvite(false)
+      }
+    }
+    navigator.clipboard.writeText(`${window.location.origin}/join?token=${token}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   async function handleRemoveMember(userId: number) {
@@ -176,6 +215,19 @@ export default function GroupManagePage() {
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </form>
+          </section>
+
+          {/* Invite Link */}
+          <section style={{ marginBottom: '40px' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Invite Link</h3>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={handleCopyInvite} disabled={generatingInvite} style={{ padding: '6px 14px', cursor: 'pointer', fontSize: '14px' }}>
+                {generatingInvite ? 'Generating...' : copied ? 'Copied!' : 'Copy Link'}
+              </button>
+              <button onClick={handleGenerateInvite} disabled={generatingInvite} style={{ padding: '6px 14px', cursor: 'pointer', fontSize: '14px' }}>
+                {generatingInvite ? 'Generating...' : 'Regenerate Link'}
+              </button>
+            </div>
           </section>
 
           {/* Member Management */}
