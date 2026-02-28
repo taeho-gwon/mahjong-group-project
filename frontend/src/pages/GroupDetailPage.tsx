@@ -3,6 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getGroup } from '../api/groups'
 import type { GroupDetailResponse } from '../api/groups'
 import { getMe } from '../api/auth'
+import { listGameRecords } from '../api/gameRecords'
+import type { GameRecordResponse } from '../api/gameRecords'
+
+async function fetchAllGameRecords(groupId: number): Promise<GameRecordResponse[]> {
+  const PAGE_SIZE = 50
+  const first = await listGameRecords(groupId, 1, PAGE_SIZE)
+  const results = [...first.items]
+  const totalPages = Math.ceil(first.total / PAGE_SIZE)
+  for (let page = 2; page <= totalPages; page++) {
+    const res = await listGameRecords(groupId, page, PAGE_SIZE)
+    results.push(...res.items)
+  }
+  return results
+}
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -15,15 +29,28 @@ export default function GroupDetailPage() {
   const navigate = useNavigate()
   const [group, setGroup] = useState<GroupDetailResponse | null>(null)
   const [myRole, setMyRole] = useState<string | null>(null)
+  const [ranking, setRanking] = useState<{ username: string; count: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!id) return
-    Promise.all([getGroup(Number(id)), getMe()])
-      .then(([g, user]) => {
+    Promise.all([getGroup(Number(id)), getMe(), fetchAllGameRecords(Number(id))])
+      .then(([g, user, allRecords]) => {
         setGroup(g)
         setMyRole(g.members.find((m) => m.id === user.id)?.role ?? null)
+        const countMap = new Map<number, { username: string; count: number }>()
+        for (const rec of allRecords) {
+          for (const player of [rec.east_player, rec.south_player, rec.west_player, rec.north_player]) {
+            const entry = countMap.get(player.id)
+            if (entry) {
+              entry.count += 1
+            } else {
+              countMap.set(player.id, { username: player.username, count: 1 })
+            }
+          }
+        }
+        setRanking([...countMap.values()].sort((a, b) => b.count - a.count))
       })
       .catch(() => setError('Failed to load group'))
       .finally(() => setLoading(false))
@@ -93,11 +120,43 @@ export default function GroupDetailPage() {
             </div>
           </section>
 
+          {/* Ranking */}
+          <section style={{ marginBottom: '32px' }}>
+            <h3 style={{ margin: '0 0 12px' }}>Ranking</h3>
+            {ranking.length === 0 ? (
+              <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 게임 기록이 없습니다.</p>
+            ) : (
+              <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {ranking.map((entry, idx) => (
+                  <li
+                    key={entry.username}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      border: '1px solid #ccc',
+                      borderRadius: '6px',
+                      padding: '10px 14px',
+                      fontSize: '14px',
+                    }}
+                  >
+                    <span style={{ width: '24px', textAlign: 'right', fontWeight: 'bold', color: '#666' }}>{idx + 1}</span>
+                    <span style={{ flex: 1 }}>{entry.username}</span>
+                    <span style={{ color: '#555' }}>{entry.count}경기</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+
           {/* Members */}
           <section>
             <h3 style={{ margin: '0 0 12px' }}>Members</h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {group.members.map((m) => (
+              {[...group.members].sort((a, b) => {
+                const order = { owner: 0, admin: 1, member: 2 }
+                return (order[a.role as keyof typeof order] ?? 3) - (order[b.role as keyof typeof order] ?? 3)
+              }).map((m) => (
                 <li
                   key={m.id}
                   style={{
