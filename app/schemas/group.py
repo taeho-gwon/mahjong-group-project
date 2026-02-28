@@ -40,6 +40,13 @@ class GroupDetailResponse(GroupResponse):
     members: list[MemberInfo]
 
 
+class PaginatedGroupResponse(BaseModel):
+    items: list[GroupResponse]
+    total: int
+    page: int
+    size: int
+
+
 class InviteLinkResponse(BaseModel):
     invite_token: str
 

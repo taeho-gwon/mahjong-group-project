@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.group import Group, GroupMember
+from app.models.group import Group, GroupMember, JoinPolicy
 from app.schemas.group import GroupCreate, GroupUpdate
 
 
@@ -35,6 +35,24 @@ async def get_by_id_with_members(db: AsyncSession, group_id: int) -> Group | Non
 async def list_all(db: AsyncSession) -> list[Group]:
     result = await db.execute(select(Group))
     return list(result.scalars().all())
+
+
+async def list_public(db: AsyncSession, offset: int, limit: int) -> list[Group]:
+    result = await db.execute(
+        select(Group)
+        .where(Group.join_policy == JoinPolicy.public)
+        .order_by(Group.id)
+        .offset(offset)
+        .limit(limit)
+    )
+    return list(result.scalars().all())
+
+
+async def count_public(db: AsyncSession) -> int:
+    result = await db.execute(
+        select(func.count()).where(Group.join_policy == JoinPolicy.public)
+    )
+    return result.scalar_one()
 
 
 async def update(db: AsyncSession, group: Group, data: GroupUpdate) -> Group:

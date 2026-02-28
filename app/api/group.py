@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -11,6 +11,7 @@ from app.schemas.group import (
     GroupUpdate,
     InviteLinkResponse,
     JoinByInviteRequest,
+    PaginatedGroupResponse,
 )
 from app.services import group as group_service
 
@@ -26,9 +27,13 @@ async def create_group(
     return await group_service.create_group(db, current_user.id, data)
 
 
-@router.get("", response_model=list[GroupResponse])
-async def list_groups(db: AsyncSession = Depends(get_db)) -> list[GroupResponse]:
-    return await group_service.list_groups(db)
+@router.get("", response_model=PaginatedGroupResponse)
+async def list_groups(
+    page: int = Query(default=1, ge=1),
+    size: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> PaginatedGroupResponse:
+    return await group_service.list_public_groups(db, page, size)
 
 
 @router.post("/join-by-invite", response_model=GroupResponse)

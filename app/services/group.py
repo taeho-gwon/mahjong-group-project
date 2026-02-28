@@ -6,7 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import group as group_db
 from app.models.group import Group, JoinPolicy
-from app.schemas.group import GroupCreate, GroupUpdate, InviteLinkResponse
+from app.schemas.group import (
+    GroupCreate,
+    GroupUpdate,
+    InviteLinkResponse,
+    PaginatedGroupResponse,
+)
 
 
 async def create_group(db: AsyncSession, owner_id: int, data: GroupCreate) -> Group:
@@ -33,8 +38,13 @@ async def get_group_detail(db: AsyncSession, group_id: int) -> Group:
     return group
 
 
-async def list_groups(db: AsyncSession) -> list[Group]:
-    return await group_db.list_all(db)
+async def list_public_groups(
+    db: AsyncSession, page: int, size: int
+) -> PaginatedGroupResponse:
+    offset = (page - 1) * size
+    items = await group_db.list_public(db, offset, size)
+    total = await group_db.count_public(db)
+    return PaginatedGroupResponse(items=items, total=total, page=page, size=size)
 
 
 async def update_group(
