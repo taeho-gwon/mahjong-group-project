@@ -46,6 +46,9 @@ class Group(Base):
     invite_token: Mapped[str | None] = mapped_column(
         unique=True, index=True, nullable=True
     )
+    invite_token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

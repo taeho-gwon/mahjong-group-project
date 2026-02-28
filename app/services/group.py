@@ -1,4 +1,5 @@
 import secrets
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -94,6 +95,9 @@ async def leave_group(db: AsyncSession, group_id: int, user_id: int) -> None:
     await group_db.remove_member(db, group_id, user_id)
 
 
+INVITE_TOKEN_TTL_DAYS = 7
+
+
 async def generate_invite_token(
     db: AsyncSession, group_id: int, user_id: int
 ) -> InviteLinkResponse:
@@ -103,7 +107,8 @@ async def generate_invite_token(
             status_code=status.HTTP_403_FORBIDDEN, detail="Not the group owner"
         )
     token = secrets.token_urlsafe(32)
-    await group_db.set_invite_token(db, group, token)
+    expires_at = datetime.now(UTC) + timedelta(days=INVITE_TOKEN_TTL_DAYS)
+    await group_db.set_invite_token(db, group, token, expires_at)
     return InviteLinkResponse(invite_token=token)
 
 
@@ -113,14 +118,17 @@ async def join_via_invite(db: AsyncSession, token: str, user_id: int) -> Group:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Invalid invite token"
         )
+    now = datetime.now(UTC)
+    if group.invite_token_expires_at is None or group.invite_token_expires_at < now:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Invite token has expired"
+        )
     existing = await group_db.get_member(db, group.id, user_id)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Already a member"
         )
     await group_db.add_member(db, group.id, user_id)
-    new_token = secrets.token_urlsafe(32)
-    group = await group_db.set_invite_token(db, group, new_token)
     return group
 
 

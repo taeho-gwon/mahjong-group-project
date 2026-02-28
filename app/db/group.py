@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -79,8 +81,11 @@ async def get_by_invite_token(db: AsyncSession, token: str) -> Group | None:
     return result.scalar_one_or_none()
 
 
-async def set_invite_token(db: AsyncSession, group: Group, token: str | None) -> Group:
+async def set_invite_token(
+    db: AsyncSession, group: Group, token: str | None, expires_at: datetime | None
+) -> Group:
     group.invite_token = token
+    group.invite_token_expires_at = expires_at
     await db.commit()
     await db.refresh(group)
     return group
