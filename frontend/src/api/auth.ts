@@ -16,15 +16,30 @@ export interface UserResponse {
   created_at: string
 }
 
-export async function login(email: string, password: string): Promise<TokenResponse> {
+export async function login(username: string, password: string): Promise<TokenResponse> {
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   })
 
   if (!res.ok) {
-    throw new Error('Invalid email or password')
+    throw new Error('Invalid username or password')
+  }
+
+  return res.json()
+}
+
+export async function register(username: string, password: string): Promise<UserResponse> {
+  const res = await fetch(`${BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  })
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail ?? 'Registration failed')
   }
 
   return res.json()
