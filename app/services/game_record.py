@@ -24,11 +24,15 @@ class GameRecordService:
         return record
 
     async def list_game_records(
-        self, page: int, size: int, group_id: int | None
+        self,
+        page: int,
+        size: int,
+        group_id: int | None,
+        contest_id: int | None = None,
     ) -> PaginatedGameRecordResponse:
         offset = (page - 1) * size
-        items = await self.game_record_repo.list(offset, size, group_id)
-        total = await self.game_record_repo.count(group_id)
+        items = await self.game_record_repo.list(offset, size, group_id, contest_id)
+        total = await self.game_record_repo.count(group_id, contest_id)
         return PaginatedGameRecordResponse(
             items=items, total=total, page=page, size=size
         )

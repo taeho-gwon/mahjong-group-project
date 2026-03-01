@@ -50,19 +50,29 @@ class GameRecordRepository(BaseRepository):
         return result.scalar_one_or_none()
 
     async def list(
-        self, offset: int, limit: int, group_id: int | None = None
+        self,
+        offset: int,
+        limit: int,
+        group_id: int | None = None,
+        contest_id: int | None = None,
     ) -> list[GameRecord]:
         stmt = _with_players(select(GameRecord))
         if group_id is not None:
             stmt = stmt.where(GameRecord.group_id == group_id)
+        if contest_id is not None:
+            stmt = stmt.where(GameRecord.contest_id == contest_id)
         stmt = stmt.order_by(GameRecord.played_at.desc()).offset(offset).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def count(self, group_id: int | None = None) -> int:
+    async def count(
+        self, group_id: int | None = None, contest_id: int | None = None
+    ) -> int:
         stmt = select(func.count()).select_from(GameRecord)
         if group_id is not None:
             stmt = stmt.where(GameRecord.group_id == group_id)
+        if contest_id is not None:
+            stmt = stmt.where(GameRecord.contest_id == contest_id)
         result = await self.db.execute(stmt)
         return result.scalar_one()
 
