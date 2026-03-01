@@ -268,6 +268,53 @@ onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세
 
 ---
 
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — Contest 타입 UI 반영 + Group uma 제거
+
+**선행 조건**: `infra/CHANGELOG.md`의 migration TODO가 DONE으로 완료된 후 실행
+
+### 1. `src/api/contests.ts`
+- `ContestResponse` 인터페이스에 `contest_type: 'overall' | 'regular' | 'independent'` 추가
+- `ContestCreate` 인터페이스에 `contest_type?: 'regular' | 'independent'` 추가 (overall은 API 직접 생성 불가)
+
+### 2. `src/api/groups.ts`
+- `GroupResponse`에서 `uma_1st`, `uma_2nd`, `uma_3rd`, `uma_4th` 필드 제거
+- `GroupCreate`의 uma 필드는 유지 (overall 생성 용도로 서버에 그대로 전달)
+
+### 3. `src/pages/GameRecordCreatePage.tsx`
+- Contest 선택 드롭다운에서 `contest_type === 'overall'` 항목 제외
+- "없음 (전체에 포함)" 옵션 명확히 표시 → `contest_id = null` 전송
+
+### 4. `src/pages/ContestManagePage.tsx`
+- Contest 생성 폼에 `contest_type` 선택 추가: "일반 랭킹전 (regular)" / "독립 랭킹전 (independent)"
+- overall 타입은 UI에 노출하지 않음 (생성 불가)
+- 목록에서 overall contest: 삭제 버튼 숨김, 수정은 가능
+
+### 5. `src/pages/ContestDetailPage.tsx`
+- contest_type 배지 표시:
+  - `overall` → "전체 랭킹" (또는 뱃지 색 구분)
+  - `regular` → "일반"
+  - `independent` → "독립"
+- overall contest 조회 시 기존 `useContestGameRecords` 그대로 사용 (백엔드에서 special query 처리)
+
+### 6. `src/pages/GameRecordManagePage.tsx`
+- Contest 컬럼: `contest_id === null` 게임은 "전체 (미지정)" 으로 표시
+
+### 7. 그룹 관련 페이지 (GroupManagePage 등)
+- `GroupResponse`에서 uma 제거됨 — uma를 직접 표시하는 곳이 있으면 제거
+- 그룹 랭킹 계산 시 overall contest의 uma 사용 (`useContests`로 overall contest fetch 후 uma 추출)
+
+### 완료 조건
+- [ ] `npm run build` 에러 없음
+- [ ] 게임 등록 시 overall contest 선택 불가, "없음" 선택 시 null 전송 확인
+- [ ] ContestManagePage에서 contest_type 선택 가능
+- [ ] overall contest 삭제 버튼 숨김 확인
+- [ ] `frontend/CHANGELOG.md` DONE 기록
+- [ ] `docs/status.md` 업데이트
+
+---
+
 ## 참고
 
 - API 클라이언트: `src/api/client.ts` → Zustand store에서 accessToken 읽음

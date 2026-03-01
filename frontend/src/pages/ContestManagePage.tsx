@@ -168,16 +168,18 @@ export default function ContestManagePage() {
 
           <hr className="my-10 border-gray-100" />
 
-          <div>
-            <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
-            <button
-              onClick={handleDelete}
-              disabled={deleteContestMutation.isPending}
-              className="px-5 py-2 text-sm cursor-pointer text-red-600 border-red-600"
-            >
-              {deleteContestMutation.isPending ? '삭제 중...' : '랭킹전 삭제'}
-            </button>
-          </div>
+          {contest?.contest_type !== 'overall' && (
+            <div>
+              <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
+              <button
+                onClick={handleDelete}
+                disabled={deleteContestMutation.isPending}
+                className="px-5 py-2 text-sm cursor-pointer text-red-600 border-red-600"
+              >
+                {deleteContestMutation.isPending ? '삭제 중...' : '랭킹전 삭제'}
+              </button>
+            </div>
+          )}
         </>
       ) : null}
     </div>

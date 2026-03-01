@@ -6,10 +6,6 @@ export interface GroupResponse {
   description: string | null
   owner_id: number
   join_policy: 'public' | 'private'
-  uma_1st: number
-  uma_2nd: number
-  uma_3rd: number
-  uma_4th: number
   is_active: boolean
   created_at: string
 }
@@ -55,10 +51,6 @@ export async function updateGroup(
     name?: string
     description?: string | null
     join_policy?: 'public' | 'private'
-    uma_1st?: number
-    uma_2nd?: number
-    uma_3rd?: number
-    uma_4th?: number
   },
 ): Promise<GroupResponse> {
   const res = await apiFetch(`/groups/${id}`, {

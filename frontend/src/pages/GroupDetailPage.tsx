@@ -78,12 +78,6 @@ export default function GroupDetailPage() {
               </div>
               <div><strong>Owner:</strong> {group.members.find((m) => m.role === 'owner')?.username ?? '-'}</div>
               <div><strong>Members:</strong> {group.members.length}</div>
-              <div>
-                <strong>Uma:</strong>{' '}
-                {[group.uma_1st, group.uma_2nd, group.uma_3rd, group.uma_4th]
-                  .map((v, i) => `${i + 1}위 ${v > 0 ? '+' : ''}${v}`)
-                  .join(' / ')}
-              </div>
               <div><strong>Created:</strong> {new Date(group.created_at).toLocaleDateString()}</div>
             </div>
           </section>

@@ -81,7 +81,7 @@ export default function GameRecordManagePage() {
                     {new Date(rec.played_at).toLocaleDateString()}
                   </td>
                   <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600">
-                    {rec.contest_id ? (contestMap.get(rec.contest_id) ?? `#${rec.contest_id}`) : '없음'}
+                    {rec.contest_id ? (contestMap.get(rec.contest_id) ?? `#${rec.contest_id}`) : '전체 (미지정)'}
                   </td>
                   {[
                     { player: rec.east_player, point: rec.east_point },

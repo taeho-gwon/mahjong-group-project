@@ -95,7 +95,18 @@ export default function ContestDetailPage() {
       ) : contest ? (
         <>
           <section className="mb-6">
-            <h2 className="mt-0 mb-2">{contest.name}</h2>
+            <div className="flex items-center gap-2 mb-2">
+              <h2 className="mt-0 mb-0">{contest.name}</h2>
+              <span className={`text-xs px-2 py-0.5 rounded ${
+                contest.contest_type === 'overall'
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : contest.contest_type === 'independent'
+                  ? 'bg-purple-50 text-purple-700'
+                  : 'bg-blue-50 text-blue-700'
+              }`}>
+                {contest.contest_type === 'overall' ? '전체 랭킹' : contest.contest_type === 'independent' ? '독립' : '일반'}
+              </span>
+            </div>
             <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
               <div>
                 <strong>랭킹 방식:</strong>{' '}

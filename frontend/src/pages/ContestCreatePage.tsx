@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { RankingType } from '../api/contests'
+import type { ContestType } from '../api/contests'
 import { useCreateContest } from '../hooks/mutations/useCreateContest'
 
 export default function ContestCreatePage() {
@@ -11,6 +12,7 @@ export default function ContestCreatePage() {
   const createContestMutation = useCreateContest(groupId)
 
   const [name, setName] = useState('')
+  const [contestType, setContestType] = useState<Exclude<ContestType, 'overall'>>('regular')
   const [rankingType, setRankingType] = useState<RankingType>('score')
   const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
   const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
@@ -32,6 +34,7 @@ export default function ContestCreatePage() {
     try {
       await createContestMutation.mutateAsync({
         name: name.trim(),
+        contest_type: contestType,
         group_id: groupId ?? null,
         ranking_type: rankingType,
         ...uma,
@@ -67,6 +70,18 @@ export default function ContestCreatePage() {
             placeholder="랭킹전 이름"
             className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
           />
+        </div>
+
+        <div>
+          <label className="block font-bold mb-1.5 text-sm">랭킹전 타입</label>
+          <select
+            value={contestType}
+            onChange={(e) => setContestType(e.target.value as Exclude<ContestType, 'overall'>)}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+          >
+            <option value="regular">일반 랭킹전 (regular)</option>
+            <option value="independent">독립 랭킹전 (independent)</option>
+          </select>
         </div>
 
         <div>

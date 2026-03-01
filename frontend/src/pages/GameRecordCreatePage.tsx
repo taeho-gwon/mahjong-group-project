@@ -34,11 +34,10 @@ export default function GameRecordCreatePage() {
   const { data: contests = [] } = useContests(groupId)
 
   const members: MemberInfo[] = group?.members ?? []
-  const defaultContest = contests.find((c) => c.name === '전체 랭킹') ?? null
+  const selectableContests = contests.filter((c) => c.contest_type !== 'overall')
   const [selectedContestId, setSelectedContestId] = useState<number | null>(null)
 
-  const effectiveContestId = selectedContestId ?? defaultContest?.id ?? null
-  const createGameRecordMutation = useCreateGameRecord(effectiveContestId)
+  const createGameRecordMutation = useCreateGameRecord(selectedContestId)
 
   const [error, setError] = useState('')
   const [positions, setPositions] = useState<Record<Position, PositionState>>({
@@ -85,7 +84,7 @@ export default function GameRecordCreatePage() {
         west_point: Number(west.point),
         north_point: Number(north.point),
         group_id: groupId,
-        contest_id: effectiveContestId,
+        contest_id: selectedContestId,
       })
       navigate(`/groups/${id}`)
     } catch {
@@ -111,16 +110,16 @@ export default function GameRecordCreatePage() {
         <>
           {error && <p className="text-red-600 mb-4">{error}</p>}
 
-          {contests.length > 0 && (
+          {selectableContests.length > 0 && (
             <div className="mb-5">
               <label className="block font-bold mb-1.5 text-sm">랭킹전 (선택)</label>
               <select
-                value={effectiveContestId ?? ''}
+                value={selectedContestId ?? ''}
                 onChange={(e) => setSelectedContestId(e.target.value ? Number(e.target.value) : null)}
                 className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
               >
-                <option value="">선택 안 함</option>
-                {contests.map((c) => (
+                <option value="">없음 (전체에 포함)</option>
+                {selectableContests.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>

@@ -1,10 +1,12 @@
 import { apiFetch } from './client'
 
 export type RankingType = 'score' | 'match_point'
+export type ContestType = 'overall' | 'regular' | 'independent'
 
 export interface ContestResponse {
   id: number
   name: string
+  contest_type: ContestType
   group_id: number | null
   created_by_id: number
   ranking_type: RankingType
@@ -22,6 +24,7 @@ export interface ContestResponse {
 
 export interface ContestCreate {
   name: string
+  contest_type?: 'regular' | 'independent'
   group_id?: number | null
   ranking_type?: RankingType
   uma_1st: number
