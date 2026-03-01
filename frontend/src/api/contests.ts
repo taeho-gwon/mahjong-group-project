@@ -55,6 +55,28 @@ export async function getContest(id: number): Promise<ContestResponse> {
   return res.json()
 }
 
+export interface ContestUpdate {
+  name?: string
+  ranking_type?: RankingType
+  uma_1st?: number
+  uma_2nd?: number
+  uma_3rd?: number
+  uma_4th?: number
+  scoring_1st?: number
+  scoring_2nd?: number
+  scoring_3rd?: number
+  scoring_4th?: number
+}
+
+export async function updateContest(id: number, data: ContestUpdate): Promise<ContestResponse> {
+  const res = await apiFetch(`/contests/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('Failed to update contest')
+  return res.json()
+}
+
 export async function deleteContest(id: number): Promise<void> {
   const res = await apiFetch(`/contests/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error('Failed to delete contest')

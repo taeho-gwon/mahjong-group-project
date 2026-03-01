@@ -10,6 +10,7 @@ import JoinPage from './pages/JoinPage'
 import GameRecordCreatePage from './pages/GameRecordCreatePage'
 import ContestCreatePage from './pages/ContestCreatePage'
 import ContestDetailPage from './pages/ContestDetailPage'
+import ContestManagePage from './pages/ContestManagePage'
 import GroupRankingPage from './pages/GroupRankingPage'
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
           <Route path="/groups/:id/ranking" element={<GroupRankingPage />} />
           <Route path="/groups/:id/contests/new" element={<ContestCreatePage />} />
           <Route path="/contests/:contestId" element={<ContestDetailPage />} />
+          <Route path="/contests/:contestId/manage" element={<ContestManagePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

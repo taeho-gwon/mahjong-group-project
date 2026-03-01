@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getContest, deleteContest } from '../api/contests'
+import { getContest } from '../api/contests'
 import type { ContestResponse } from '../api/contests'
 import { getMe } from '../api/auth'
 import { listGameRecords } from '../api/gameRecords'
@@ -89,7 +89,6 @@ export default function ContestDetailPage() {
   const [ranking, setRanking] = useState<RankingEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!contestId) return
@@ -109,19 +108,6 @@ export default function ContestDetailPage() {
       .finally(() => setLoading(false))
   }, [contestId])
 
-  async function handleDelete() {
-    if (!contest) return
-    if (!window.confirm('이 랭킹전을 삭제하시겠습니까?')) return
-    setDeleting(true)
-    try {
-      await deleteContest(contest.id)
-      navigate(`/groups/${contest.group_id}`)
-    } catch {
-      setError('삭제에 실패했습니다.')
-      setDeleting(false)
-    }
-  }
-
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -133,11 +119,10 @@ export default function ContestDetailPage() {
         </button>
         {contest && (myRole === 'owner' || myRole === 'admin') && (
           <button
-            onClick={handleDelete}
-            disabled={deleting}
-            style={{ fontSize: '14px', padding: '6px 14px', cursor: deleting ? 'not-allowed' : 'pointer', color: '#c0392b', borderColor: '#c0392b' }}
+            onClick={() => navigate(`/contests/${contestId}/manage`)}
+            style={{ fontSize: '14px', padding: '6px 14px', cursor: 'pointer' }}
           >
-            {deleting ? '삭제 중...' : '삭제'}
+            관리
           </button>
         )}
       </div>
