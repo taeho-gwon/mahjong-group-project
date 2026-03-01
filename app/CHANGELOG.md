@@ -28,31 +28,56 @@
 
 ---
 
-## [2026-03-01] TODO(@agent-backend) — 게임기록 수정 API
+## [2026-03-01] @agent-backend ✅ DONE — 게임기록 수정 API
+
+### Added
+- `PUT /game-records/{id}` — 게임기록 수정 엔드포인트
+  - `GameRecordUpdate` 스키마 추가 (모든 필드 optional)
+  - 생성자(`created_by_id`)만 수정 가능, 타인 시도 시 403
+  - **영향**: @agent-frontend — 수정 UI 구현 가능
+
+---
+
+## TODO(@agent-backend) — API 통합 테스트 작성
 
 ### 작업 요청 by @agent-manager
 
-**배경:** 게임기록 삭제는 `DELETE /game-records/{id}` 이미 구현됨.
-수정 API가 없어 프론트엔드에서 수정 기능 구현 불가.
+**배경:** 현재 테스트가 없어 리팩토링/기능 추가 시 회귀 검증 불가.
+`tests/conftest.py`에 async httpx 클라이언트 픽스처가 있으므로 바로 작성 가능.
 
 **구현할 것:**
 
-1. `app/schemas/game_record.py`에 `GameRecordUpdate` 추가
-   - 수정 가능 필드 (모두 optional): `east/south/west/north_player_id`, `east/south/west/north_point`, `game_link`, `played_at`
+**1. `tests/test_auth.py`**
+- `POST /auth/register` — 정상 가입, 중복 username 409
+- `POST /auth/login` — 정상 로그인, 잘못된 비밀번호 401
+- `POST /auth/refresh` — 정상 갱신, 만료/위조 토큰 401
+- `GET /auth/me` — 정상 조회, 토큰 없음 401
 
-2. `app/repositories/game_record.py`에 `update` 메서드 추가
-   - `model_dump(exclude_unset=True)` 패턴 사용
-   - commit 후 `_with_players` 로드해서 반환
+**2. `tests/test_groups.py`**
+- `POST /groups` — 생성, 인증 없음 401
+- `GET /groups` — 공개 그룹 목록
+- `GET /groups/{id}` — 상세 조회, 없는 id 404
+- `POST /groups/{id}/join` — public 그룹 가입, private 그룹 거부
+- `DELETE /groups/{id}` — owner만 삭제 가능, member 시도 403
 
-3. `app/services/game_record.py`에 `update_game_record` 추가
-   - `created_by_id != current_user_id` → 403
+**3. `tests/test_contests.py`**
+- `POST /contests` — 생성, 인증 없음 401
+- `GET /contests?group_id=` — 목록 조회
+- `PUT /contests/{id}` — 생성자만 수정 가능, 타인 403
+- `DELETE /contests/{id}` — 생성자만 삭제 가능, 타인 403
 
-4. `app/api/game_record.py`에 `PUT /{record_id}` 엔드포인트 추가
-   - `response_model=GameRecordResponse`, status 200
+**4. `tests/test_game_records.py`**
+- `POST /game-records` — 생성, 인증 없음 401
+- `GET /game-records?contest_id=` — 목록 조회
+- `PUT /game-records/{id}` — 생성자만 수정 가능, 타인 403
+- `DELETE /game-records/{id}` — 생성자만 삭제 가능, 타인 403
 
-**완료 조건:** `PUT /game-records/{id}` 가 생성자만 수정 가능하도록 동작
+**규칙:**
+- 각 테스트는 독립적으로 실행 가능해야 함 (픽스처로 데이터 격리)
+- 테스트 DB는 별도 설정 (`conftest.py` 확인 후 필요시 추가)
+- `uv run pytest` 전체 통과가 완료 조건
 
-**영향:** @agent-frontend — API 완성 후 수정 UI 구현 가능
+**완료 조건:** `uv run pytest` 실행 시 전체 통과, 주요 엔드포인트 happy/error path 커버
 
 ---
 
