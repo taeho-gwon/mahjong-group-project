@@ -68,10 +68,20 @@ PostgreSQL 17 — 비동기 SQLAlchemy ORM
 | 컬럼 | 타입 | 제약 |
 |------|------|------|
 | id | INTEGER | PK, auto |
-| group_id | INTEGER | FK → groups.id (CASCADE), NOT NULL |
+| group_id | INTEGER | FK → groups.id (SET NULL), NULL |
 | contest_id | INTEGER | FK → contests.id (SET NULL), NULL |
-| ... | ... | (세부 컬럼 추가 예정) |
-| created_at | TIMESTAMP | NOT NULL |
+| east_player_id | INTEGER | FK → users.id (CASCADE), NOT NULL |
+| south_player_id | INTEGER | FK → users.id (CASCADE), NOT NULL |
+| west_player_id | INTEGER | FK → users.id (CASCADE), NOT NULL |
+| north_player_id | INTEGER | FK → users.id (CASCADE), NOT NULL |
+| east_point | INTEGER | NOT NULL |
+| south_point | INTEGER | NOT NULL |
+| west_point | INTEGER | NOT NULL |
+| north_point | INTEGER | NOT NULL |
+| created_by_id | INTEGER | FK → users.id (CASCADE), NOT NULL |
+| game_link | VARCHAR(500) | NULL |
+| played_at | TIMESTAMP | NOT NULL (default: now) |
+| created_at | TIMESTAMP | NOT NULL (default: now) |
 
 ## 관계 다이어그램
 

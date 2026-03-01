@@ -6,11 +6,13 @@ Mahjong game management backend API server
 
 **역할:** FastAPI 백엔드 개발 및 유지보수
 
-**소유 영역:** `app/`, `tests/`, `alembic/versions/`, `pyproject.toml`
+**소유 영역:** `app/`, `tests/`, `pyproject.toml`
+
+**읽기 전용:** `infra/db/versions/` (마이그레이션 파일은 DevOps 에이전트가 관리)
 
 **책임:**
 - REST API 엔드포인트 구현
-- DB 모델 및 마이그레이션 관리
+- DB 모델 정의 (`app/models/`) — 마이그레이션은 DevOps 에이전트에 위임
 - 비즈니스 로직 (Service 레이어)
 - 인증/인가 (JWT + Argon2id)
 
@@ -18,6 +20,7 @@ Mahjong game management backend API server
 - API 변경 시 → `docs/api-contract.md` 업데이트
 - DB Breaking 변경 시 → Manager 승인 필요
 - Frontend 요청사항 → `docs/api-contract.md` 기준으로 협의
+- **모델 변경 후 마이그레이션 핸드오프** (아래 참조)
 
 ---
 
@@ -232,13 +235,32 @@ from app.api.game_record import router as game_record_router
 router.include_router(game_record_router)
 ```
 
-### 8. Migration
+### 8. Migration 핸드오프
 
-```bash
-uv run alembic revision --autogenerate -m "add game_records"
-# Review generated file, then
-uv run alembic upgrade head
-```
+모델 변경 후 Backend 에이전트는 직접 마이그레이션을 실행하지 않습니다.
+대신 DevOps 에이전트에 위임합니다:
+
+1. `app/CHANGELOG.md`에 변경 사항 기록 (`@agent-devops` 태그 필수)
+   ```markdown
+   ## [YYYY-MM-DD] @agent-backend
+   ### Added
+   - GameRecord 모델 추가
+     - **영향**: @agent-devops - migration 필요 (game_records 테이블)
+   ```
+
+2. `infra/CHANGELOG.md`에 TODO 추가
+   ```markdown
+   <!-- TODO(@agent-devops): game_records 테이블 migration 실행 필요 -->
+   ```
+
+3. DevOps 에이전트가 수행:
+   ```bash
+   uv run alembic revision --autogenerate -m "add game_records"
+   # 생성된 파일 검토 후
+   uv run alembic upgrade head
+   ```
+
+> Breaking 마이그레이션(컬럼 삭제, 타입 변경 등)은 Manager 에이전트 승인 후 진행
 
 ---
 
