@@ -22,8 +22,14 @@
 
 ### DB 관리자 (Database Administrator)
 - **담당**: 스키마, 마이그레이션, 쿼리 최적화
-- **작업 범위**: `alembic/`, `app/models/`
+- **작업 범위**: `infra/db/`, `app/models/`
 - **제약**: 비즈니스 로직 구현 금지
+
+### DevOps 엔지니어 (DevOps Engineer)
+- **담당**: 인프라 설정, DB 마이그레이션 관리, Docker 환경
+- **작업 범위**: `infra/`, `alembic.ini`
+- **제약**: `app/models/` 읽기만 가능, Breaking 마이그레이션은 Manager 승인 필요
+- **세부 지침**: `infra/CLAUDE.md`
 
 ---
 
@@ -57,9 +63,10 @@
 ## 충돌 방지 규칙
 
 ### Rule 1: 읽기 전용 디렉토리
-- agent-backend: `alembic/versions/`, `frontend/src/` 읽기만 가능
-- agent-frontend: `app/api/`, `alembic/` 읽기만 가능
+- agent-backend: `infra/db/versions/`, `frontend/src/` 읽기만 가능
+- agent-frontend: `app/api/`, `infra/` 읽기만 가능
 - agent-db: `app/services/`, `frontend/` 읽기만 가능
+- agent-devops: `app/models/` 읽기만 가능, `app/services/`, `frontend/` 수정 금지
 
 ### Rule 2: Breaking Change는 반드시 승인
 1. ADR 문서 작성 (`docs/decisions/YYYY-MM-DD-title.md`)

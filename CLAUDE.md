@@ -71,13 +71,18 @@ Mahjong 그룹 생성/관리, 게임 기록 및 통계 서비스
 project-root/
 ├── app/                    # Backend 에이전트 → app/CLAUDE.md
 ├── frontend/               # Frontend 에이전트 → frontend/CLAUDE.md
-├── alembic/                # DB 마이그레이션
+├── infra/                  # DevOps 에이전트 → infra/CLAUDE.md
+│   ├── db/                 # Alembic 마이그레이션 (구 alembic/)
+│   │   └── versions/       # 마이그레이션 파일들
+│   ├── docker/             # Docker 서비스 설정
+│   └── redis/              # Redis 설정 (향후)
 ├── tests/                  # 통합 테스트
 ├── docs/                   # 프로젝트 문서
 │   ├── decisions/          # ADR (아키텍처 결정 기록)
 │   ├── api-contract.md     # BE-FE API 계약서
 │   ├── db-schema.md        # DB 스키마
 │   └── architecture.md     # 시스템 아키텍처
+├── alembic.ini             # Alembic CLI 설정 (script_location → infra/db)
 ├── AGENTS.md               # 에이전트 역할 정의
 └── CLAUDE.md               # 관리자 에이전트 (이 파일)
 ```
@@ -89,6 +94,7 @@ project-root/
 각 에이전트는 해당 디렉토리에서 Claude Code를 실행:
 - 백엔드 작업: `cd app/` → `app/CLAUDE.md` 참조
 - 프론트엔드 작업: `cd frontend/` → `frontend/CLAUDE.md` 참조
+- 인프라/마이그레이션: `cd infra/` → `infra/CLAUDE.md` 참조
 - 아키텍처/문서/CI: 루트에서 이 파일 참조
 
 ---
@@ -105,5 +111,5 @@ uv run alembic upgrade head
 cd frontend && npm run dev
 
 # DB (Docker)
-docker compose up -d    # PostgreSQL port 5433
+docker compose -f infra/docker/docker-compose.yml up -d    # PostgreSQL port 5433
 ```
