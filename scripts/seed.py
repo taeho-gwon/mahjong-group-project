@@ -108,7 +108,7 @@ async def setup_group(
         name="전체 랭킹",
         group_id=group.id,
         created_by_id=owner.id,
-        contest_type=ContestType.overall,
+        contest_type=ContestType.aggregate,
         ranking_type=RankingType.score,
     )
     regular = Contest(

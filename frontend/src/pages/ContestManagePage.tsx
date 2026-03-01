@@ -26,6 +26,8 @@ export default function ContestManagePage() {
   const [rankingType, setRankingType] = useState<RankingType>('score')
   const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
   const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
+  const [periodStart, setPeriodStart] = useState<string | null>(null)
+  const [periodEnd, setPeriodEnd] = useState<string | null>(null)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
 
@@ -45,6 +47,8 @@ export default function ContestManagePage() {
     setRankingType(contest.ranking_type)
     setUma({ uma_1st: contest.uma_1st, uma_2nd: contest.uma_2nd, uma_3rd: contest.uma_3rd, uma_4th: contest.uma_4th })
     setScoring({ scoring_1st: contest.scoring_1st, scoring_2nd: contest.scoring_2nd, scoring_3rd: contest.scoring_3rd, scoring_4th: contest.scoring_4th })
+    setPeriodStart(contest.period_start ? contest.period_start.slice(0, 10) : null)
+    setPeriodEnd(contest.period_end ? contest.period_end.slice(0, 10) : null)
   }, [contest, group, me, contestId, navigate])
 
   async function handleSave(e: FormEvent) {
@@ -56,7 +60,17 @@ export default function ContestManagePage() {
     setSaveError('')
     setSaveSuccess(false)
     try {
-      await updateContestMutation.mutateAsync({ name, contest_type: contestType, ranking_type: rankingType, ...uma, ...scoring })
+      await updateContestMutation.mutateAsync({
+        name,
+        contest_type: contestType,
+        ranking_type: rankingType,
+        ...uma,
+        ...scoring,
+        ...(contest?.contest_type === 'aggregate' ? {
+          period_start: periodStart || null,
+          period_end: periodEnd || null,
+        } : {}),
+      })
       setSaveSuccess(true)
     } catch {
       setSaveError('저장에 실패했습니다.')
@@ -72,6 +86,8 @@ export default function ContestManagePage() {
       alert('삭제에 실패했습니다.')
     }
   }
+
+  const canDelete = contest && !contest.is_default
 
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
@@ -103,7 +119,7 @@ export default function ContestManagePage() {
               />
             </div>
 
-            {contest?.contest_type !== 'overall' && (
+            {contest?.contest_type !== 'aggregate' && (
               <div>
                 <label className="block font-bold mb-1.5 text-sm">랭킹전 타입</label>
                 <select
@@ -118,6 +134,30 @@ export default function ContestManagePage() {
                   {contestType === 'regular'
                     ? '기록이 전체 랭킹에 합산됩니다.'
                     : '기록이 전체 랭킹에 합산되지 않습니다. (연습전, 이벤트전 등)'}
+                </p>
+              </div>
+            )}
+
+            {contest?.contest_type === 'aggregate' && (
+              <div>
+                <label className="block font-bold mb-1.5 text-sm">집계 기간</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="date"
+                    value={periodStart ?? ''}
+                    onChange={(e) => { setPeriodStart(e.target.value || null); setSaveSuccess(false) }}
+                    className="border border-gray-300 rounded px-3 py-1.5 text-sm"
+                  />
+                  <span className="text-gray-400">~</span>
+                  <input
+                    type="date"
+                    value={periodEnd ?? ''}
+                    onChange={(e) => { setPeriodEnd(e.target.value || null); setSaveSuccess(false) }}
+                    className="border border-gray-300 rounded px-3 py-1.5 text-sm"
+                  />
+                </div>
+                <p className="mt-1.5 mb-0 text-xs text-gray-500">
+                  {!periodStart && !periodEnd ? '전체 기간 (제한 없음)' : '비어있는 날짜는 제한 없음으로 처리됩니다.'}
                 </p>
               </div>
             )}
@@ -187,7 +227,7 @@ export default function ContestManagePage() {
             </button>
           </form>
 
-          {contest?.contest_type !== 'overall' && (
+          {canDelete && (
             <>
               <hr className="my-10 border-gray-100" />
 

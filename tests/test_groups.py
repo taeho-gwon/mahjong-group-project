@@ -110,3 +110,125 @@ async def test_create_group_creates_default_aggregate_contest(
     ]
     assert len(aggregate) == 1
     assert aggregate[0]["name"] == "전체 랭킹"
+
+
+async def test_list_my_groups(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    await client.post("/groups", json=_GROUP_PAYLOAD, headers=headers)
+
+    r = await client.get("/groups/me", headers=headers)
+    assert r.status_code == 200
+    assert len(r.json()) >= 1
+
+
+async def test_update_group_by_owner(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    create_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=headers)
+    group_id = create_r.json()["id"]
+
+    r = await client.put(
+        f"/groups/{group_id}",
+        json={"name": "Updated Group"},
+        headers=headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["name"] == "Updated Group"
+
+
+async def test_update_group_by_member_forbidden(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    member_headers = await _login(client, "member")
+    create_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=owner_headers)
+    group_id = create_r.json()["id"]
+    await client.post(f"/groups/{group_id}/join", headers=member_headers)
+
+    r = await client.put(
+        f"/groups/{group_id}",
+        json={"name": "Hacked"},
+        headers=member_headers,
+    )
+    assert r.status_code == 403
+
+
+async def test_generate_invite_link(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    create_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=headers)
+    group_id = create_r.json()["id"]
+
+    r = await client.post(f"/groups/{group_id}/invite-link", headers=headers)
+    assert r.status_code == 200
+    assert "invite_url" in r.json()
+
+
+async def test_join_by_invite(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    member_headers = await _login(client, "member")
+    private_payload = {**_GROUP_PAYLOAD, "join_policy": "private"}
+    create_r = await client.post("/groups", json=private_payload, headers=owner_headers)
+    group_id = create_r.json()["id"]
+
+    invite_r = await client.post(
+        f"/groups/{group_id}/invite-link", headers=owner_headers
+    )
+    # Extract token from invite_url query param
+    invite_url = invite_r.json()["invite_url"]
+    token = invite_url.split("token=")[1]
+
+    r = await client.post(
+        "/groups/join-by-invite",
+        json={"invite_token": token},
+        headers=member_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["id"] == group_id
+
+
+async def test_leave_group(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    member_headers = await _login(client, "member")
+    create_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=owner_headers)
+    group_id = create_r.json()["id"]
+    await client.post(f"/groups/{group_id}/join", headers=member_headers)
+
+    r = await client.delete(f"/groups/{group_id}/leave", headers=member_headers)
+    assert r.status_code == 204
+
+
+async def test_remove_member(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    member_auth = await _login(client, "member")
+
+    create_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=owner_headers)
+    group_id = create_r.json()["id"]
+    await client.post(f"/groups/{group_id}/join", headers=member_auth)
+
+    # Get member user id from group detail
+    detail_r = await client.get(f"/groups/{group_id}")
+    members = detail_r.json()["members"]
+    member_id = next(m["id"] for m in members if m["username"] == "member")
+
+    r = await client.delete(
+        f"/groups/{group_id}/members/{member_id}", headers=owner_headers
+    )
+    assert r.status_code == 204
+
+
+async def test_update_member_role(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    member_auth = await _login(client, "member")
+
+    create_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=owner_headers)
+    group_id = create_r.json()["id"]
+    await client.post(f"/groups/{group_id}/join", headers=member_auth)
+
+    detail_r = await client.get(f"/groups/{group_id}")
+    members = detail_r.json()["members"]
+    member_id = next(m["id"] for m in members if m["username"] == "member")
+
+    r = await client.put(
+        f"/groups/{group_id}/members/{member_id}/role",
+        json={"role": "admin"},
+        headers=owner_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["role"] == "admin"

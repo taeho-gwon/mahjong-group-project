@@ -41,6 +41,13 @@ class GameRecordService:
     async def create_game_record(
         self, created_by_id: int, data: GameRecordCreate
     ) -> GameRecord:
+        if data.group_id is not None:
+            member = await self.group_repo.get_member(data.group_id, created_by_id)
+            if member is None:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You must be a member of the group to create a game record",
+                )
         return await self.game_record_repo.create(created_by_id, data)
 
     async def get_game_record(self, record_id: int) -> GameRecord:

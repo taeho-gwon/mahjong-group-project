@@ -4,6 +4,18 @@
 
 ---
 
+## [2026-03-01] @agent-backend ✅ DONE
+### Fixed — 기술부채 해결
+- `GameRecordCreate`/`GameRecordUpdate`에 점수 합계 == 100,000 검증 추가
+- `ContestCreate`에 `period_start < period_end` 기간 검증 추가
+- `create_game_record()`에 그룹 멤버십 체크 추가 (비멤버 → 403)
+- `app/api/contest.py` — `type: ignore` 주석 4개 제거
+- `docs/api-contract.md` — `PUT /groups/{id}` 스펙에서 제거된 uma 필드 정리
+- `app/repositories/user.py` — 미사용 `get_by_email()` 메서드 제거
+- 테스트 14개 추가 (39 → 53): groups 7개, contests 2개, game_records 5개
+
+---
+
 ## [2026-03-01] @agent-backend
 
 ### Added

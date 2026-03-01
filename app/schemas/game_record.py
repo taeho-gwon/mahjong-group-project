@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class PlayerInfo(BaseModel):
@@ -24,6 +24,13 @@ class GameRecordCreate(BaseModel):
     game_link: str | None = None
     played_at: datetime | None = None
 
+    @model_validator(mode="after")
+    def check_point_sum(self) -> "GameRecordCreate":
+        total = self.east_point + self.south_point + self.west_point + self.north_point
+        if total != 100000:
+            raise ValueError(f"Sum of points must be 100000, got {total}")
+        return self
+
 
 class GameRecordUpdate(BaseModel):
     east_player_id: int | None = None
@@ -36,6 +43,16 @@ class GameRecordUpdate(BaseModel):
     north_point: int | None = None
     game_link: str | None = None
     played_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def check_point_sum(self) -> "GameRecordUpdate":
+        points = [self.east_point, self.south_point, self.west_point, self.north_point]
+        provided = [p for p in points if p is not None]
+        if len(provided) == 4:
+            total = sum(provided)
+            if total != 100000:
+                raise ValueError(f"Sum of points must be 100000, got {total}")
+        return self
 
 
 class GameRecordResponse(BaseModel):

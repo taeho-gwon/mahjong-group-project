@@ -1,58 +1,98 @@
-# 전체 작업 현황 대시보드
+# 프로젝트 대시보드
 
-> Manager 에이전트가 관리. 작업 지시 시 동시 업데이트.
-> 마지막 업데이트: 2026-03-01
-
----
-
-## 현재 진행 가능한 작업
-
-현재 할당된 작업 없음.
+> Manager가 한눈에 현황을 파악하기 위한 단일 소스.
+> **모든 에이전트는 작업 완료(DONE) 시 이 파일의 해당 섹션을 반드시 업데이트한다.**
+> 마지막 업데이트: 2026-03-01 (2차)
 
 ---
 
-## 완료된 작업
+## MVP 진행 상황
+
+| 항목 | 상태 | 담당 | 비고 |
+|------|------|------|------|
+| 인증 (가입/로그인/토큰 갱신) | ✅ | BE+FE | |
+| 그룹 CRUD + 멤버 관리 | ✅ | BE+FE | |
+| 초대 링크 (생성/가입) | ✅ | BE+FE | |
+| 공개 그룹 가입 | ✅ | FE | |
+| 랭킹전 CRUD (aggregate/regular/independent) | ✅ | BE | |
+| 랭킹전 aggregate UI | ✅ | FE | |
+| 게임 기록 CRUD + 권한 | ✅ | BE+FE | |
+| 랭킹 계산 (프론트엔드) | ✅ | FE | |
+| 유저 프로필 | ✅ | BE+FE | |
+| 401 토큰 자동 갱신 | ✅ | FE | |
+| 그룹 탈퇴 UX | ✅ | FE | |
+| 멤버 목록 정렬 통일 | ✅ | FE | |
+| independent/regular 차이 UI | ✅ | FE | |
+| **그룹 삭제 UI** | ✅ | FE | |
+| **에러 페이지 (404/403)** | ✅ | FE | |
+| **aggregate migration** | ✅ | DevOps | initial_schema 재생성으로 반영 |
+| **배포 인프라 마무리** | ✅ | DevOps | entrypoint + nginx 보안/gzip/캐싱 |
+| **BE 기술부채 해결** | ✅ | BE | 입력검증, 권한체크, 테스트 보강 (53개) |
+
+---
+
+## 활성 TODO 목록
+
+> 현재 활성 TODO 없음 — MVP 전 항목 완료
+
+---
+
+## 최근 완료된 작업
 
 | 작업 | 담당 | 완료일 |
 |------|------|--------|
-| GameRecord 모델 + API (`POST /game-records`, `GET`, `DELETE`) | @agent-backend | 2026-03-01 |
-| 게임기록 수정 API (`PUT /game-records/{id}`) | @agent-backend | 2026-03-01 |
-| 게임기록 삭제 UI | @agent-frontend | 2026-03-01 |
-| 게임기록 수정 UI (`/game-records/:id/edit`) | @agent-frontend | 2026-03-01 |
-| Contest 모델 + API CRUD | @agent-backend | 2026-03-01 |
-| Contest 랭킹/관리 페이지 | @agent-frontend | 2026-03-01 |
-| Group 초대 링크 API (`POST /groups/{id}/invite-link`) | @agent-backend | 2026-03-01 |
-| Group 초대 링크 UI | @agent-frontend | 2026-03-01 |
-| UX 개선 (토스트 알림/로딩 스피너/점수 검증) | @agent-frontend | 2026-03-01 |
-| 게임 기록 관리 페이지 신규 + ContestDetailPage 정리 | @agent-frontend | 2026-03-01 |
-| Group 관리 페이지 (멤버 역할 변경, 강퇴) | @agent-frontend | 2026-03-01 |
-| 마이그레이션 완료 (users, groups, contests, game_records 포함) | @agent-devops | 2026-03-01 |
-| 마이그레이션 — contests.contest_type 추가 + groups.uma_* 제거 (34 tests ✅) | @agent-devops | 2026-03-01 |
-| 백엔드 API 통합 테스트 작성 (31개 통과) | @agent-backend | 2026-03-01 |
-| 게임기록 수정/삭제 권한 변경 (owner/admin 전용) | @agent-backend | 2026-03-01 |
-| Contest 타입 시스템 (ContestType enum + overall 자동 생성 + Group uma 제거) | @agent-backend | 2026-03-01 |
-| Contest 타입 UI 반영 + Group uma 제거 | @agent-frontend | 2026-03-01 |
+| overall → aggregate 리네이밍 + 기간 필드 (39 tests) | BE | 2026-03-01 |
+| 유저 프로필 API (GET /users/{id}, 38 tests) | BE | 2026-03-01 |
+| 초대 링크 API 수정 (invite_url + expires_at) | BE | 2026-03-01 |
+| 유저 프로필 페이지 + 유저명 링크 | FE | 2026-03-01 |
+| 공개 그룹 가입 버튼 | FE | 2026-03-01 |
+| 그룹 탈퇴 UX (useLeaveGroup + GroupDetailPage 버튼) | FE | 2026-03-01 |
+| 멤버 목록 정렬 통일 (owner→admin→member) | FE | 2026-03-01 |
+| independent/regular 차이 UI | FE | 2026-03-01 |
+| Access Token 자동 갱신 (401 인터셉터) | FE | 2026-03-01 |
+| 버그 수정 3건 (overall→contest_type, overall 선택지 제거) | FE | 2026-03-01 |
+| AGENTS.md 거버넌스 확인 | FE | 2026-03-01 |
+| AGENTS.md 거버넌스 확인 | DevOps | 2026-03-01 |
+| aggregate migration (initial_schema 재생성) | DevOps | 2026-03-01 |
+| MVP 배포 인프라 마무리 (entrypoint + nginx 보안) | DevOps | 2026-03-01 |
+| 프로덕션 배포 준비 (nginx 라우트 수정, 로깅, 백업 스크립트) | DevOps | 2026-03-01 |
+| 종합 거버넌스 규칙 (AGENTS.md) | Manager | 2026-03-01 |
+| ADR: overall → aggregate 리네이밍 | Manager | 2026-03-01 |
+| 랭킹전 aggregate UI (ContestCreate/Manage/Detail 기간 필드, GroupRanking is_default) | FE | 2026-03-01 |
+| 그룹 삭제 UI (useDeleteGroup + GroupManagePage 위험 구역) | FE | 2026-03-01 |
+| 에러 페이지 (NotFoundPage 404 + ForbiddenPage 403) | FE | 2026-03-01 |
+| 기술부채 해결 (입력검증, 권한체크, type:ignore 제거, 테스트 39→53) | BE | 2026-03-01 |
+| AGENTS.md 거버넌스 확인 | BE | 2026-03-01 |
 
 ---
 
-## api-contract.md 동기화 상태
+## 에이전트 피드백/이슈
+
+| 출처 | 내용 | 상태 |
+|------|------|------|
+| DevOps | `scripts/` 소유권 미정의 | ✅ 해결 (AGENTS.md에 DevOps로 추가) |
+
+---
+
+## API 계약 동기화
 
 | 엔드포인트 | 문서 반영 | 최종 확인 |
 |------------|----------|-----------|
-| `PUT /game-records/{id}` | ✅ | 2026-03-01 |
-| `DELETE /game-records/{id}` | ✅ | 2026-03-01 |
-| `POST /game-records` | ✅ | 2026-03-01 |
-| `POST /groups/{id}/invite-link` | ✅ | 2026-03-01 |
-| Contest CRUD 전체 | ✅ | 2026-03-01 |
+| Auth 전체 (/register, /login, /refresh, /me) | ✅ | 2026-03-01 |
 | Group CRUD 전체 | ✅ | 2026-03-01 |
+| Contest CRUD 전체 (aggregate 포함) | ✅ | 2026-03-01 |
+| GameRecord CRUD 전체 | ✅ | 2026-03-01 |
+| GET /users/{id} | ✅ | 2026-03-01 |
+| POST /groups/{id}/invite-link | ✅ | 2026-03-01 |
 
 ---
 
-## 아키텍처 결정 기록 (ADR)
+## ADR (아키텍처 결정 기록)
 
 | 파일 | 주제 | 날짜 |
 |------|------|------|
-| `docs/decisions/` 확인 필요 | — | — |
+| `2026-03-01-infra-directory-restructure.md` | infra 디렉토리 구조 개편 | 2026-03-01 |
+| `2026-03-01-rename-overall-to-aggregate.md` | ContestType overall→aggregate + 기간 필드 | 2026-03-01 |
 
 ---
 
@@ -60,7 +100,7 @@
 
 | 기호 | 의미 |
 |------|------|
-| ✅ DONE | 완료 |
-| 🔄 진행 가능 | 선행 의존성 없음, 즉시 착수 가능 |
-| ⏳ 대기 중 | 선행 작업 완료 필요 |
-| 🚧 진행 중 | 에이전트 작업 중 |
+| ✅ | 완료 |
+| ⏳ | 대기 중 (TODO 배정됨) |
+| 🚧 | 진행 중 |
+| ❌ | 차단됨 / 이슈 |

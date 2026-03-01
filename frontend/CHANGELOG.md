@@ -397,53 +397,15 @@ onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세
 
 ---
 
-## [2026-03-01] TODO(@agent-frontend) — aggregate 타입 리네이밍 + 기간 프리셋 UI (선행: @agent-backend aggregate 작업 완료 후)
+## [2026-03-01] @agent-frontend ✅ DONE — aggregate 타입 리네이밍 + 기간 프리셋 UI
 
-### 배경
-- 백엔드에서 `contest_type: overall` → `aggregate`로 변경됨
-- aggregate contest에 `period_start`, `period_end`, `is_default` 필드 추가
-- 사용자가 aggregate contest를 직접 생성 가능해짐 (기간 지정)
-
-### 수정 범위
-
-#### 1. `src/api/contests.ts` — 타입 업데이트
-- `ContestResponse`의 `contest_type`: `'overall'` → `'aggregate'`
-- `period_start: string | null`, `period_end: string | null`, `is_default: boolean` 추가
-- `ContestCreate`에 `period_start`, `period_end` 추가
-
-#### 2. 코드베이스 전체 `overall` → `aggregate` 치환
-- `contest_type === 'overall'` → `contest_type === 'aggregate'`
-- GroupRankingPage, ContestDetailPage, ContestCreatePage, ContestManagePage, GameRecordCreatePage 등
-
-#### 3. `src/pages/ContestCreatePage.tsx` — aggregate 생성 UI
-- contest_type에 `aggregate` 옵션 추가: "집계 랭킹 (aggregate)"
-  - 설명: "다른 랭킹전의 기록을 모아서 기간별로 집계합니다"
-- aggregate 선택 시 기간 설정 UI 표시:
-  - **프리셋 버튼**: 일간 / 주간 / 월간 / 연간 / 전체 / 직접 설정
-  - 프리셋 선택 시 `period_start`, `period_end` 자동 계산
-  - "직접 설정" 선택 시 날짜 입력 필드 2개 표시
-  - "전체" 선택 시 둘 다 null
-- regular/independent 선택 시 기간 UI 숨김
-
-#### 4. `src/pages/ContestManagePage.tsx`
-- aggregate contest 수정 시 기간 변경 가능
-- `is_default=true`인 aggregate: 삭제 버튼 숨김 (기존 overall 삭제 방지 로직 유지)
-- `is_default=false`인 aggregate: 삭제 가능
-
-#### 5. `src/pages/GroupRankingPage.tsx`
-- `contest_type === 'overall'` → `contest_type === 'aggregate'`
-- default aggregate 찾기: `c.contest_type === 'aggregate' && c.is_default`
-
-#### 6. `src/pages/ContestDetailPage.tsx`
-- 배지: `aggregate` → "집계" 표시
-- aggregate contest일 때 기간 표시 (예: "2026.03.01 ~ 2026.03.31" 또는 "전체 기간")
-
-### 완료 조건
-- [ ] `npm run build` 에러 없음
-- [ ] 모든 `overall` 참조가 `aggregate`로 변경됨
-- [ ] aggregate contest 생성 시 기간 프리셋 UI 동작
-- [ ] is_default aggregate 삭제 불가, 일반 aggregate 삭제 가능
-- [ ] `frontend/CHANGELOG.md` DONE 기록
+### Changed
+- `src/api/contests.ts` — `ContestType` overall → aggregate, `period_start`/`period_end`/`is_default` 필드 추가 (Response, Create, Update)
+- 코드베이스 전체 `overall` → `aggregate` 치환 (GroupRankingPage, ContestDetailPage, ContestCreatePage, ContestManagePage, GameRecordCreatePage)
+- `src/pages/GroupRankingPage.tsx` — default aggregate 탐색: `c.contest_type === 'aggregate' && c.is_default`
+- `src/pages/ContestCreatePage.tsx` — aggregate 옵션 추가 + 기간 프리셋 UI (일간/주간/월간/연간/전체/직접 설정)
+- `src/pages/ContestManagePage.tsx` — aggregate 기간 수정 UI + `is_default` 기반 삭제 로직 (is_default=true 삭제 불가)
+- `src/pages/ContestDetailPage.tsx` — 배지 "집계" 표시 + aggregate 기간 정보 표시
 
 ---
 
@@ -454,6 +416,24 @@ onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세
 - **CHANGELOG 프로토콜**: TODO/DONE 형식 일치 (TODO는 Manager만 작성, DONE은 FE가 업데이트)
 - **교차 영역 규칙**: "남의 코드를 직접 수정하지 않는다" — `frontend/CLAUDE.md`의 "범위 외 요청" 규칙과 일치
 - **충돌 없음**: `AGENTS.md`와 `frontend/CLAUDE.md` 간 규칙 충돌 발견되지 않음
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — 그룹 삭제 UI (MVP)
+
+### Added
+- `src/api/groups.ts` — `deleteGroup(groupId)` 함수 추가
+- `src/hooks/mutations/useDeleteGroup.ts` — 삭제 mutation 훅 (invalidate + 토스트 + 홈 이동)
+- `src/pages/GroupManagePage.tsx` — 위험 구역 섹션 추가 (owner만 삭제 버튼 표시, confirm 후 mutation)
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — 에러 페이지 (MVP)
+
+### Added
+- `src/pages/NotFoundPage.tsx` — 404 페이지 (홈 이동 링크)
+- `src/pages/ForbiddenPage.tsx` — 403 페이지 (홈 이동 링크)
+- `App.tsx` — catch-all `<Route path="*">` → NotFoundPage로 변경 (기존 Navigate to "/" 제거)
 
 ---
 

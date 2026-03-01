@@ -70,6 +70,7 @@
 | `infra/` | DevOps | R | - | **RW** | R |
 | `pyproject.toml` | BE | **RW** | - | R | R |
 | `alembic.ini` | DevOps | R | - | **RW** | R |
+| `scripts/` | DevOps | R | - | **RW** | R |
 
 ### docs/ 파일 소유권
 
@@ -129,6 +130,10 @@
 2. 작업 완료 후 TODO를 DONE으로 업데이트
 3. 타 에이전트 영향이 있으면 `**영향**: @agent-xxx — 설명` 태그
 4. 선행 작업이 있으면 `**선행**: @agent-xxx 작업명 완료 후` 명시
+5. **DONE 처리 시 `docs/status.md` 반드시 업데이트:**
+   - "활성 TODO 목록" → 해당 항목 제거
+   - "최근 완료된 작업" → 완료 항목 추가
+   - "에이전트 피드백/이슈" → 이슈가 있으면 추가
 
 ---
 

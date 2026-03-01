@@ -4,6 +4,36 @@
 
 ---
 
+## [2026-03-01] @agent-devops ✅ DONE — 프로덕션 배포 준비
+
+### Fixed
+- `infra/docker/nginx.conf` — API 프록시 라우트에 `/game-records`, `/users` 추가
+  - **이전**: `/auth`, `/groups`, `/contests`만 프록시 → 게임기록/유저 API가 프로덕션에서 404
+  - **이후**: `^/(auth|groups|contests|game-records|users)(/|$)`
+  - **⚠️ 승인 필요**: 배포 환경 설정 변경
+
+### Changed
+- `infra/docker/docker-compose.prod.yml` — 전 서비스에 로깅 설정 추가
+  - json-file 드라이버, max-size 10m, 로그 로테이션 (backend 5개, db/nginx 3개)
+  - **⚠️ 승인 필요**: 배포 환경 설정 변경
+- `.env.prod.example` — 비밀번호/시크릿 생성 가이드 추가 (`openssl rand` 예시)
+
+### Added
+- `scripts/backup_db.sh` — PostgreSQL 백업 스크립트 (프로덕션용)
+  - pg_dump + gzip 압축, 날짜별 파일명
+  - `KEEP_DAYS` 환경변수로 오래된 백업 자동 정리 (기본 7일)
+  - FYI(@agent-manager): `scripts/` 디렉토리 소유권이 AGENTS.md에 미정의. DevOps 범위로 판단하여 생성함
+
+### Migration
+- 기존 12개 마이그레이션 → 1개 `initial_schema`로 통합 재생성 (e527fa9f2984)
+  - 최신 모델 반영: `contesttype` enum `overall→aggregate`, `period_start/end`, `is_default` 컬럼 포함
+  - 이전 버전(bd7db8cf9814)은 모델 변경 미반영 → downgrade 후 재생성
+  - orphaned enum 타입 수동 정리 (`joinpolicy`, `memberrole`, `rankingtype`, `contesttype`)
+  - `uv run alembic current` → `e527fa9f2984 (head)` ✅
+- `scripts/seed.py` — `ContestType.overall` → `ContestType.aggregate` 수정
+
+---
+
 ## [2026-03-01] @agent-devops (기술 부채 해결)
 
 ### Fixed
@@ -36,30 +66,10 @@
 
 ---
 
-<!-- TODO(@agent-devops): contesttype enum 값 변경 (overall→aggregate) + contests 컬럼 3개 추가 (period_start, period_end, is_default) migration 필요 -->
+## 마이그레이션 현황
 
-<!-- TODO(@agent-devops): Contest 타입 + Group uma 제거 migration — @agent-backend ✅ DONE (2026-03-01) -->
-
-## [2026-03-01] @agent-devops ✅ DONE — Contest 타입 + Group uma 제거 Migration
-
-### Added
-- `infra/db/versions/1b81330c150d_add_contest_type_to_contests_and_remove_.py`
-  - `contests.contest_type` 컬럼 추가 (contesttype enum: overall/regular/independent, default='regular')
-  - `groups.uma_1st/2nd/3rd/4th` 컬럼 제거
-  - `upgrade()` / `downgrade()` 모두 구현 (enum 타입 생성/삭제 포함)
-- `uv run alembic current` → `1b81330c150d (head)` ✅
-- `uv run pytest` → 34개 전체 통과 ✅
-
----
-
-## 마이그레이션 완료 목록
-
-- [x] users 테이블 초기 생성
-- [x] groups + group_members 테이블
-- [x] Group.uma_* 컬럼 추가
-- [x] contests 테이블
-- [x] game_records 테이블 (contest_id FK 포함)
-- [x] contests.contest_type 추가 + groups.uma_* 제거
+- 현재 HEAD: `e527fa9f2984` (initial_schema — 전체 스키마 통합)
+- 이전 12개 개별 마이그레이션은 통합되어 삭제됨
 
 ---
 
@@ -80,23 +90,34 @@ uv run alembic downgrade -1
 
 ---
 
-## [2026-03-01] TODO(@agent-devops) — AGENTS.md 거버넌스 규칙 확인
+## [2026-03-01] @agent-devops ✅ DONE — AGENTS.md 거버넌스 규칙 확인
 
-### 배경
-- `AGENTS.md`에 파일 소유권 매트릭스, CHANGELOG 프로토콜, 교차 영역 작업 규칙, 충돌 방지 규칙이 추가됨
-- 모든 에이전트가 이 규칙을 숙지하고 준수해야 함
+### 확인 결과
+- [x] `AGENTS.md` 확인 완료
+- [x] `infra/CLAUDE.md`와 충돌 없음 확인
+- [x] 피드백 기록
 
-### 할 일
-1. `AGENTS.md` 전체를 읽고 내용 확인
-2. 특히 다음 항목을 확인:
-   - **파일 소유권 매트릭스**: DevOps 에이전트의 RW/R 권한이 현재 작업 방식과 맞는지
-   - **CHANGELOG 프로토콜**: TODO/DONE 형식이 현재 사용 중인 형식과 일치하는지
-   - **교차 영역 작업 규칙**: 규칙에 동의하는지, 보완할 점이 있는지
-3. `infra/CLAUDE.md`에 이미 적힌 규칙과 `AGENTS.md`가 **충돌하는 부분**이 있는지 확인
-4. 문제가 있으면 이 CHANGELOG에 피드백 기록 (예: `FYI(@agent-manager): ...`)
-5. 문제가 없으면 DONE 처리
+### 피드백
+- FYI(@agent-manager): `scripts/` 디렉토리 소유권이 AGENTS.md 파일 소유권 매트릭스에 미정의
+  - 현재 DevOps(`backup_db.sh`, `dev_reset.sh`, `seed.py`)와 BE 성격 스크립트가 혼재
+  - 소유권 명시 또는 `scripts/infra/`, `scripts/data/` 등 하위 분류 권장
 
-### 완료 조건
-- [ ] `AGENTS.md` 확인 완료
-- [ ] `infra/CLAUDE.md`와 충돌 없음 확인
-- [ ] 피드백 또는 DONE 기록
+---
+
+## [2026-03-01] @agent-devops ✅ DONE — MVP 배포 인프라 마무리
+
+### Added
+- `infra/docker/entrypoint.sh` — 배포 시 migration 자동 실행 후 서버 시작
+- `Dockerfile.backend` — entrypoint.sh 사용하도록 변경 (CMD → entrypoint)
+
+### Changed
+- `infra/docker/nginx.conf` — 보안 헤더 + Gzip + 정적 파일 캐싱 추가
+  - Gzip: text/plain, text/css, application/json, application/javascript, text/xml
+  - 보안 헤더: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+  - 정적 파일(JS/CSS/이미지/폰트): 30일 캐시 + immutable
+
+### 완료 확인
+- [x] entrypoint.sh 생성 + Dockerfile 반영
+- [x] nginx.conf 보안 헤더 + Gzip 추가
+- [x] aggregate migration — initial_schema 재생성으로 이미 반영됨 (`e527fa9f2984`)
+- [x] CHANGELOG DONE 기록

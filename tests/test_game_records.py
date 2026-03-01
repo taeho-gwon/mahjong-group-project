@@ -153,6 +153,44 @@ async def test_delete_game_record_by_group_owner(client: AsyncClient) -> None:
     assert r.status_code == 204
 
 
+async def test_get_game_record_success(client: AsyncClient) -> None:
+    ctx = await _setup_game(client)
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    create_r = await client.post(
+        "/game-records", json=payload, headers=ctx["creator_headers"]
+    )
+    record_id = create_r.json()["id"]
+
+    r = await client.get(f"/game-records/{record_id}")
+    assert r.status_code == 200
+    assert r.json()["id"] == record_id
+
+
+async def test_get_game_record_not_found(client: AsyncClient) -> None:
+    r = await client.get("/game-records/99999")
+    assert r.status_code == 404
+
+
+async def test_create_game_record_invalid_point_sum(client: AsyncClient) -> None:
+    ctx = await _setup_game(client)
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload["east_point"] = 50000  # sum = 50000+30000+20000+10000 = 110000
+
+    r = await client.post("/game-records", json=payload, headers=ctx["creator_headers"])
+    assert r.status_code == 422
+
+
+async def test_create_game_record_non_member_forbidden(client: AsyncClient) -> None:
+    ctx = await _setup_game(client)
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+
+    # player2 is not a group member
+    r = await client.post(
+        "/game-records", json=payload, headers=ctx["other_headers"]
+    )
+    assert r.status_code == 403
+
+
 async def test_delete_game_record_by_member_forbidden(client: AsyncClient) -> None:
     # 일반 member → 403
     ctx = await _setup_game(client)

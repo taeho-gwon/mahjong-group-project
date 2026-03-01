@@ -1,8 +1,8 @@
 """initial_schema
 
-Revision ID: bd7db8cf9814
+Revision ID: e527fa9f2984
 Revises:
-Create Date: 2026-03-01 20:16:34.458976
+Create Date: 2026-03-01 21:23:16.572126
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "bd7db8cf9814"
+revision: str = "e527fa9f2984"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -120,9 +120,26 @@ def upgrade() -> None:
         sa.Column(
             "contest_type",
             sa.Enum(
-                "overall", "regular", "independent", name="contesttype"
+                "aggregate", "regular", "independent",
+                name="contesttype",
             ),
             server_default="regular",
+            nullable=False,
+        ),
+        sa.Column(
+            "period_start",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.Column(
+            "period_end",
+            sa.DateTime(timezone=True),
+            nullable=True,
+        ),
+        sa.Column(
+            "is_default",
+            sa.Boolean(),
+            server_default="false",
             nullable=False,
         ),
         sa.Column(

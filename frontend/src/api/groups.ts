@@ -95,6 +95,11 @@ export async function leaveGroup(groupId: number): Promise<void> {
   if (!res.ok) throw new Error('Failed to leave group')
 }
 
+export async function deleteGroup(groupId: number): Promise<void> {
+  const res = await apiFetch(`/groups/${groupId}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Failed to delete group')
+}
+
 export async function joinByInvite(token: string): Promise<GroupResponse> {
   const res = await apiFetch('/groups/join-by-invite', {
     method: 'POST',

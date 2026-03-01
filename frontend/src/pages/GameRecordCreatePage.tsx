@@ -34,7 +34,7 @@ export default function GameRecordCreatePage() {
   const { data: contests = [] } = useContests(groupId)
 
   const members: MemberInfo[] = group?.members ?? []
-  const selectableContests = contests.filter((c) => c.contest_type !== 'overall')
+  const selectableContests = contests.filter((c) => c.contest_type !== 'aggregate')
   const [selectedContestId, setSelectedContestId] = useState<number | null>(null)
 
   const createGameRecordMutation = useCreateGameRecord(selectedContestId)

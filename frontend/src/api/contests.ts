@@ -1,7 +1,7 @@
 import { apiFetch } from './client'
 
 export type RankingType = 'score' | 'match_point'
-export type ContestType = 'overall' | 'regular' | 'independent'
+export type ContestType = 'aggregate' | 'regular' | 'independent'
 
 export interface ContestResponse {
   id: number
@@ -18,6 +18,9 @@ export interface ContestResponse {
   scoring_2nd: number
   scoring_3rd: number
   scoring_4th: number
+  period_start: string | null
+  period_end: string | null
+  is_default: boolean
   created_at: string
   updated_at: string
 }
@@ -35,6 +38,8 @@ export interface ContestCreate {
   scoring_2nd?: number
   scoring_3rd?: number
   scoring_4th?: number
+  period_start?: string | null
+  period_end?: string | null
 }
 
 export async function createContest(data: ContestCreate): Promise<ContestResponse> {
@@ -70,6 +75,8 @@ export interface ContestUpdate {
   scoring_2nd?: number
   scoring_3rd?: number
   scoring_4th?: number
+  period_start?: string | null
+  period_end?: string | null
 }
 
 export async function updateContest(id: number, data: ContestUpdate): Promise<ContestResponse> {

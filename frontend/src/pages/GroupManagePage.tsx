@@ -10,6 +10,7 @@ import { useUpdateMemberRole } from '../hooks/mutations/useUpdateMemberRole'
 import { useRemoveMember } from '../hooks/mutations/useRemoveMember'
 import { useGenerateInviteLink } from '../hooks/mutations/useGenerateInviteLink'
 import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
+import { useDeleteGroup } from '../hooks/mutations/useDeleteGroup'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -31,6 +32,7 @@ export default function GroupManagePage() {
   const removeMemberMutation = useRemoveMember(groupId!)
   const generateInviteMutation = useGenerateInviteLink(groupId!)
   const leaveGroupMutation = useLeaveGroup(groupId!)
+  const deleteGroupMutation = useDeleteGroup()
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -326,6 +328,23 @@ export default function GroupManagePage() {
               })}
             </ul>
           </section>
+
+          {/* Danger Zone — owner only */}
+          {myRole === 'owner' && (
+            <section className="mt-10 border-t border-gray-100 pt-6">
+              <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
+              <button
+                onClick={() => {
+                  if (!window.confirm('정말로 이 그룹을 삭제하시겠습니까? 모든 데이터가 삭제됩니다.')) return
+                  deleteGroupMutation.mutate(groupId!)
+                }}
+                disabled={deleteGroupMutation.isPending}
+                className="px-5 py-2 text-sm cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
+              >
+                {deleteGroupMutation.isPending ? '삭제 중...' : '그룹 삭제'}
+              </button>
+            </section>
+          )}
         </>
       ) : null}
     </div>

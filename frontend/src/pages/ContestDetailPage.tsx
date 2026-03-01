@@ -98,19 +98,27 @@ export default function ContestDetailPage() {
             <div className="flex items-center gap-2 mb-2">
               <h2 className="mt-0 mb-0">{contest.name}</h2>
               <span className={`text-xs px-2 py-0.5 rounded ${
-                contest.contest_type === 'overall'
+                contest.contest_type === 'aggregate'
                   ? 'bg-yellow-100 text-yellow-700'
                   : contest.contest_type === 'independent'
                   ? 'bg-purple-50 text-purple-700'
                   : 'bg-blue-50 text-blue-700'
               }`}>
-                {contest.contest_type === 'overall' ? '전체 랭킹' : contest.contest_type === 'independent' ? '독립' : '일반'}
+                {contest.contest_type === 'aggregate' ? '집계' : contest.contest_type === 'independent' ? '독립' : '일반'}
               </span>
               {contest.contest_type === 'independent' && (
                 <span className="text-xs text-gray-400">전체 랭킹 미합산</span>
               )}
             </div>
             <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
+              {contest.contest_type === 'aggregate' && (
+                <div>
+                  <strong>기간:</strong>{' '}
+                  {contest.period_start || contest.period_end
+                    ? `${contest.period_start ? new Date(contest.period_start).toLocaleDateString() : '시작 없음'} ~ ${contest.period_end ? new Date(contest.period_end).toLocaleDateString() : '종료 없음'}`
+                    : '전체 기간'}
+                </div>
+              )}
               <div>
                 <strong>랭킹 방식:</strong>{' '}
                 {contest.ranking_type === 'match_point' ? '승점 (match_point)' : '점수 합산 (score)'}

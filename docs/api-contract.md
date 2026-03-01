@@ -70,7 +70,7 @@ Status:   200
 
 ### PUT /groups/{id}
 ```json
-Request:  { "name"?, "description"?, "join_policy"?, "uma_*"? }
+Request:  { "name"?, "description"?, "join_policy"? }
 Response: GroupResponse
 Status:   200
 Auth:     Required (owner/admin)

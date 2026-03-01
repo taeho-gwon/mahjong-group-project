@@ -60,6 +60,22 @@ async def test_create_contest_unauthorized(client: AsyncClient) -> None:
     assert r.status_code == 401
 
 
+async def test_get_contest_success(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    contest_id = await _create_contest(client, headers, group_id)
+
+    r = await client.get(f"/contests/{contest_id}")
+    assert r.status_code == 200
+    assert r.json()["id"] == contest_id
+    assert r.json()["name"] == "Spring League"
+
+
+async def test_get_contest_not_found(client: AsyncClient) -> None:
+    r = await client.get("/contests/99999")
+    assert r.status_code == 404
+
+
 async def test_list_contests_by_group(client: AsyncClient) -> None:
     headers = await _login(client, "owner")
     group_id = await _create_group(client, headers)

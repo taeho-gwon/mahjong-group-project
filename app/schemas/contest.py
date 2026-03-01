@@ -18,6 +18,13 @@ class ContestCreate(UmaFields):
     period_start: datetime | None = None
     period_end: datetime | None = None
 
+    @model_validator(mode="after")
+    def check_period_order(self) -> "ContestCreate":
+        if self.period_start is not None and self.period_end is not None:
+            if self.period_start >= self.period_end:
+                raise ValueError("period_start must be before period_end")
+        return self
+
 
 class ContestUpdate(BaseModel):
     name: str | None = None
