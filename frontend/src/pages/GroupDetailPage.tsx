@@ -3,22 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getGroup } from '../api/groups'
 import type { GroupDetailResponse } from '../api/groups'
 import { getMe } from '../api/auth'
-import { listGameRecords } from '../api/gameRecords'
-import type { GameRecordResponse } from '../api/gameRecords'
 import { listContests } from '../api/contests'
 import type { ContestResponse } from '../api/contests'
-
-async function fetchAllGameRecords(groupId: number): Promise<GameRecordResponse[]> {
-  const PAGE_SIZE = 50
-  const first = await listGameRecords(groupId, 1, PAGE_SIZE)
-  const results = [...first.items]
-  const totalPages = Math.ceil(first.total / PAGE_SIZE)
-  for (let page = 2; page <= totalPages; page++) {
-    const res = await listGameRecords(groupId, page, PAGE_SIZE)
-    results.push(...res.items)
-  }
-  return results
-}
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -31,37 +17,17 @@ export default function GroupDetailPage() {
   const navigate = useNavigate()
   const [group, setGroup] = useState<GroupDetailResponse | null>(null)
   const [myRole, setMyRole] = useState<string | null>(null)
-  const [ranking, setRanking] = useState<{ username: string; totalScore: number; count: number }[]>([])
   const [contests, setContests] = useState<ContestResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!id) return
-    Promise.all([getGroup(Number(id)), getMe(), fetchAllGameRecords(Number(id)), listContests(Number(id))])
-      .then(([g, user, allRecords, contestList]) => {
+    Promise.all([getGroup(Number(id)), getMe(), listContests(Number(id))])
+      .then(([g, user, contestList]) => {
         setGroup(g)
         setMyRole(g.members.find((m) => m.id === user.id)?.role ?? null)
         setContests(contestList)
-        const umaByRank = [g.uma_1st, g.uma_2nd, g.uma_3rd, g.uma_4th]
-        const playerMap = new Map<number, { username: string; totalScore: number; count: number }>()
-        for (const rec of allRecords) {
-          const seats = [
-            { player: rec.east_player, point: rec.east_point },
-            { player: rec.south_player, point: rec.south_point },
-            { player: rec.west_player, point: rec.west_point },
-            { player: rec.north_player, point: rec.north_point },
-          ]
-          // 동점 시 자리 순서(동>남>서>북)로 처리
-          seats.sort((a, b) => b.point - a.point)
-          seats.forEach(({ player, point }, rank) => {
-            const entry = playerMap.get(player.id) ?? { username: player.username, totalScore: 0, count: 0 }
-            entry.totalScore += (point - 25000) / 1000 + umaByRank[rank]
-            entry.count += 1
-            playerMap.set(player.id, entry)
-          })
-        }
-        setRanking([...playerMap.values()].sort((a, b) => b.totalScore - a.totalScore))
       })
       .catch(() => setError('Failed to load group'))
       .finally(() => setLoading(false))
@@ -139,34 +105,23 @@ export default function GroupDetailPage() {
 
           {/* Ranking */}
           <section style={{ marginBottom: '32px' }}>
-            <h3 style={{ margin: '0 0 12px' }}>Ranking</h3>
-            {ranking.length === 0 ? (
-              <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 게임 기록이 없습니다.</p>
-            ) : (
-              <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {ranking.map((entry, idx) => (
-                  <li
-                    key={entry.username}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      border: '1px solid #ccc',
-                      borderRadius: '6px',
-                      padding: '10px 14px',
-                      fontSize: '14px',
-                    }}
-                  >
-                    <span style={{ width: '24px', textAlign: 'right', fontWeight: 'bold', color: '#666' }}>{idx + 1}</span>
-                    <span style={{ flex: 1 }}>{entry.username}</span>
-                    <span style={{ color: entry.totalScore >= 0 ? '#2d7a3a' : '#c0392b', fontWeight: 'bold' }}>
-                      {entry.totalScore > 0 ? '+' : ''}{entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}
-                    </span>
-                    <span style={{ color: '#aaa', fontSize: '12px', minWidth: '40px', textAlign: 'right' }}>{entry.count}게임</span>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <h3 style={{ margin: '0 0 12px' }}>랭킹</h3>
+            <div
+              onClick={() => navigate(`/groups/${id}/ranking`)}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                border: '1px solid #ccc',
+                borderRadius: '6px',
+                padding: '10px 14px',
+                fontSize: '14px',
+                cursor: 'pointer',
+              }}
+            >
+              <span>전체 랭킹</span>
+              <span style={{ fontSize: '12px', color: '#888' }}>점수</span>
+            </div>
           </section>
 
           {/* Contests */}
