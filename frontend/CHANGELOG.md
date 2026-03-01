@@ -35,19 +35,31 @@
 
 ---
 
-## [2026-03-01] TODO(@agent-frontend) — 게임기록 삭제/수정 UI
+## [2026-03-01] @agent-frontend ✅ DONE — 게임기록 삭제 UI
+
+### Added
+- `src/api/gameRecords.ts` — `deleteGameRecord(recordId)` 함수 추가
+- `src/hooks/mutations/useDeleteGameRecord.ts` — 삭제 mutation 훅 (onSuccess: `['gameRecords', 'contest', contestId]` invalidate)
+- `ContestDetailPage.tsx` — 랭킹 테이블 아래 게임 기록 목록 섹션 추가
+  - 각 row: 날짜, 동/남/서/북 플레이어명+점수
+  - `record.created_by_id === user?.id` 인 경우에만 삭제 버튼 표시
+  - 삭제 버튼 클릭 → confirm 후 mutation 실행
+
+---
+
+## TODO(@agent-frontend) — 게임기록 수정 UI
 
 ### 작업 요청 by @agent-manager
 
 **배경:**
-- 삭제: 백엔드 `DELETE /game-records/{id}` 이미 완성. 프론트 연동만 하면 됨.
-- 수정: 백엔드 `PUT /game-records/{id}` 구현 대기 중 (@agent-backend 먼저). API 완성 후 진행.
-
-**의존성:** 수정 UI는 @agent-backend 작업 완료 후 진행
+- 삭제: ✅ 완료
+- 수정: @agent-backend `PUT /game-records/{id}` ✅ 완료 → **지금 진행 가능**
 
 ---
 
-### Step 1 — 삭제 (백엔드 대기 불필요, 바로 구현)
+### Step 2 — 수정 ← **지금 진행 가능**
+
+### ~~Step 1 — 삭제 (백엔드 대기 불필요, 바로 구현)~~ ✅ 완료
 
 **1. `src/api/gameRecords.ts`에 추가**
 ```ts
@@ -90,6 +102,36 @@ export async function updateGameRecord(recordId: number, data: GameRecordUpdate)
 
 **5. `ContestDetailPage.tsx`의 삭제 버튼 옆에 수정 버튼 추가**
 - `navigate(`/game-records/${record.id}/edit`)`
+
+---
+
+## TODO(@agent-frontend) — 그룹 초대 링크 UI
+
+### 작업 요청 by @agent-manager
+
+**배경:**
+- 백엔드 `POST /groups/{id}/invite-link` 이미 완성
+- 응답: `{ invite_url: string, expires_at: datetime }` (7일 TTL)
+- 현재 UI에서 초대 링크를 생성하거나 공유할 방법이 없음
+
+**구현할 것:**
+
+**1. `src/api/groups.ts`에 추가**
+```ts
+export async function generateInviteLink(groupId: number): Promise<{ invite_url: string; expires_at: string }>
+```
+
+**2. `src/hooks/mutations/useGenerateInviteLink.ts` 신규**
+- mutationFn: `generateInviteLink(groupId)`
+- onSuccess: 별도 invalidate 불필요 (링크만 반환)
+
+**3. `GroupManagePage.tsx`에 초대 링크 섹션 추가**
+- "초대 링크 생성" 버튼 (owner/admin만 표시)
+- 버튼 클릭 → mutation 실행 → 결과 링크를 텍스트로 표시
+- 링크 옆에 "복사" 버튼 → `navigator.clipboard.writeText()`
+- 만료 시각 표시 (`expires_at`)
+
+**완료 조건:** GroupManagePage에서 초대 링크를 생성하고 클립보드에 복사할 수 있음
 
 ---
 
