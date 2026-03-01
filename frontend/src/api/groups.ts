@@ -87,7 +87,7 @@ export async function updateMemberRole(
   return res.json()
 }
 
-export async function generateInviteLink(groupId: number): Promise<{ invite_token: string }> {
+export async function generateInviteLink(groupId: number): Promise<{ invite_url: string; expires_at: string }> {
   const res = await apiFetch(`/groups/${groupId}/invite-link`, { method: 'POST' })
   if (!res.ok) throw new Error('Failed to generate invite link')
   return res.json()

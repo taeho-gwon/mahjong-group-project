@@ -47,19 +47,15 @@
 
 ---
 
-## TODO(@agent-frontend) — 게임기록 수정 UI
+## [2026-03-01] @agent-frontend ✅ DONE — 게임기록 수정 UI
 
-### 작업 요청 by @agent-manager
-
-**배경:**
-- 삭제: ✅ 완료
-- 수정: @agent-backend `PUT /game-records/{id}` ✅ 완료 → **지금 진행 가능**
-
----
-
-### Step 2 — 수정 ← **지금 진행 가능**
-
-### ~~Step 1 — 삭제 (백엔드 대기 불필요, 바로 구현)~~ ✅ 완료
+### Added
+- `src/api/gameRecords.ts` — `getGameRecord(recordId)`, `GameRecordUpdate` 인터페이스, `updateGameRecord(recordId, data)` 추가
+- `src/hooks/useGameRecord.ts` — `GET /game-records/{id}` 쿼리 훅
+- `src/hooks/mutations/useUpdateGameRecord.ts` — 수정 mutation 훅 (onSuccess: gameRecord + gameRecords invalidate)
+- `src/pages/GameRecordEditPage.tsx` — 수정 페이지 (기존 값 pre-fill, 그룹 멤버 선택, PUT 제출)
+- `App.tsx` — `/game-records/:recordId/edit` route 추가
+- `ContestDetailPage.tsx` — 게임 기록 목록에 수정 버튼 추가 (삭제 버튼 옆)
 
 **1. `src/api/gameRecords.ts`에 추가**
 ```ts
@@ -105,33 +101,93 @@ export async function updateGameRecord(recordId: number, data: GameRecordUpdate)
 
 ---
 
-## TODO(@agent-frontend) — 그룹 초대 링크 UI
+## [2026-03-01] @agent-frontend ✅ DONE — 그룹 초대 링크 UI
+
+### Added/Fixed
+- `src/api/groups.ts` — `generateInviteLink` 반환 타입 `{ invite_token }` → `{ invite_url, expires_at }` 수정 (API 계약서 기준)
+- `src/hooks/mutations/useGenerateInviteLink.ts` — mutation 훅 신규
+- `GroupManagePage.tsx` — Invite Link 섹션 개선
+  - "초대 링크 생성" / "Regenerate Link" 버튼
+  - 생성된 링크 텍스트 표시 + "복사" 버튼 (`navigator.clipboard.writeText`)
+  - 만료 시각 표시 (`expires_at`)
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — UX 개선 (토스트 알림 / 로딩 상태 / 점수 검증)
 
 ### 작업 요청 by @agent-manager
 
-**배경:**
-- 백엔드 `POST /groups/{id}/invite-link` 이미 완성
-- 응답: `{ invite_url: string, expires_at: datetime }` (7일 TTL)
-- 현재 UI에서 초대 링크를 생성하거나 공유할 방법이 없음
+**승인된 외부 의존성 추가:** `sonner` (토스트 알림 라이브러리)
 
-**구현할 것:**
+---
 
-**1. `src/api/groups.ts`에 추가**
-```ts
-export async function generateInviteLink(groupId: number): Promise<{ invite_url: string; expires_at: string }>
+### A-1. 토스트 알림 (sonner)
+
+**설치:**
+```bash
+npm install sonner
 ```
 
-**2. `src/hooks/mutations/useGenerateInviteLink.ts` 신규**
-- mutationFn: `generateInviteLink(groupId)`
-- onSuccess: 별도 invalidate 불필요 (링크만 반환)
+**`src/App.tsx`에 Toaster 추가:**
+```tsx
+import { Toaster } from 'sonner'
+// JSX 최상단 (Router 내부)에 추가
+<Toaster position="top-right" richColors />
+```
 
-**3. `GroupManagePage.tsx`에 초대 링크 섹션 추가**
-- "초대 링크 생성" 버튼 (owner/admin만 표시)
-- 버튼 클릭 → mutation 실행 → 결과 링크를 텍스트로 표시
-- 링크 옆에 "복사" 버튼 → `navigator.clipboard.writeText()`
-- 만료 시각 표시 (`expires_at`)
+**각 mutation 훅 onSuccess/onError에 토스트 추가:**
 
-**완료 조건:** GroupManagePage에서 초대 링크를 생성하고 클립보드에 복사할 수 있음
+| 훅 | onSuccess 메시지 |
+|----|----------------|
+| useCreateGameRecord | "게임 기록이 등록됐습니다" |
+| useUpdateGameRecord | "게임 기록이 수정됐습니다" |
+| useDeleteGameRecord | "게임 기록이 삭제됐습니다" |
+| useCreateContest | "랭킹전이 생성됐습니다" |
+| useUpdateContest | "랭킹전이 수정됐습니다" |
+| useDeleteContest | "랭킹전이 삭제됐습니다" |
+| useCreateGroup | "그룹이 생성됐습니다" |
+| useUpdateGroup | "그룹 설정이 저장됐습니다" |
+| useUpdateMemberRole | "멤버 역할이 변경됐습니다" |
+| useRemoveMember | "멤버가 강퇴됐습니다" |
+
+onError 공통 (모든 훅):
+```ts
+onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세요')
+```
+
+---
+
+### A-2. 로딩 상태
+
+**페이지 로딩 중 스피너:**
+- `isLoading === true` 일 때 페이지 중앙에 스피너 표시
+- `src/components/Spinner.tsx` 공용 컴포넌트로 만들어서 재사용
+
+**mutation 진행 중 버튼 비활성화:**
+- `isPending === true` 일 때 제출 버튼 `disabled` + 텍스트 "처리 중..." 으로 변경
+- 적용 대상: 게임 기록 등록/수정, 랭킹전 생성/수정, 그룹 생성/수정 폼
+
+---
+
+### A-3. 점수 합계 검증
+
+적용 파일: `GameRecordCreatePage`, `GameRecordEditPage`
+
+- 동/남/서/북 4개 점수 입력 시 합계 실시간 계산
+- 폼 하단에 합계 표시:
+  - 정상: `합계: 100,000 ✅` (초록)
+  - 오류: `합계: 98,000 ❌ (100,000이어야 합니다)` (빨강)
+- 합계 !== 100,000 이면 제출 버튼 `disabled`
+
+---
+
+**완료 조건:**
+- `npm run build` 에러 없음
+- 모든 mutation에 성공/실패 토스트 표시
+- 페이지 로딩 중 스피너 표시, mutation 중 버튼 비활성화
+- 게임 기록 폼에서 합계 100,000 검증 동작
+- `frontend/CHANGELOG.md` DONE 기록
+- `docs/status.md` 항목 업데이트
 
 ---
 

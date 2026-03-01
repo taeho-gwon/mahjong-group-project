@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { MemberInfo } from '../api/groups'
 import Spinner from '../components/Spinner'
+import { useGameRecord } from '../hooks/useGameRecord'
 import { useGroupDetail } from '../hooks/useGroupDetail'
-import { useContests } from '../hooks/useContests'
-import { useCreateGameRecord } from '../hooks/mutations/useCreateGameRecord'
+import { useUpdateGameRecord } from '../hooks/mutations/useUpdateGameRecord'
 
 const POSITIONS = [
   { key: 'east', label: '동' },
@@ -25,28 +25,36 @@ function initPosition(): PositionState {
   return { search: '', playerId: null, point: '' }
 }
 
-export default function GameRecordCreatePage() {
-  const { id } = useParams<{ id: string }>()
+export default function GameRecordEditPage() {
+  const { recordId } = useParams<{ recordId: string }>()
   const navigate = useNavigate()
-  const groupId = id ? Number(id) : undefined
+  const id = recordId ? Number(recordId) : undefined
 
-  const { data: group, isLoading } = useGroupDetail(groupId)
-  const { data: contests = [] } = useContests(groupId)
+  const { data: record, isLoading: loadingRecord } = useGameRecord(id)
+  const { data: group, isLoading: loadingGroup } = useGroupDetail(record?.group_id ?? undefined)
+
+  const updateMutation = useUpdateGameRecord(id!, record?.contest_id)
 
   const members: MemberInfo[] = group?.members ?? []
-  const defaultContest = contests.find((c) => c.name === '전체 랭킹') ?? null
-  const [selectedContestId, setSelectedContestId] = useState<number | null>(null)
-
-  const effectiveContestId = selectedContestId ?? defaultContest?.id ?? null
-  const createGameRecordMutation = useCreateGameRecord(effectiveContestId)
-
   const [error, setError] = useState('')
+  const [initialized, setInitialized] = useState(false)
   const [positions, setPositions] = useState<Record<Position, PositionState>>({
     east: initPosition(),
     south: initPosition(),
     west: initPosition(),
     north: initPosition(),
   })
+
+  useEffect(() => {
+    if (!record || initialized) return
+    setPositions({
+      east: { search: '', playerId: record.east_player_id, point: String(record.east_point) },
+      south: { search: '', playerId: record.south_player_id, point: String(record.south_point) },
+      west: { search: '', playerId: record.west_player_id, point: String(record.west_point) },
+      north: { search: '', playerId: record.north_player_id, point: String(record.north_point) },
+    })
+    setInitialized(true)
+  }, [record, initialized])
 
   function updatePosition(pos: Position, patch: Partial<PositionState>) {
     setPositions((prev) => ({ ...prev, [pos]: { ...prev[pos], ...patch } }))
@@ -75,7 +83,7 @@ export default function GameRecordCreatePage() {
 
     setError('')
     try {
-      await createGameRecordMutation.mutateAsync({
+      await updateMutation.mutateAsync({
         east_player_id: east.playerId,
         south_player_id: south.playerId,
         west_player_id: west.playerId,
@@ -84,14 +92,14 @@ export default function GameRecordCreatePage() {
         south_point: Number(south.point),
         west_point: Number(west.point),
         north_point: Number(north.point),
-        group_id: groupId,
-        contest_id: effectiveContestId,
       })
-      navigate(`/groups/${id}`)
+      navigate(-1)
     } catch {
-      setError('게임 기록 등록에 실패했습니다.')
+      setError('게임 기록 수정에 실패했습니다.')
     }
   }
+
+  const isLoading = loadingRecord || (!!record?.group_id && loadingGroup)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -102,7 +110,7 @@ export default function GameRecordCreatePage() {
         >
           ← Back
         </button>
-        <h2 className="m-0 ml-4">게임 등록</h2>
+        <h2 className="m-0 ml-4">게임 기록 수정</h2>
       </div>
 
       {isLoading ? (
@@ -110,22 +118,6 @@ export default function GameRecordCreatePage() {
       ) : (
         <>
           {error && <p className="text-red-600 mb-4">{error}</p>}
-
-          {contests.length > 0 && (
-            <div className="mb-5">
-              <label className="block font-bold mb-1.5 text-sm">랭킹전 (선택)</label>
-              <select
-                value={effectiveContestId ?? ''}
-                onChange={(e) => setSelectedContestId(e.target.value ? Number(e.target.value) : null)}
-                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
-              >
-                <option value="">선택 안 함</option>
-                {contests.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
 
           <table className="w-full border-collapse mb-6">
             <thead>
@@ -202,10 +194,10 @@ export default function GameRecordCreatePage() {
           <div className="flex justify-end">
             <button
               onClick={handleSubmit}
-              disabled={createGameRecordMutation.isPending || (['east', 'south', 'west', 'north'] as Position[]).reduce((acc, k) => acc + (Number(positions[k].point) || 0), 0) !== 100000}
+              disabled={updateMutation.isPending || (['east', 'south', 'west', 'north'] as Position[]).reduce((acc, k) => acc + (Number(positions[k].point) || 0), 0) !== 100000}
               className="px-5 py-2 text-sm cursor-pointer disabled:opacity-50"
             >
-              {createGameRecordMutation.isPending ? '처리 중...' : '등록'}
+              {updateMutation.isPending ? '처리 중...' : '저장'}
             </button>
           </div>
         </>

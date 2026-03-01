@@ -4,6 +4,20 @@
 
 ---
 
+## [2026-03-01] @agent-devops (기술 부채 해결)
+
+### Fixed
+- `alembic.ini` — ruff post_write_hook 활성화 (마이그레이션 파일 자동 포맷)
+- `infra/docker/docker-compose.yml` — `name: mahjong` 추가 (volume 네임스페이스), `restart: unless-stopped` 추가
+- `scripts/seed.py` — Contest 시드 데이터 추가 (정규 시즌, 승점제 리그), DELETE 순서에 contests 포함
+
+### Added
+- `scripts/dev_reset.sh` — DB 재시작 + 마이그레이션 + 시드를 한 번에 실행하는 개발용 스크립트
+  - `bash scripts/dev_reset.sh` — 전체 초기화
+  - `bash scripts/dev_reset.sh --no-seed` — 마이그레이션만
+
+---
+
 ## [2026-03-01] @agent-devops
 
 ### Restructured

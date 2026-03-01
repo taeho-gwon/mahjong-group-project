@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Spinner from '../components/Spinner'
 import { useMe } from '../hooks/useMe'
 import { useMyGroups } from '../hooks/useMyGroups'
 import { useCreateGroup } from '../hooks/mutations/useCreateGroup'
@@ -67,7 +68,7 @@ export default function MyPage() {
       <section className="mb-8">
         <h2 className="mt-0 mb-3">My Profile</h2>
         {loadingUser ? (
-          <p>Loading...</p>
+          <Spinner />
         ) : user ? (
           <div className="leading-relaxed text-sm">
             <div><strong>Username:</strong> {user.username}</div>
@@ -155,7 +156,7 @@ export default function MyPage() {
       <section>
         <h2 className="mt-0 mb-3">My Groups</h2>
         {loadingGroups ? (
-          <p>Loading...</p>
+          <Spinner />
         ) : groups.length === 0 ? (
           <p className="text-gray-400">You have no groups yet.</p>
         ) : (

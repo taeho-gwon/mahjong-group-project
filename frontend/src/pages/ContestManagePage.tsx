@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import Spinner from '../components/Spinner'
 import type { RankingType } from '../api/contests'
 import { useContest } from '../hooks/useContest'
 import { useGroupDetail } from '../hooks/useGroupDetail'
@@ -83,7 +84,7 @@ export default function ContestManagePage() {
       </div>
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Spinner />
       ) : isError ? (
         <p className="text-red-600">Failed to load contest</p>
       ) : myRole ? (

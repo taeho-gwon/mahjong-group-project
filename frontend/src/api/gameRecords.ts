@@ -56,6 +56,39 @@ export async function createGameRecord(data: GameRecordCreate): Promise<GameReco
   return res.json()
 }
 
+export async function getGameRecord(recordId: number): Promise<GameRecordResponse> {
+  const res = await apiFetch(`/game-records/${recordId}`)
+  if (!res.ok) throw new Error('Failed to fetch game record')
+  return res.json()
+}
+
+export interface GameRecordUpdate {
+  east_player_id?: number
+  south_player_id?: number
+  west_player_id?: number
+  north_player_id?: number
+  east_point?: number
+  south_point?: number
+  west_point?: number
+  north_point?: number
+  game_link?: string | null
+  played_at?: string
+}
+
+export async function updateGameRecord(recordId: number, data: GameRecordUpdate): Promise<GameRecordResponse> {
+  const res = await apiFetch(`/game-records/${recordId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('Failed to update game record')
+  return res.json()
+}
+
+export async function deleteGameRecord(recordId: number): Promise<void> {
+  const res = await apiFetch(`/game-records/${recordId}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Failed to delete game record')
+}
+
 export async function listGameRecords(
   groupId?: number,
   page = 1,

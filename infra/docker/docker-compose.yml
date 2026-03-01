@@ -1,6 +1,9 @@
+name: mahjong
+
 services:
   db:
     image: postgres:17
+    restart: unless-stopped
     environment:
       POSTGRES_USER: mahjong
       POSTGRES_PASSWORD: mahjong

@@ -1,9 +1,13 @@
 """
-Seed script: Clear all data and create test users/groups.
+Seed script: Clear all data and create test users/groups/contests.
 
 Groups:
   - Group A: testuser1 (owner), testuser2~6 (member)
   - Group B: testuser5 (owner), testuser6~10 (member)
+
+Contests (Group A):
+  - 정규 시즌 (score ranking, default uma)
+  - 승점제 리그 (match_point ranking)
 """
 
 import asyncio
@@ -11,6 +15,7 @@ import asyncio
 from sqlalchemy import text
 
 from app.db.session import AsyncSessionLocal
+from app.models.contest import Contest, RankingType
 from app.models.game_record import GameRecord  # noqa: F401 (ensure table registered)
 from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
 from app.models.user import User
@@ -27,6 +32,7 @@ async def main() -> None:
     async with AsyncSessionLocal() as db:
         # 1. Clear all tables (FK order)
         await db.execute(text("DELETE FROM game_records"))
+        await db.execute(text("DELETE FROM contests"))
         await db.execute(text("DELETE FROM group_members"))
         await db.execute(text("DELETE FROM groups"))
         await db.execute(text("DELETE FROM users"))
@@ -82,6 +88,27 @@ async def main() -> None:
             db.add(GroupMember(group_id=group_b.id, user_id=user_map[uid].id, role=role))
         await db.commit()
         print(f"Created Group B (id={group_b.id}): members {GROUP_B_MEMBERS}")
+
+        # 5. Create contests for Group A
+        contest_a1 = Contest(
+            name="정규 시즌",
+            group_id=group_a.id,
+            created_by_id=group_a_owner.id,
+            ranking_type=RankingType.score,
+        )
+        contest_a2 = Contest(
+            name="승점제 리그",
+            group_id=group_a.id,
+            created_by_id=group_a_owner.id,
+            ranking_type=RankingType.match_point,
+        )
+        db.add(contest_a1)
+        db.add(contest_a2)
+        await db.commit()
+        await db.refresh(contest_a1)
+        await db.refresh(contest_a2)
+        print(f"Created Contest '정규 시즌' (id={contest_a1.id}, score ranking)")
+        print(f"Created Contest '승점제 리그' (id={contest_a2.id}, match_point ranking)")
 
         print("\nDone! Password for all users:", PASSWORD)
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Spinner from '../components/Spinner'
 import { usePublicGroups } from '../hooks/usePublicGroups'
 import { useAuthStore } from '../stores/authStore'
 
@@ -33,7 +34,7 @@ export default function MainPage() {
       </header>
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Spinner />
       ) : isError ? (
         <p className="text-red-600">Failed to load groups</p>
       ) : groups.length === 0 ? (

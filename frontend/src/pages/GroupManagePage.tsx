@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { generateInviteLink, leaveGroup } from '../api/groups'
+import { leaveGroup } from '../api/groups'
+import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useContests } from '../hooks/useContests'
 import { useMe } from '../hooks/useMe'
 import { useUpdateGroup } from '../hooks/mutations/useUpdateGroup'
 import { useUpdateMemberRole } from '../hooks/mutations/useUpdateMemberRole'
 import { useRemoveMember } from '../hooks/mutations/useRemoveMember'
+import { useGenerateInviteLink } from '../hooks/mutations/useGenerateInviteLink'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -27,6 +29,7 @@ export default function GroupManagePage() {
   const updateGroupMutation = useUpdateGroup(groupId!)
   const updateRoleMutation = useUpdateMemberRole(groupId!)
   const removeMemberMutation = useRemoveMember(groupId!)
+  const generateInviteMutation = useGenerateInviteLink(groupId!)
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -34,8 +37,8 @@ export default function GroupManagePage() {
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
 
-  const [inviteToken, setInviteToken] = useState<string | null>(null)
-  const [generatingInvite, setGeneratingInvite] = useState(false)
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+  const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -66,39 +69,22 @@ export default function GroupManagePage() {
     }
   }
 
-  async function handleCopyInvite() {
-    if (!group) return
-    let token = inviteToken
-    if (!token) {
-      setGeneratingInvite(true)
-      try {
-        const res = await generateInviteLink(group.id)
-        token = res.invite_token
-        setInviteToken(token)
-      } catch {
-        alert('Failed to generate invite link')
-        return
-      } finally {
-        setGeneratingInvite(false)
-      }
-    }
-    navigator.clipboard.writeText(`${window.location.origin}/join?token=${token}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   async function handleGenerateInvite() {
-    if (!group) return
-    setGeneratingInvite(true)
     try {
-      const { invite_token } = await generateInviteLink(group.id)
-      setInviteToken(invite_token)
+      const { invite_url, expires_at } = await generateInviteMutation.mutateAsync()
+      setInviteUrl(invite_url)
+      setInviteExpiresAt(expires_at)
       setCopied(false)
     } catch {
       alert('Failed to generate invite link')
-    } finally {
-      setGeneratingInvite(false)
     }
+  }
+
+  function handleCopyInvite() {
+    if (!inviteUrl) return
+    navigator.clipboard.writeText(inviteUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   async function handleRemoveMember(userId: number) {
@@ -139,7 +125,7 @@ export default function GroupManagePage() {
       </button>
 
       {isLoading ? (
-        <p className="mt-6">Loading...</p>
+        <Spinner />
       ) : isError ? (
         <p className="mt-6 text-red-600">Failed to load group</p>
       ) : group ? (
@@ -242,14 +228,31 @@ export default function GroupManagePage() {
           {/* Invite Link */}
           <section className="mb-10">
             <h3 className="mt-0 mb-4 text-base">Invite Link</h3>
-            <div className="flex gap-2">
-              <button onClick={handleCopyInvite} disabled={generatingInvite} className="px-3.5 py-1.5 cursor-pointer text-sm">
-                {generatingInvite ? 'Generating...' : copied ? 'Copied!' : 'Copy Link'}
-              </button>
-              <button onClick={handleGenerateInvite} disabled={generatingInvite} className="px-3.5 py-1.5 cursor-pointer text-sm">
-                {generatingInvite ? 'Generating...' : 'Regenerate Link'}
-              </button>
-            </div>
+            <button
+              onClick={handleGenerateInvite}
+              disabled={generateInviteMutation.isPending}
+              className="px-3.5 py-1.5 cursor-pointer text-sm"
+            >
+              {generateInviteMutation.isPending ? 'Generating...' : inviteUrl ? 'Regenerate Link' : '초대 링크 생성'}
+            </button>
+            {inviteUrl && (
+              <div className="mt-3 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 break-all">{inviteUrl}</span>
+                  <button
+                    onClick={handleCopyInvite}
+                    className="shrink-0 text-xs px-2 py-0.5 cursor-pointer border border-gray-400 rounded"
+                  >
+                    {copied ? '복사됨!' : '복사'}
+                  </button>
+                </div>
+                {inviteExpiresAt && (
+                  <p className="text-xs text-gray-400 m-0">
+                    만료: {new Date(inviteExpiresAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Member Management */}

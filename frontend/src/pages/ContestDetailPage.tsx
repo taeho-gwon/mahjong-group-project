@@ -1,8 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import Spinner from '../components/Spinner'
 import { useContest } from '../hooks/useContest'
 import { useContestGameRecords } from '../hooks/useContestGameRecords'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useMe } from '../hooks/useMe'
+import { useDeleteGameRecord } from '../hooks/mutations/useDeleteGameRecord'
 import type { ContestResponse } from '../api/contests'
 import type { GameRecordResponse } from '../api/gameRecords'
 
@@ -67,6 +69,12 @@ export default function ContestDetailPage() {
 
   const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
   const ranking = contest ? computeRanking(contest, records) : []
+  const deleteGameRecordMutation = useDeleteGameRecord(id)
+
+  async function handleDeleteRecord(recordId: number) {
+    if (!window.confirm('이 게임 기록을 삭제하시겠습니까?')) return
+    await deleteGameRecordMutation.mutateAsync(recordId)
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -88,7 +96,7 @@ export default function ContestDetailPage() {
       </div>
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Spinner />
       ) : isError ? (
         <p className="text-red-600">Failed to load contest</p>
       ) : contest ? (
@@ -117,7 +125,7 @@ export default function ContestDetailPage() {
             </div>
           </section>
 
-          <section>
+          <section className="mb-8">
             <h3 className="mt-0 mb-3">랭킹</h3>
             {ranking.length === 0 ? (
               <p className="text-sm text-gray-400 m-0">아직 게임 기록이 없습니다.</p>
@@ -158,6 +166,54 @@ export default function ContestDetailPage() {
                   })}
                 </tbody>
               </table>
+            )}
+          </section>
+
+          <section>
+            <h3 className="mt-0 mb-3">게임 기록</h3>
+            {records.length === 0 ? (
+              <p className="text-sm text-gray-400 m-0">아직 게임 기록이 없습니다.</p>
+            ) : (
+              <ul className="list-none p-0 m-0 flex flex-col gap-2">
+                {[...records].sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()).map((rec) => (
+                  <li key={rec.id} className="border border-gray-300 rounded-md px-4 py-3 text-sm">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-xs text-gray-400">{new Date(rec.played_at).toLocaleDateString()}</span>
+                      {rec.created_by_id === user?.id && (
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => navigate(`/game-records/${rec.id}/edit`)}
+                            className="text-xs px-2 py-0.5 cursor-pointer bg-transparent border border-gray-400 rounded"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRecord(rec.id)}
+                            disabled={deleteGameRecordMutation.isPending}
+                            className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      {[
+                        { label: '동', player: rec.east_player, point: rec.east_point },
+                        { label: '남', player: rec.south_player, point: rec.south_point },
+                        { label: '서', player: rec.west_player, point: rec.west_point },
+                        { label: '북', player: rec.north_player, point: rec.north_point },
+                      ].map(({ label, player, point }) => (
+                        <div key={label}>
+                          <div className="text-xs text-gray-400 mb-0.5">{label}</div>
+                          <div className="font-medium">{player.username}</div>
+                          <div className="text-xs text-gray-600">{point.toLocaleString()}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
         </>

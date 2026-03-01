@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import Spinner from '../components/Spinner'
 import { useContests } from '../hooks/useContests'
 
 export default function GroupRankingPage() {
@@ -18,5 +19,5 @@ export default function GroupRankingPage() {
   if (contests && !contests.find((c) => c.name === '전체 랭킹')) {
     return <p className="p-6 text-red-600">전체 랭킹을 찾을 수 없습니다.</p>
   }
-  return <p className="p-6">Loading...</p>
+  return <Spinner />
 }

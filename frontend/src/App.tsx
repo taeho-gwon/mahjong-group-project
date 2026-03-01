@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import AuthGuard from './components/AuthGuard'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -8,6 +9,7 @@ import GroupDetailPage from './pages/GroupDetailPage'
 import GroupManagePage from './pages/GroupManagePage'
 import JoinPage from './pages/JoinPage'
 import GameRecordCreatePage from './pages/GameRecordCreatePage'
+import GameRecordEditPage from './pages/GameRecordEditPage'
 import ContestCreatePage from './pages/ContestCreatePage'
 import ContestDetailPage from './pages/ContestDetailPage'
 import ContestManagePage from './pages/ContestManagePage'
@@ -16,6 +18,7 @@ import GroupRankingPage from './pages/GroupRankingPage'
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" richColors />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -30,6 +33,7 @@ function App() {
           <Route path="/groups/:id/contests/new" element={<ContestCreatePage />} />
           <Route path="/contests/:contestId" element={<ContestDetailPage />} />
           <Route path="/contests/:contestId/manage" element={<ContestManagePage />} />
+          <Route path="/game-records/:recordId/edit" element={<GameRecordEditPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

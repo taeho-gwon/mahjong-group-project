@@ -42,6 +42,13 @@ Mahjong group management React SPA
 - ContestDetailPage 게임 기록 목록 + 삭제 버튼
 ```
 
+### 완료 기준 (Definition of Done)
+
+다음 항목을 모두 충족해야 DONE으로 기록:
+- [ ] `npm run build` 에러 없음
+- [ ] `frontend/CHANGELOG.md`에 DONE 기록
+- [ ] `docs/status.md` 담당 항목 상태 업데이트
+
 ### 범위 외 요청 발생 시
 직접 처리하지 말고 해당 CHANGELOG에 태그 남기기:
 - 새 API 필요 → `app/CHANGELOG.md`에 `TODO(@agent-backend)` 기록

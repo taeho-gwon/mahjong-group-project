@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useContests } from '../hooks/useContests'
 import { useMe } from '../hooks/useMe'
@@ -48,7 +49,7 @@ export default function GroupDetailPage() {
       </div>
 
       {isLoading ? (
-        <p className="mt-6">Loading...</p>
+        <Spinner />
       ) : isError ? (
         <p className="mt-6 text-red-600">Failed to load group</p>
       ) : group ? (
