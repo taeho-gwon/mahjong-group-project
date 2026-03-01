@@ -15,6 +15,10 @@ export default function MyPage() {
   const [groupName, setGroupName] = useState('')
   const [groupDesc, setGroupDesc] = useState('')
   const [groupJoinPolicy, setGroupJoinPolicy] = useState<'public' | 'private'>('public')
+  const [uma1st, setUma1st] = useState(30)
+  const [uma2nd, setUma2nd] = useState(10)
+  const [uma3rd, setUma3rd] = useState(-10)
+  const [uma4th, setUma4th] = useState(-30)
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
 
@@ -37,14 +41,27 @@ export default function MyPage() {
 
   async function handleCreateGroup(e: FormEvent) {
     e.preventDefault()
+    if (uma1st + uma2nd + uma3rd + uma4th !== 0) {
+      setCreateError('우마 합계는 0이어야 합니다.')
+      return
+    }
     setCreateError('')
     setCreating(true)
     try {
-      const group = await createGroup(groupName, groupDesc, groupJoinPolicy)
+      const group = await createGroup(groupName, groupDesc, groupJoinPolicy, {
+        uma_1st: uma1st,
+        uma_2nd: uma2nd,
+        uma_3rd: uma3rd,
+        uma_4th: uma4th,
+      })
       setGroups((prev) => [group, ...prev])
       setGroupName('')
       setGroupDesc('')
       setGroupJoinPolicy('public')
+      setUma1st(30)
+      setUma2nd(10)
+      setUma3rd(-10)
+      setUma4th(-30)
     } catch {
       setCreateError('Failed to create group')
     } finally {
@@ -124,6 +141,26 @@ export default function MyPage() {
               />
               Private
             </label>
+          </div>
+          <div>
+            <div style={{ fontSize: '13px', color: '#555', marginBottom: '4px' }}>
+              Uma (합계: {uma1st + uma2nd + uma3rd + uma4th}, 합계 0이어야 함)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+              {([['1위', uma1st, setUma1st], ['2위', uma2nd, setUma2nd], ['3위', uma3rd, setUma3rd], ['4위', uma4th, setUma4th]] as const).map(
+                ([label, value, setter]) => (
+                  <div key={label}>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '2px' }}>{label}</div>
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) => setter(Number(e.target.value))}
+                      style={{ padding: '6px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                )
+              )}
+            </div>
           </div>
           {createError && <p style={{ color: 'red', margin: 0 }}>{createError}</p>}
           <button type="submit" disabled={creating} style={{ padding: '8px', cursor: 'pointer', alignSelf: 'flex-start' }}>

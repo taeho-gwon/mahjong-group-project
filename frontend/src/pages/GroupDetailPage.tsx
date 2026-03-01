@@ -5,6 +5,8 @@ import type { GroupDetailResponse } from '../api/groups'
 import { getMe } from '../api/auth'
 import { listGameRecords } from '../api/gameRecords'
 import type { GameRecordResponse } from '../api/gameRecords'
+import { listContests } from '../api/contests'
+import type { ContestResponse } from '../api/contests'
 
 async function fetchAllGameRecords(groupId: number): Promise<GameRecordResponse[]> {
   const PAGE_SIZE = 50
@@ -29,28 +31,37 @@ export default function GroupDetailPage() {
   const navigate = useNavigate()
   const [group, setGroup] = useState<GroupDetailResponse | null>(null)
   const [myRole, setMyRole] = useState<string | null>(null)
-  const [ranking, setRanking] = useState<{ username: string; count: number }[]>([])
+  const [ranking, setRanking] = useState<{ username: string; totalScore: number; count: number }[]>([])
+  const [contests, setContests] = useState<ContestResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!id) return
-    Promise.all([getGroup(Number(id)), getMe(), fetchAllGameRecords(Number(id))])
-      .then(([g, user, allRecords]) => {
+    Promise.all([getGroup(Number(id)), getMe(), fetchAllGameRecords(Number(id)), listContests(Number(id))])
+      .then(([g, user, allRecords, contestList]) => {
         setGroup(g)
         setMyRole(g.members.find((m) => m.id === user.id)?.role ?? null)
-        const countMap = new Map<number, { username: string; count: number }>()
+        setContests(contestList)
+        const umaByRank = [g.uma_1st, g.uma_2nd, g.uma_3rd, g.uma_4th]
+        const playerMap = new Map<number, { username: string; totalScore: number; count: number }>()
         for (const rec of allRecords) {
-          for (const player of [rec.east_player, rec.south_player, rec.west_player, rec.north_player]) {
-            const entry = countMap.get(player.id)
-            if (entry) {
-              entry.count += 1
-            } else {
-              countMap.set(player.id, { username: player.username, count: 1 })
-            }
-          }
+          const seats = [
+            { player: rec.east_player, point: rec.east_point },
+            { player: rec.south_player, point: rec.south_point },
+            { player: rec.west_player, point: rec.west_point },
+            { player: rec.north_player, point: rec.north_point },
+          ]
+          // 동점 시 자리 순서(동>남>서>북)로 처리
+          seats.sort((a, b) => b.point - a.point)
+          seats.forEach(({ player, point }, rank) => {
+            const entry = playerMap.get(player.id) ?? { username: player.username, totalScore: 0, count: 0 }
+            entry.totalScore += (point - 25000) / 1000 + umaByRank[rank]
+            entry.count += 1
+            playerMap.set(player.id, entry)
+          })
         }
-        setRanking([...countMap.values()].sort((a, b) => b.count - a.count))
+        setRanking([...playerMap.values()].sort((a, b) => b.totalScore - a.totalScore))
       })
       .catch(() => setError('Failed to load group'))
       .finally(() => setLoading(false))
@@ -116,6 +127,12 @@ export default function GroupDetailPage() {
               </div>
               <div><strong>Owner:</strong> {group.members.find((m) => m.role === 'owner')?.username ?? '-'}</div>
               <div><strong>Members:</strong> {group.members.length}</div>
+              <div>
+                <strong>Uma:</strong>{' '}
+                {[group.uma_1st, group.uma_2nd, group.uma_3rd, group.uma_4th]
+                  .map((v, i) => `${i + 1}위 ${v > 0 ? '+' : ''}${v}`)
+                  .join(' / ')}
+              </div>
               <div><strong>Created:</strong> {new Date(group.created_at).toLocaleDateString()}</div>
             </div>
           </section>
@@ -142,10 +159,55 @@ export default function GroupDetailPage() {
                   >
                     <span style={{ width: '24px', textAlign: 'right', fontWeight: 'bold', color: '#666' }}>{idx + 1}</span>
                     <span style={{ flex: 1 }}>{entry.username}</span>
-                    <span style={{ color: '#555' }}>{entry.count}경기</span>
+                    <span style={{ color: entry.totalScore >= 0 ? '#2d7a3a' : '#c0392b', fontWeight: 'bold' }}>
+                      {entry.totalScore > 0 ? '+' : ''}{entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}
+                    </span>
+                    <span style={{ color: '#aaa', fontSize: '12px', minWidth: '40px', textAlign: 'right' }}>{entry.count}게임</span>
                   </li>
                 ))}
               </ol>
+            )}
+          </section>
+
+          {/* Contests */}
+          <section style={{ marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0 }}>랭킹전</h3>
+              {myRole !== null && (
+                <button
+                  onClick={() => navigate(`/groups/${id}/contests/new`)}
+                  style={{ fontSize: '13px', padding: '4px 12px', cursor: 'pointer' }}
+                >
+                  랭킹전 만들기
+                </button>
+              )}
+            </div>
+            {contests.length === 0 ? (
+              <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 랭킹전이 없습니다.</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {contests.map((c) => (
+                  <li
+                    key={c.id}
+                    onClick={() => navigate(`/contests/${c.id}`)}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      border: '1px solid #ccc',
+                      borderRadius: '6px',
+                      padding: '10px 14px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>{c.name}</span>
+                    <span style={{ fontSize: '12px', color: '#888' }}>
+                      {c.ranking_type === 'match_point' ? '승점' : '점수'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
 

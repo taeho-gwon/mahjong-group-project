@@ -9,7 +9,7 @@ from alembic import context
 from app.config import settings
 
 # Import all models here so Alembic can detect them
-from app.models import game_record, group, user  # noqa: F401
+from app.models import contest, game_record, group, user  # noqa: F401
 from app.models.base import Base
 
 config = context.config

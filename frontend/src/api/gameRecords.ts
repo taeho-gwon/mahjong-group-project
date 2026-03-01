@@ -10,6 +10,7 @@ export interface GameRecordCreate {
   west_point: number
   north_point: number
   group_id?: number
+  contest_id?: number | null
 }
 
 export interface PlayerInfo {
@@ -32,6 +33,9 @@ export interface GameRecordResponse {
   west_point: number
   north_point: number
   group_id: number | null
+  contest_id: number | null
+  game_link: string | null
+  played_at: string
   created_by_id: number
   created_at: string
 }

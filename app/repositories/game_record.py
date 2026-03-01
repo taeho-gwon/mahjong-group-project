@@ -31,6 +31,7 @@ class GameRecordRepository(BaseRepository):
             west_point=data.west_point,
             north_point=data.north_point,
             group_id=data.group_id,
+            contest_id=data.contest_id,
             game_link=data.game_link,
             played_at=played_at,
         )

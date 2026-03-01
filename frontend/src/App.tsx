@@ -8,6 +8,8 @@ import GroupDetailPage from './pages/GroupDetailPage'
 import GroupManagePage from './pages/GroupManagePage'
 import JoinPage from './pages/JoinPage'
 import GameRecordCreatePage from './pages/GameRecordCreatePage'
+import ContestCreatePage from './pages/ContestCreatePage'
+import ContestDetailPage from './pages/ContestDetailPage'
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
           <Route path="/groups/:id" element={<GroupDetailPage />} />
           <Route path="/groups/:id/manage" element={<GroupManagePage />} />
           <Route path="/groups/:id/games/new" element={<GameRecordCreatePage />} />
+          <Route path="/groups/:id/contests/new" element={<ContestCreatePage />} />
+          <Route path="/contests/:contestId" element={<ContestDetailPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

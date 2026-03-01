@@ -6,6 +6,10 @@ export interface GroupResponse {
   description: string | null
   owner_id: number
   join_policy: 'public' | 'private'
+  uma_1st: number
+  uma_2nd: number
+  uma_3rd: number
+  uma_4th: number
   is_active: boolean
   created_at: string
 }
@@ -47,7 +51,15 @@ export async function getGroup(id: number): Promise<GroupDetailResponse> {
 
 export async function updateGroup(
   id: number,
-  data: { name?: string; description?: string | null; join_policy?: 'public' | 'private' },
+  data: {
+    name?: string
+    description?: string | null
+    join_policy?: 'public' | 'private'
+    uma_1st?: number
+    uma_2nd?: number
+    uma_3rd?: number
+    uma_4th?: number
+  },
 ): Promise<GroupResponse> {
   const res = await apiFetch(`/groups/${id}`, {
     method: 'PUT',
@@ -99,10 +111,11 @@ export async function createGroup(
   name: string,
   description?: string,
   join_policy: 'public' | 'private' = 'public',
+  uma?: { uma_1st: number; uma_2nd: number; uma_3rd: number; uma_4th: number },
 ): Promise<GroupResponse> {
   const res = await apiFetch('/groups', {
     method: 'POST',
-    body: JSON.stringify({ name, description: description || null, join_policy }),
+    body: JSON.stringify({ name, description: description || null, join_policy, ...uma }),
   })
   if (!res.ok) throw new Error('Failed to create group')
   return res.json()

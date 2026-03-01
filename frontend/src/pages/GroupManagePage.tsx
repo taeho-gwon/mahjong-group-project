@@ -30,6 +30,10 @@ export default function GroupManagePage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [joinPolicy, setJoinPolicy] = useState<'public' | 'private'>('public')
+  const [uma1st, setUma1st] = useState(30)
+  const [uma2nd, setUma2nd] = useState(10)
+  const [uma3rd, setUma3rd] = useState(-10)
+  const [uma4th, setUma4th] = useState(-30)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -52,6 +56,10 @@ export default function GroupManagePage() {
         setName(g.name)
         setDescription(g.description ?? '')
         setJoinPolicy(g.join_policy)
+        setUma1st(g.uma_1st)
+        setUma2nd(g.uma_2nd)
+        setUma3rd(g.uma_3rd)
+        setUma4th(g.uma_4th)
       })
       .catch(() => setError('Failed to load group'))
       .finally(() => setLoading(false))
@@ -60,6 +68,10 @@ export default function GroupManagePage() {
   async function handleSave(e: FormEvent) {
     e.preventDefault()
     if (!group) return
+    if (uma1st + uma2nd + uma3rd + uma4th !== 0) {
+      setSaveError('우마 합계는 0이어야 합니다.')
+      return
+    }
     setSaveError('')
     setSaveSuccess(false)
     setSaving(true)
@@ -68,6 +80,10 @@ export default function GroupManagePage() {
         name,
         description: description || null,
         join_policy: joinPolicy,
+        uma_1st: uma1st,
+        uma_2nd: uma2nd,
+        uma_3rd: uma3rd,
+        uma_4th: uma4th,
       })
       setGroup((prev) => prev ? { ...prev, ...updated } : prev)
       setSaveSuccess(true)
@@ -213,6 +229,26 @@ export default function GroupManagePage() {
                     />
                     Private
                   </label>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '6px' }}>
+                  Uma (합계: {uma1st + uma2nd + uma3rd + uma4th}, 합계 0이어야 함)
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                  {([['1위', uma1st, setUma1st], ['2위', uma2nd, setUma2nd], ['3위', uma3rd, setUma3rd], ['4위', uma4th, setUma4th]] as const).map(
+                    ([label, value, setter]) => (
+                      <div key={label}>
+                        <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '2px' }}>{label}</label>
+                        <input
+                          type="number"
+                          value={value}
+                          onChange={(e) => { setter(Number(e.target.value)); setSaveSuccess(false) }}
+                          style={{ padding: '6px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
               {saveError && <p style={{ color: 'red', margin: 0, fontSize: '14px' }}>{saveError}</p>}

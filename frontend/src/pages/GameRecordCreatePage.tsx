@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getGroup } from '../api/groups'
 import type { MemberInfo } from '../api/groups'
 import { createGameRecord } from '../api/gameRecords'
+import { listContests } from '../api/contests'
+import type { ContestResponse } from '../api/contests'
 
 const POSITIONS = [
   { key: 'east', label: '동' },
@@ -27,6 +29,8 @@ export default function GameRecordCreatePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [members, setMembers] = useState<MemberInfo[]>([])
+  const [contests, setContests] = useState<ContestResponse[]>([])
+  const [selectedContestId, setSelectedContestId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -40,8 +44,11 @@ export default function GameRecordCreatePage() {
 
   useEffect(() => {
     if (!id) return
-    getGroup(Number(id))
-      .then((g) => setMembers(g.members))
+    Promise.all([getGroup(Number(id)), listContests(Number(id))])
+      .then(([g, contestList]) => {
+        setMembers(g.members)
+        setContests(contestList)
+      })
       .catch(() => setError('Failed to load group members'))
       .finally(() => setLoading(false))
   }, [id])
@@ -84,6 +91,7 @@ export default function GameRecordCreatePage() {
         west_point: Number(west.point),
         north_point: Number(north.point),
         group_id: id ? Number(id) : undefined,
+        contest_id: selectedContestId,
       })
       navigate(`/groups/${id}`)
     } catch {
@@ -110,6 +118,22 @@ export default function GameRecordCreatePage() {
       ) : (
         <>
           {error && <p style={{ color: 'red', marginBottom: '16px' }}>{error}</p>}
+
+          {contests.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' }}>랭킹전 (선택)</label>
+              <select
+                value={selectedContestId ?? ''}
+                onChange={(e) => setSelectedContestId(e.target.value ? Number(e.target.value) : null)}
+                style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }}
+              >
+                <option value="">선택 안 함</option>
+                {contests.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px' }}>
             <thead>
