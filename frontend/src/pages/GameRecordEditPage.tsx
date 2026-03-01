@@ -33,7 +33,7 @@ export default function GameRecordEditPage() {
   const { data: record, isLoading: loadingRecord } = useGameRecord(id)
   const { data: group, isLoading: loadingGroup } = useGroupDetail(record?.group_id ?? undefined)
 
-  const updateMutation = useUpdateGameRecord(id!, record?.contest_id)
+  const updateMutation = useUpdateGameRecord(id!, record?.event_id)
 
   const members: MemberInfo[] = group?.members ?? []
   const [error, setError] = useState('')

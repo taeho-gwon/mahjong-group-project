@@ -5,15 +5,16 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import MainPage from './pages/MainPage'
 import MyPage from './pages/MyPage'
+import GroupCreatePage from './pages/GroupCreatePage'
 import GroupDetailPage from './pages/GroupDetailPage'
 import GroupManagePage from './pages/GroupManagePage'
 import JoinPage from './pages/JoinPage'
 import GameRecordCreatePage from './pages/GameRecordCreatePage'
 import GameRecordEditPage from './pages/GameRecordEditPage'
 import GameRecordManagePage from './pages/GameRecordManagePage'
-import ContestCreatePage from './pages/ContestCreatePage'
-import ContestDetailPage from './pages/ContestDetailPage'
-import ContestManagePage from './pages/ContestManagePage'
+import EventCreatePage from './pages/EventCreatePage'
+import EventDetailPage from './pages/EventDetailPage'
+import EventManagePage from './pages/EventManagePage'
 import GroupRankingPage from './pages/GroupRankingPage'
 import UserProfilePage from './pages/UserProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -29,13 +30,14 @@ function App() {
         <Route element={<AuthGuard />}>
           <Route path="/" element={<MainPage />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/groups/new" element={<GroupCreatePage />} />
           <Route path="/groups/:id" element={<GroupDetailPage />} />
           <Route path="/groups/:id/manage" element={<GroupManagePage />} />
           <Route path="/groups/:id/games/new" element={<GameRecordCreatePage />} />
           <Route path="/groups/:id/ranking" element={<GroupRankingPage />} />
-          <Route path="/groups/:id/contests/new" element={<ContestCreatePage />} />
-          <Route path="/contests/:contestId" element={<ContestDetailPage />} />
-          <Route path="/contests/:contestId/manage" element={<ContestManagePage />} />
+          <Route path="/groups/:id/events/new" element={<EventCreatePage />} />
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
+          <Route path="/events/:eventId/manage" element={<EventManagePage />} />
           <Route path="/game-records/:recordId/edit" element={<GameRecordEditPage />} />
           <Route path="/groups/:groupId/records/manage" element={<GameRecordManagePage />} />
           <Route path="/users/:userId" element={<UserProfilePage />} />

@@ -113,11 +113,10 @@ export async function createGroup(
   name: string,
   description?: string,
   join_policy: 'public' | 'private' = 'public',
-  uma?: { uma_1st: number; uma_2nd: number; uma_3rd: number; uma_4th: number },
 ): Promise<GroupResponse> {
   const res = await apiFetch('/groups', {
     method: 'POST',
-    body: JSON.stringify({ name, description: description || null, join_policy, ...uma }),
+    body: JSON.stringify({ name, description: description || null, join_policy }),
   })
   if (!res.ok) throw new Error('Failed to create group')
   return res.json()

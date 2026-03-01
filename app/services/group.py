@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 
 from app.config import settings
 from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
-from app.repositories.contest import ContestRepository
+from app.repositories.event import EventRepository
 from app.repositories.group import GroupRepository
 from app.schemas.group import (
     GroupCreate,
@@ -20,10 +20,10 @@ INVITE_TOKEN_TTL_DAYS = 7
 
 class GroupService:
     def __init__(
-        self, group_repo: GroupRepository, contest_repo: ContestRepository
+        self, group_repo: GroupRepository, event_repo: EventRepository
     ) -> None:
         self.group_repo = group_repo
-        self.contest_repo = contest_repo
+        self.event_repo = event_repo
 
     async def _require_member(self, group_id: int, user_id: int) -> GroupMember:
         member = await self.group_repo.get_member(group_id, user_id)
@@ -37,7 +37,7 @@ class GroupService:
     async def create_group(self, owner_id: int, data: GroupCreate) -> Group:
         group = await self.group_repo.create(owner_id, data)
         await self.group_repo.add_member(group.id, owner_id, role=MemberRole.owner)
-        await self.contest_repo.create_default_aggregate(group.id, owner_id, data)
+        await self.event_repo.create_default_aggregate(group.id, owner_id)
         return group
 
     async def get_group(self, group_id: int) -> Group:

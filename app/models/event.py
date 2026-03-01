@@ -15,14 +15,23 @@ class RankingType(StrEnum):
     match_point = "match_point"
 
 
-class ContestType(StrEnum):
+class EventType(StrEnum):
     aggregate = "aggregate"
     regular = "regular"
     independent = "independent"
 
 
-class Contest(Base):
-    __tablename__ = "contests"
+class PresetType(StrEnum):
+    daily = "daily"
+    weekly = "weekly"
+    monthly = "monthly"
+    yearly = "yearly"
+    all = "all"
+    custom = "custom"
+
+
+class Event(Base):
+    __tablename__ = "events"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -38,9 +47,9 @@ class Contest(Base):
         server_default="score",
         nullable=False,
     )
-    contest_type: Mapped[ContestType] = mapped_column(
-        SAEnum(ContestType, name="contesttype"),
-        default=ContestType.regular,
+    event_type: Mapped[EventType] = mapped_column(
+        SAEnum(EventType, name="eventtype"),
+        default=EventType.regular,
         server_default="regular",
         nullable=False,
     )
@@ -54,8 +63,16 @@ class Contest(Base):
     is_default: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", nullable=False
     )
+    is_closed: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+    preset_type: Mapped[PresetType | None] = mapped_column(
+        SAEnum(PresetType, name="presettype"),
+        nullable=True,
+        default=None,
+    )
 
-    # 우마 (그룹 우마 override)
+    # 우마
     uma_1st: Mapped[int] = mapped_column(
         default=30, server_default="30", nullable=False
     )

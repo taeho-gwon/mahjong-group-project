@@ -3,9 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.models.group import JoinPolicy, MemberRole
-from app.schemas.common import UmaFields
-
-
 class MemberInfo(BaseModel):
     model_config = {"from_attributes": True}
 
@@ -18,7 +15,7 @@ class MemberRoleUpdate(BaseModel):
     role: MemberRole
 
 
-class GroupCreate(UmaFields):
+class GroupCreate(BaseModel):
     name: str
     description: str | None = None
     join_policy: JoinPolicy = JoinPolicy.public

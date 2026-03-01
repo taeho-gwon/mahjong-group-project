@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useGroupGameRecords } from '../hooks/useGroupGameRecords'
-import { useContests } from '../hooks/useContests'
+import { useEvents } from '../hooks/useEvents'
 import { useMe } from '../hooks/useMe'
 import { deleteGameRecord } from '../api/gameRecords'
 
@@ -16,7 +16,7 @@ export default function GameRecordManagePage() {
   const { data: group, isLoading: loadingGroup } = useGroupDetail(id)
   const { data: me } = useMe()
   const { data: records = [], isLoading: loadingRecords } = useGroupGameRecords(id)
-  const { data: contests = [] } = useContests(id)
+  const { data: events = [] } = useEvents(id)
 
   const queryClient = useQueryClient()
   const deleteMutation = useMutation({
@@ -31,7 +31,7 @@ export default function GameRecordManagePage() {
   const myRole = group && me ? (group.members.find((m) => m.id === me.id)?.role ?? null) : null
   const isAuthorized = myRole === 'owner' || myRole === 'admin'
   const isLoading = loadingGroup || (!!id && loadingRecords)
-  const contestMap = new Map(contests.map((c) => [c.id, c.name]))
+  const eventMap = new Map(events.map((c) => [c.id, c.name]))
   const sortedRecords = [...records].sort(
     (a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()
   )
@@ -64,8 +64,9 @@ export default function GameRecordManagePage() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-gray-300 text-gray-600 text-[13px]">
+                <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
                 <th className="px-2.5 py-2 text-left whitespace-nowrap">날짜</th>
-                <th className="px-2.5 py-2 text-left whitespace-nowrap">컨테스트</th>
+                <th className="px-2.5 py-2 text-left whitespace-nowrap">이벤트</th>
                 <th className="px-2.5 py-2 text-center whitespace-nowrap">동</th>
                 <th className="px-2.5 py-2 text-center whitespace-nowrap">남</th>
                 <th className="px-2.5 py-2 text-center whitespace-nowrap">서</th>
@@ -77,11 +78,14 @@ export default function GameRecordManagePage() {
             <tbody>
               {sortedRecords.map((rec) => (
                 <tr key={rec.id} className="border-b border-gray-100">
+                  <td className="px-2.5 py-2.5 align-middle text-center whitespace-nowrap text-xs text-gray-400 font-mono">
+                    {rec.id}
+                  </td>
                   <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600">
                     {new Date(rec.played_at).toLocaleDateString()}
                   </td>
                   <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600">
-                    {rec.contest_id ? (contestMap.get(rec.contest_id) ?? `#${rec.contest_id}`) : '전체 (미지정)'}
+                    {rec.event_id ? (eventMap.get(rec.event_id) ?? `#${rec.event_id}`) : '전체 (미지정)'}
                   </td>
                   {[
                     { player: rec.east_player, point: rec.east_point },

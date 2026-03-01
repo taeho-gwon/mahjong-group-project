@@ -1,10 +1,10 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import Spinner from '../components/Spinner'
-import { useContest } from '../hooks/useContest'
-import { useContestGameRecords } from '../hooks/useContestGameRecords'
+import { useEvent } from '../hooks/useEvent'
+import { useEventGameRecords } from '../hooks/useEventGameRecords'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useMe } from '../hooks/useMe'
-import type { ContestResponse } from '../api/contests'
+import type { EventResponse } from '../api/events'
 import type { GameRecordResponse } from '../api/gameRecords'
 
 interface RankingEntry {
@@ -16,9 +16,9 @@ interface RankingEntry {
   gameCount: number
 }
 
-function computeRanking(contest: ContestResponse, records: GameRecordResponse[]): RankingEntry[] {
-  const umaByRank = [contest.uma_1st, contest.uma_2nd, contest.uma_3rd, contest.uma_4th]
-  const scoringByRank = [contest.scoring_1st, contest.scoring_2nd, contest.scoring_3rd, contest.scoring_4th]
+function computeRanking(event: EventResponse, records: GameRecordResponse[]): RankingEntry[] {
+  const umaByRank = [event.uma_1st, event.uma_2nd, event.uma_3rd, event.uma_4th]
+  const scoringByRank = [event.scoring_1st, event.scoring_2nd, event.scoring_3rd, event.scoring_4th]
 
   const playerMap = new Map<number, RankingEntry>()
 
@@ -48,7 +48,7 @@ function computeRanking(contest: ContestResponse, records: GameRecordResponse[])
   }
 
   const entries = [...playerMap.values()]
-  if (contest.ranking_type === 'match_point') {
+  if (event.ranking_type === 'match_point') {
     entries.sort((a, b) => b.matchPoint - a.matchPoint)
   } else {
     entries.sort((a, b) => b.totalScore - a.totalScore)
@@ -56,18 +56,18 @@ function computeRanking(contest: ContestResponse, records: GameRecordResponse[])
   return entries
 }
 
-export default function ContestDetailPage() {
-  const { contestId } = useParams<{ contestId: string }>()
+export default function EventDetailPage() {
+  const { eventId } = useParams<{ eventId: string }>()
   const navigate = useNavigate()
-  const id = contestId ? Number(contestId) : undefined
+  const id = eventId ? Number(eventId) : undefined
 
-  const { data: contest, isLoading, isError } = useContest(id)
-  const { data: records = [] } = useContestGameRecords(id)
-  const { data: group } = useGroupDetail(contest?.group_id ?? undefined)
+  const { data: event, isLoading, isError } = useEvent(id)
+  const { data: records = [] } = useEventGameRecords(id)
+  const { data: group } = useGroupDetail(event?.group_id ?? undefined)
   const { data: user } = useMe()
 
   const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
-  const ranking = contest ? computeRanking(contest, records) : []
+  const ranking = event ? computeRanking(event, records) : []
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -78,9 +78,9 @@ export default function ContestDetailPage() {
         >
           ← Back
         </button>
-        {contest && (myRole === 'owner' || myRole === 'admin') && (
+        {event && (myRole === 'owner' || myRole === 'admin') && (
           <button
-            onClick={() => navigate(`/contests/${contestId}/manage`)}
+            onClick={() => navigate(`/events/${eventId}/manage`)}
             className="text-sm px-3.5 py-1.5 cursor-pointer"
           >
             관리
@@ -91,48 +91,51 @@ export default function ContestDetailPage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="text-red-600">Failed to load contest</p>
-      ) : contest ? (
+        <p className="text-red-600">Failed to load event</p>
+      ) : event ? (
         <>
           <section className="mb-6">
             <div className="flex items-center gap-2 mb-2">
-              <h2 className="mt-0 mb-0">{contest.name}</h2>
+              <h2 className="mt-0 mb-0">{event.name}</h2>
               <span className={`text-xs px-2 py-0.5 rounded ${
-                contest.contest_type === 'aggregate'
+                event.event_type === 'aggregate'
                   ? 'bg-yellow-100 text-yellow-700'
-                  : contest.contest_type === 'independent'
+                  : event.event_type === 'independent'
                   ? 'bg-purple-50 text-purple-700'
                   : 'bg-blue-50 text-blue-700'
               }`}>
-                {contest.contest_type === 'aggregate' ? '집계' : contest.contest_type === 'independent' ? '독립' : '일반'}
+                {event.event_type === 'aggregate' ? '집계' : event.event_type === 'independent' ? '독립' : '일반'}
               </span>
-              {contest.contest_type === 'independent' && (
+              {event.event_type === 'independent' && (
                 <span className="text-xs text-gray-400">전체 랭킹 미합산</span>
+              )}
+              {event.is_closed && (
+                <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">마감</span>
               )}
             </div>
             <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
-              {contest.contest_type === 'aggregate' && (
+              {event.event_type === 'aggregate' && (
                 <div>
                   <strong>기간:</strong>{' '}
-                  {contest.period_start || contest.period_end
-                    ? `${contest.period_start ? new Date(contest.period_start).toLocaleDateString() : '시작 없음'} ~ ${contest.period_end ? new Date(contest.period_end).toLocaleDateString() : '종료 없음'}`
+                  {event.period_start || event.period_end
+                    ? `${event.period_start ? new Date(event.period_start).toLocaleDateString() : '시작 없음'} ~ ${event.period_end ? new Date(event.period_end).toLocaleDateString() : '종료 없음'}`
                     : '전체 기간'}
                 </div>
               )}
               <div>
                 <strong>랭킹 방식:</strong>{' '}
-                {contest.ranking_type === 'match_point' ? '승점 (match_point)' : '점수 합산 (score)'}
+                {event.ranking_type === 'match_point' ? '승점 (match_point)' : '점수 합산 (score)'}
               </div>
               <div>
                 <strong>우마:</strong>{' '}
-                {[contest.uma_1st, contest.uma_2nd, contest.uma_3rd, contest.uma_4th]
+                {[event.uma_1st, event.uma_2nd, event.uma_3rd, event.uma_4th]
                   .map((v, i) => `${i + 1}위 ${v > 0 ? '+' : ''}${v}`)
                   .join(' / ')}
               </div>
-              {contest.ranking_type === 'match_point' && (
+              {event.ranking_type === 'match_point' && (
                 <div>
                   <strong>승점 배점:</strong>{' '}
-                  {[contest.scoring_1st, contest.scoring_2nd, contest.scoring_3rd, contest.scoring_4th]
+                  {[event.scoring_1st, event.scoring_2nd, event.scoring_3rd, event.scoring_4th]
                     .map((v, i) => `${i + 1}위 ${v}pt`)
                     .join(' / ')}
                 </div>
@@ -150,7 +153,7 @@ export default function ContestDetailPage() {
                   <tr className="border-b-2 border-gray-300 text-gray-600 text-[13px]">
                     <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
                     <th className="px-2.5 py-2 text-left whitespace-nowrap">이름</th>
-                    <th className="px-2.5 py-2 text-center whitespace-nowrap">{contest.ranking_type === 'match_point' ? '승점' : '점수'}</th>
+                    <th className="px-2.5 py-2 text-center whitespace-nowrap">{event.ranking_type === 'match_point' ? '승점' : '점수'}</th>
                     <th className="px-2.5 py-2 text-center whitespace-nowrap">1위</th>
                     <th className="px-2.5 py-2 text-center whitespace-nowrap">2위</th>
                     <th className="px-2.5 py-2 text-center whitespace-nowrap">3위</th>
@@ -160,10 +163,10 @@ export default function ContestDetailPage() {
                 </thead>
                 <tbody>
                   {ranking.map((entry, idx) => {
-                    const mainScore = contest.ranking_type === 'match_point'
+                    const mainScore = event.ranking_type === 'match_point'
                       ? `${entry.matchPoint}pt`
                       : `${entry.totalScore > 0 ? '+' : ''}${entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}`
-                    const isPositive = contest.ranking_type === 'match_point'
+                    const isPositive = event.ranking_type === 'match_point'
                       ? entry.matchPoint >= 0
                       : entry.totalScore >= 0
                     return (
@@ -192,7 +195,8 @@ export default function ContestDetailPage() {
               <ul className="list-none p-0 m-0 flex flex-col gap-2">
                 {[...records].sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()).map((rec) => (
                   <li key={rec.id} className="border border-gray-300 rounded-md px-4 py-3 text-sm">
-                    <div className="mb-1.5">
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <span className="text-xs text-gray-300 font-mono">#{rec.id}</span>
                       <span className="text-xs text-gray-400">{new Date(rec.played_at).toLocaleDateString()}</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2 text-center">

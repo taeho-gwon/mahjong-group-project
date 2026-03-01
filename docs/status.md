@@ -2,7 +2,7 @@
 
 > Manager가 한눈에 현황을 파악하기 위한 단일 소스.
 > **모든 에이전트는 작업 완료(DONE) 시 이 파일의 해당 섹션을 반드시 업데이트한다.**
-> 마지막 업데이트: 2026-03-01 (2차)
+> 마지막 업데이트: 2026-03-02
 
 ---
 
@@ -33,7 +33,15 @@
 
 ## 활성 TODO 목록
 
-> 현재 활성 TODO 없음 — MVP 전 항목 완료
+| 항목 | 상태 | 담당 | 비고 |
+|------|------|------|------|
+| Contest 종료 기능 (모델/스키마/서비스/API/테스트) | ✅ | BE | is_closed + preset_type + close API (60 tests) |
+| Contest 종료 migration | ✅ | DevOps | 0dfadc37485c 적용 완료 |
+| Contest 종료 UI + Auto-Rolling Aggregate | ✅ | FE | 마감 UI + auto-roll 훅 완료 |
+| **Contest → Event 리네이밍 (BE)** | ✅ | BE | 모델/스키마/서비스/API/테스트 전체 (60 tests) |
+| **Contest → Event migration** | ✅ | DevOps | initial_schema 재생성 (e7340feacebb) |
+| **Contest → Event 리네이밍 (FE)** | ✅ | FE | 파일/코드/라우트/UI라벨 전체 완료 |
+| **UI 라벨 "그룹" → "모임" 변경** | ✅ | FE | 토스트/페이지제목/버튼/에러메시지 전체 완료 |
 
 ---
 
@@ -41,6 +49,16 @@
 
 | 작업 | 담당 | 완료일 |
 |------|------|--------|
+| UI 라벨 "그룹" → "모임" 전체 변경 | FE | 2026-03-02 |
+| Contest → Event 전체 리네이밍 (FE 파일/코드/라우트/UI라벨) | FE | 2026-03-02 |
+| Contest → Event migration (initial_schema 재생성) | DevOps | 2026-03-02 |
+| Contest → Event 전체 리네이밍 (BE 모델/스키마/서비스/API/테스트) | BE | 2026-03-02 |
+| Contest 종료 UI + Auto-Rolling Aggregate | FE | 2026-03-01 |
+| GroupCreate에서 UmaFields 제거 (BE 스키마/repo/service) | BE | 2026-03-01 |
+| Contest 종료 migration (is_closed + preset_type) | DevOps | 2026-03-01 |
+| Contest 종료 기능 (BE 모델/서비스/API, 60 tests) | BE | 2026-03-01 |
+| 그룹 생성 폼 우마 입력 제거 | FE | 2026-03-01 |
+| 그룹 생성 페이지 분리 (MyPage → /groups/new) | FE | 2026-03-01 |
 | overall → aggregate 리네이밍 + 기간 필드 (39 tests) | BE | 2026-03-01 |
 | 유저 프로필 API (GET /users/{id}, 38 tests) | BE | 2026-03-01 |
 | 초대 링크 API 수정 (invite_url + expires_at) | BE | 2026-03-01 |
@@ -80,10 +98,11 @@
 |------------|----------|-----------|
 | Auth 전체 (/register, /login, /refresh, /me) | ✅ | 2026-03-01 |
 | Group CRUD 전체 | ✅ | 2026-03-01 |
-| Contest CRUD 전체 (aggregate 포함) | ✅ | 2026-03-01 |
+| Event CRUD 전체 (aggregate 포함) | ✅ | 2026-03-02 |
 | GameRecord CRUD 전체 | ✅ | 2026-03-01 |
 | GET /users/{id} | ✅ | 2026-03-01 |
 | POST /groups/{id}/invite-link | ✅ | 2026-03-01 |
+| POST /events/{id}/close | ✅ | 2026-03-02 |
 
 ---
 

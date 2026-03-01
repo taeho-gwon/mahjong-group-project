@@ -10,7 +10,7 @@ export interface GameRecordCreate {
   west_point: number
   north_point: number
   group_id?: number
-  contest_id?: number | null
+  event_id?: number | null
 }
 
 export interface PlayerInfo {
@@ -33,7 +33,7 @@ export interface GameRecordResponse {
   west_point: number
   north_point: number
   group_id: number | null
-  contest_id: number | null
+  event_id: number | null
   game_link: string | null
   played_at: string
   created_by_id: number
@@ -93,11 +93,11 @@ export async function listGameRecords(
   groupId?: number,
   page = 1,
   size = 200,
-  contestId?: number,
+  eventId?: number,
 ): Promise<PaginatedGameRecordResponse> {
   const params = new URLSearchParams({ page: String(page), size: String(size) })
   if (groupId !== undefined) params.set('group_id', String(groupId))
-  if (contestId !== undefined) params.set('contest_id', String(contestId))
+  if (eventId !== undefined) params.set('event_id', String(eventId))
   const res = await apiFetch(`/game-records?${params}`)
   if (!res.ok) throw new Error('Failed to fetch game records')
   return res.json()

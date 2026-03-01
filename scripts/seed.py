@@ -5,15 +5,15 @@ Users:   testuser1 ~ testuser30
 Group A: testuser1  (owner) + testuser1~20
 Group B: testuser11 (owner) + testuser11~30
 
-Contests per group:
-  - overall     (contest_type=overall,      ranking_type=score)
-  - 정규 시즌   (contest_type=regular,      ranking_type=score)
-  - 독립 리그   (contest_type=independent,  ranking_type=match_point)
+Events per group:
+  - overall     (event_type=aggregate,    ranking_type=score)
+  - 정규 시즌   (event_type=regular,      ranking_type=score)
+  - 독립 리그   (event_type=independent,  ranking_type=match_point)
 
 Game records per group:
-  - 10 games  contest_id=NULL     (overall에 집계됨)
-  - 20 games  contest_id=regular
-  - 10 games  contest_id=independent
+  - 10 games  event_id=NULL     (overall에 집계됨)
+  - 20 games  event_id=regular
+  - 10 games  event_id=independent
 """
 
 import asyncio
@@ -22,7 +22,7 @@ import random
 from sqlalchemy import text
 
 from app.db.session import AsyncSessionLocal
-from app.models.contest import Contest, ContestType, RankingType
+from app.models.event import Event, EventType, RankingType
 from app.models.game_record import GameRecord
 from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
 from app.models.user import User
@@ -53,7 +53,7 @@ def make_records(
     group: Group,
     members: list[User],
     owner: User,
-    contest_id: int | None,
+    event_id: int | None,
     n: int,
 ) -> list[GameRecord]:
     records = []
@@ -62,7 +62,7 @@ def make_records(
         ep, sp, wp, np_ = random_scores()
         records.append(GameRecord(
             group_id=group.id,
-            contest_id=contest_id,
+            event_id=event_id,
             east_player_id=e.id,
             south_player_id=s.id,
             west_player_id=w.id,
@@ -103,33 +103,33 @@ async def setup_group(
     members = [user_map[uid] for uid in member_indices]
     print(f"  Created '{name}' (id={group.id}), {len(members)} members")
 
-    # Contests
-    overall = Contest(
+    # Events
+    overall = Event(
         name="전체 랭킹",
         group_id=group.id,
         created_by_id=owner.id,
-        contest_type=ContestType.aggregate,
+        event_type=EventType.aggregate,
         ranking_type=RankingType.score,
     )
-    regular = Contest(
+    regular = Event(
         name="정규 시즌",
         group_id=group.id,
         created_by_id=owner.id,
-        contest_type=ContestType.regular,
+        event_type=EventType.regular,
         ranking_type=RankingType.score,
     )
-    indep = Contest(
+    indep = Event(
         name="독립 리그",
         group_id=group.id,
         created_by_id=owner.id,
-        contest_type=ContestType.independent,
+        event_type=EventType.independent,
         ranking_type=RankingType.match_point,
     )
     db.add_all([overall, regular, indep])
     await db.commit()
     for c in [overall, regular, indep]:
         await db.refresh(c)
-    print(f"    Contests: overall(id={overall.id}), regular(id={regular.id}), indep(id={indep.id})")
+    print(f"    Events: overall(id={overall.id}), regular(id={regular.id}), indep(id={indep.id})")
 
     # Game records
     records = (
@@ -146,7 +146,7 @@ async def main() -> None:
     async with AsyncSessionLocal() as db:
         # 1. Clear all
         await db.execute(text("DELETE FROM game_records"))
-        await db.execute(text("DELETE FROM contests"))
+        await db.execute(text("DELETE FROM events"))
         await db.execute(text("DELETE FROM group_members"))
         await db.execute(text("DELETE FROM groups"))
         await db.execute(text("DELETE FROM users"))

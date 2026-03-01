@@ -28,6 +28,12 @@ frontend/.vite/
 .vscode/
 .idea/
 
+# Claude Code
+.claude/
+CLAUDE.md
+*/CLAUDE.md
+AGENTS.md
+
 # Logs
 logs/
 *.log

@@ -1,33 +1,44 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import type { RankingType, ContestType } from '../api/contests'
-import { useCreateContest } from '../hooks/mutations/useCreateContest'
+import type { RankingType, EventType } from '../api/events'
+import { useCreateEvent } from '../hooks/mutations/useCreateEvent'
 
 type PeriodPreset = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all' | 'custom'
 
 function computePeriod(preset: PeriodPreset): { start: string | null; end: string | null } {
   if (preset === 'all') return { start: null, end: null }
   if (preset === 'custom') return { start: '', end: '' }
-  const now = new Date()
-  const end = new Date(now)
-  end.setHours(23, 59, 59, 999)
-  const start = new Date(now)
+  const start = new Date()
   start.setHours(0, 0, 0, 0)
-  if (preset === 'weekly') start.setDate(start.getDate() - start.getDay())
-  else if (preset === 'monthly') start.setDate(1)
-  else if (preset === 'yearly') { start.setMonth(0); start.setDate(1) }
+  const end = new Date(start)
+  if (preset === 'daily') {
+    end.setDate(end.getDate() + 1)
+  } else if (preset === 'weekly') {
+    const day = start.getDay()
+    start.setDate(start.getDate() - (day === 0 ? 6 : day - 1))
+    end.setTime(start.getTime())
+    end.setDate(end.getDate() + 7)
+  } else if (preset === 'monthly') {
+    start.setDate(1)
+    end.setTime(start.getTime())
+    end.setMonth(end.getMonth() + 1)
+  } else if (preset === 'yearly') {
+    start.setMonth(0); start.setDate(1)
+    end.setTime(start.getTime())
+    end.setFullYear(end.getFullYear() + 1)
+  }
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
 }
 
-export default function ContestCreatePage() {
+export default function EventCreatePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const groupId = id ? Number(id) : undefined
 
-  const createContestMutation = useCreateContest(groupId)
+  const createEventMutation = useCreateEvent(groupId)
 
   const [name, setName] = useState('')
-  const [contestType, setContestType] = useState<ContestType>('regular')
+  const [eventType, setEventType] = useState<EventType>('regular')
   const [rankingType, setRankingType] = useState<RankingType>('score')
   const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
   const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
@@ -58,28 +69,29 @@ export default function ContestCreatePage() {
     }
     setError('')
     try {
-      await createContestMutation.mutateAsync({
+      await createEventMutation.mutateAsync({
         name: name.trim(),
-        contest_type: contestType,
+        event_type: eventType,
         group_id: groupId ?? null,
         ranking_type: rankingType,
         ...uma,
         ...scoring,
-        ...(contestType === 'aggregate' ? {
+        ...(eventType === 'aggregate' ? {
           period_start: periodStart || null,
           period_end: periodEnd || null,
+          preset_type: periodPreset,
         } : {}),
       })
       navigate(`/groups/${id}`)
     } catch {
-      setError('랭킹전 생성에 실패했습니다.')
+      setError('이벤트 생성에 실패했습니다.')
     }
   }
 
-  const CONTEST_TYPE_DESC: Record<ContestType, string> = {
+  const EVENT_TYPE_DESC: Record<EventType, string> = {
     regular: '기록이 전체 랭킹에 합산됩니다.',
     independent: '기록이 전체 랭킹에 합산되지 않습니다. (연습전, 이벤트전 등)',
-    aggregate: '다른 랭킹전의 기록을 모아서 기간별로 집계합니다.',
+    aggregate: '다른 이벤트의 기록을 모아서 기간별로 집계합니다.',
   }
 
   const PRESET_LABELS: { value: PeriodPreset; label: string }[] = [
@@ -100,7 +112,7 @@ export default function ContestCreatePage() {
         >
           ← Back
         </button>
-        <h2 className="m-0 ml-4">랭킹전 만들기</h2>
+        <h2 className="m-0 ml-4">이벤트 만들기</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -112,28 +124,28 @@ export default function ContestCreatePage() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="랭킹전 이름"
+            placeholder="이벤트 이름"
             className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
           />
         </div>
 
         <div>
-          <label className="block font-bold mb-1.5 text-sm">랭킹전 타입</label>
+          <label className="block font-bold mb-1.5 text-sm">이벤트 타입</label>
           <select
-            value={contestType}
-            onChange={(e) => setContestType(e.target.value as ContestType)}
+            value={eventType}
+            onChange={(e) => setEventType(e.target.value as EventType)}
             className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
           >
-            <option value="regular">일반 랭킹전 (regular)</option>
-            <option value="independent">독립 랭킹전 (independent)</option>
-            <option value="aggregate">집계 랭킹 (aggregate)</option>
+            <option value="regular">일반 이벤트 (regular)</option>
+            <option value="independent">독립 이벤트 (independent)</option>
+            <option value="aggregate">집계 (aggregate)</option>
           </select>
           <p className="mt-1.5 mb-0 text-xs text-gray-500">
-            {CONTEST_TYPE_DESC[contestType]}
+            {EVENT_TYPE_DESC[eventType]}
           </p>
         </div>
 
-        {contestType === 'aggregate' && (
+        {eventType === 'aggregate' && (
           <div>
             <label className="block font-bold mb-1.5 text-sm">집계 기간</label>
             <div className="flex flex-wrap gap-2 mb-3">
@@ -234,10 +246,10 @@ export default function ContestCreatePage() {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={createContestMutation.isPending}
+            disabled={createEventMutation.isPending}
             className="px-5 py-2 text-sm cursor-pointer"
           >
-            {createContestMutation.isPending ? '생성 중...' : '생성'}
+            {createEventMutation.isPending ? '생성 중...' : '생성'}
           </button>
         </div>
       </form>

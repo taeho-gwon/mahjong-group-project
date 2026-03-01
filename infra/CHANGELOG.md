@@ -4,6 +4,29 @@
 
 ---
 
+## [2026-03-02] @agent-devops ✅ DONE — Contest → Event 리네이밍 migration
+
+### Migration 적용 — initial_schema 재생성 (데이터 초기화)
+- 기존 migration 2개 삭제 (`e527fa9f2984`, `0dfadc37485c`)
+- DB 스키마 전체 초기화 후 `initial_schema` 재생성 (`e7340feacebb`)
+- `infra/db/env.py` import 수정: `contest` → `event`
+- 테이블: `events` (구 `contests`), FK: `game_records.event_id`, enum: `eventtype`
+- `is_closed`, `preset_type`, `is_default`, `period_start/end` 모두 포함
+- `uv run alembic current` → `e7340feacebb (head)` ✅
+
+---
+
+## [2026-03-01] @agent-devops ✅ DONE — Contest 종료 기능 migration
+
+### Migration 적용 — Contest 종료 + preset_type
+- 마이그레이션 파일: `0dfadc37485c_add_contest_is_closed_and_preset_type.py`
+- `contests` 테이블에 `is_closed` 컬럼 추가 (Boolean, NOT NULL, default false)
+- `contests` 테이블에 `preset_type` 컬럼 추가 (Enum presettype, nullable)
+- `downgrade()`에서 enum 타입 정리 포함
+- `uv run alembic current` → `0dfadc37485c (head)` ✅
+
+---
+
 ## [2026-03-01] @agent-devops ✅ DONE — 프로덕션 배포 준비
 
 ### Fixed
@@ -68,8 +91,8 @@
 
 ## 마이그레이션 현황
 
-- 현재 HEAD: `e527fa9f2984` (initial_schema — 전체 스키마 통합)
-- 이전 12개 개별 마이그레이션은 통합되어 삭제됨
+- 현재 HEAD: `e7340feacebb` (initial_schema — Contest→Event 리네이밍 반영)
+- 이전 migration들은 초기화로 삭제됨
 
 ---
 

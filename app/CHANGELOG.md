@@ -4,6 +4,75 @@
 
 ---
 
+## [2026-03-02] @agent-backend ✅ DONE — Contest → Event 전체 리네이밍
+
+### Changed (Breaking)
+- `app/models/contest.py` → `app/models/event.py`: Contest → Event, ContestType → EventType, `__tablename__ = "events"`
+- `app/schemas/contest.py` → `app/schemas/event.py`: ContestCreate/Update/Response → EventCreate/Update/Response
+- `app/repositories/contest.py` → `app/repositories/event.py`: ContestRepository → EventRepository
+- `app/services/contest.py` → `app/services/event.py`: ContestService → EventService, 모든 메서드명 contest → event
+- `app/api/contest.py` → `app/api/event.py`: `/contests` → `/events`, tags/함수명 변경
+- `app/api/deps.py`: get_contest_* → get_event_*, GroupService/GameRecordService DI 변경
+- `app/api/router.py`: contest_router → event_router
+- `app/models/game_record.py`: contest_id → event_id, Contest → Event relationship
+- `app/schemas/game_record.py`: contest_id → event_id
+- `app/repositories/game_record.py`: Contest → Event, ContestType → EventType
+- `app/services/game_record.py`: contest_repo → event_repo, ContestType → EventType
+- `app/services/group.py`: contest_repo → event_repo
+- `tests/test_contests.py` → `tests/test_events.py`: 모든 /contests → /events, contest → event
+- `tests/test_game_records.py`: contest → event 변수/URL/payload 변경
+- `tests/test_groups.py`: default aggregate contest → event 테스트 변경
+- `docs/api-contract.md`: 전체 /contests → /events, ContestResponse → EventResponse, contest_id → event_id
+
+### 완료 조건
+- [x] `uv run pytest` 전체 통과 (60개)
+- [x] `docs/api-contract.md` 업데이트
+- [x] `app/CHANGELOG.md` DONE 기록
+- **영향**: @agent-devops — Breaking migration (테이블명 contests→events, enum contesttype→eventtype, 컬럼 contest_id→event_id, 데이터 초기화 OK)
+- **영향**: @agent-frontend — API 경로 `/contests` → `/events`, 모든 타입명 Contest→Event, contest_id→event_id
+
+---
+
+## [2026-03-01] @agent-backend ✅ DONE — GroupCreate에서 UmaFields 제거
+
+### Changed
+- `GroupCreate` 스키마에서 `UmaFields` 상속 제거 → `BaseModel` 직접 상속
+- `ContestRepository.create_default_aggregate()`에서 `uma` 파라미터 제거, 고정 기본값(30/10/-10/-30) 사용
+- `GroupService.create_group()`에서 `create_default_aggregate` 호출 시 uma 인자 제거
+- `docs/api-contract.md` — POST /groups 요청에서 uma 필드 제거
+
+### 완료 조건
+- [x] `uv run pytest` 전체 통과 (60개)
+- [x] `docs/api-contract.md` 업데이트
+- [x] `app/CHANGELOG.md` DONE 기록
+- **영향**: @agent-frontend — 그룹 생성 폼에서 우마 입력 제거
+
+---
+
+## [2026-03-01] @agent-backend ✅ DONE — Contest 종료(close) 기능 + preset_type
+### Added
+- `PresetType` StrEnum 추가 (daily/weekly/monthly/yearly/all/custom)
+- Contest 모델에 `is_closed` (bool, default false), `preset_type` (nullable enum) 컬럼 추가
+- `ContestCreate`에 `preset_type` 필드, `ContestResponse`에 `is_closed`, `preset_type` 필드 추가
+- `ContestRepository.close()` 메서드 추가
+- `ContestService.close_contest()` 메서드 추가 (owner/admin 권한 체크)
+- `POST /contests/{id}/close` 엔드포인트 추가
+- 마감된 contest 수정 차단 (`update_contest()`)
+- 마감된 contest에 game record 추가 차단 (`create_game_record()`)
+- 비-aggregate contest에 `preset_type=None` 강제 (`create_contest()`)
+- `ContestService`에 `GroupRepository` 주입 추가 (DI 변경)
+- 테스트 7개 추가 (53 → 60): close 성공, 이미 마감 400, 비관리자 403, 마감 수정 차단, 마감 기록 차단, preset_type 생성, 비-aggregate preset_type 무시
+
+### 완료 조건
+- [x] `uv run pytest` 전체 통과 (60 tests)
+- [x] `docs/api-contract.md` 업데이트 (`POST /contests/{id}/close`, `is_closed`, `preset_type` 추가)
+- [x] `app/CHANGELOG.md` DONE 기록
+- [x] `infra/CHANGELOG.md`에 TODO(@agent-devops) 이미 기록됨 (migration: is_closed + preset_type)
+- **영향**: @agent-devops — migration 필요 (컬럼 2개: `is_closed` bool NOT NULL default false, `preset_type` enum nullable)
+- **영향**: @agent-frontend — `is_closed`, `preset_type` 필드 추가, `POST /contests/{id}/close` API 사용 가능
+
+---
+
 ## [2026-03-01] @agent-backend ✅ DONE
 ### Fixed — 기술부채 해결
 - `GameRecordCreate`/`GameRecordUpdate`에 점수 합계 == 100,000 검증 추가

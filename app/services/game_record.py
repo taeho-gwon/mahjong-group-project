@@ -1,9 +1,9 @@
 from fastapi import HTTPException, status
 
-from app.models.contest import ContestType
+from app.models.event import EventType
 from app.models.game_record import GameRecord
 from app.models.group import MemberRole
-from app.repositories.contest import ContestRepository
+from app.repositories.event import EventRepository
 from app.repositories.game_record import GameRecordRepository
 from app.repositories.group import GroupRepository
 from app.schemas.game_record import (
@@ -18,11 +18,11 @@ class GameRecordService:
         self,
         game_record_repo: GameRecordRepository,
         group_repo: GroupRepository,
-        contest_repo: ContestRepository,
+        event_repo: EventRepository,
     ) -> None:
         self.game_record_repo = game_record_repo
         self.group_repo = group_repo
-        self.contest_repo = contest_repo
+        self.event_repo = event_repo
 
     async def _require_group_editor(self, group_id: int | None, user_id: int) -> None:
         """group_id 그룹에서 owner/admin인지 확인. 아니면 403."""
@@ -41,6 +41,13 @@ class GameRecordService:
     async def create_game_record(
         self, created_by_id: int, data: GameRecordCreate
     ) -> GameRecord:
+        if data.event_id is not None:
+            event = await self.event_repo.get_by_id(data.event_id)
+            if event and event.is_closed:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot add records to a closed event",
+                )
         if data.group_id is not None:
             member = await self.group_repo.get_member(data.group_id, created_by_id)
             if member is None:
@@ -64,20 +71,20 @@ class GameRecordService:
         page: int,
         size: int,
         group_id: int | None,
-        contest_id: int | None = None,
+        event_id: int | None = None,
     ) -> PaginatedGameRecordResponse:
         offset = (page - 1) * size
         is_aggregate = False
         aggregate_group_id = group_id
         period_start = None
         period_end = None
-        if contest_id is not None:
-            contest = await self.contest_repo.get_by_id(contest_id)
-            if contest and contest.contest_type == ContestType.aggregate:
+        if event_id is not None:
+            event = await self.event_repo.get_by_id(event_id)
+            if event and event.event_type == EventType.aggregate:
                 is_aggregate = True
-                aggregate_group_id = contest.group_id
-                period_start = contest.period_start
-                period_end = contest.period_end
+                aggregate_group_id = event.group_id
+                period_start = event.period_start
+                period_end = event.period_end
         if is_aggregate:
             items = await self.game_record_repo.list(
                 offset,
@@ -94,8 +101,8 @@ class GameRecordService:
                 period_end=period_end,
             )
         else:
-            items = await self.game_record_repo.list(offset, size, group_id, contest_id)
-            total = await self.game_record_repo.count(group_id, contest_id)
+            items = await self.game_record_repo.list(offset, size, group_id, event_id)
+            total = await self.game_record_repo.count(group_id, event_id)
         return PaginatedGameRecordResponse(
             items=items, total=total, page=page, size=size
         )

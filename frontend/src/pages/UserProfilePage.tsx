@@ -45,9 +45,9 @@ export default function UserProfilePage() {
           </section>
 
           <section>
-            <h3 className="mt-0 mb-3">공통 소속 그룹</h3>
+            <h3 className="mt-0 mb-3">공통 소속 모임</h3>
             {profile.shared_groups.length === 0 ? (
-              <p className="text-sm text-gray-400 m-0">공통 그룹이 없습니다.</p>
+              <p className="text-sm text-gray-400 m-0">공통 모임이 없습니다.</p>
             ) : (
               <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
                 {profile.shared_groups.map((g) => (

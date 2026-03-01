@@ -36,7 +36,6 @@ uv run alembic upgrade head
 if [ "$SEED" = true ]; then
   echo "=== [4/4] 시드 데이터 투입 ==="
   PYTHONPATH=. uv run python scripts/seed.py
-  PYTHONPATH=. uv run python scripts/add_game_records.py
 else
   echo "=== [4/4] 시드 스킵 (--no-seed) ==="
 fi

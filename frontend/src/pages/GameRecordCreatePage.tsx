@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import type { MemberInfo } from '../api/groups'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
-import { useContests } from '../hooks/useContests'
+import { useEvents } from '../hooks/useEvents'
 import { useCreateGameRecord } from '../hooks/mutations/useCreateGameRecord'
 
 const POSITIONS = [
@@ -31,13 +31,13 @@ export default function GameRecordCreatePage() {
   const groupId = id ? Number(id) : undefined
 
   const { data: group, isLoading } = useGroupDetail(groupId)
-  const { data: contests = [] } = useContests(groupId)
+  const { data: events = [] } = useEvents(groupId)
 
   const members: MemberInfo[] = group?.members ?? []
-  const selectableContests = contests.filter((c) => c.contest_type !== 'aggregate')
-  const [selectedContestId, setSelectedContestId] = useState<number | null>(null)
+  const selectableEvents = events.filter((c) => c.event_type !== 'aggregate' && !c.is_closed)
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
 
-  const createGameRecordMutation = useCreateGameRecord(selectedContestId)
+  const createGameRecordMutation = useCreateGameRecord(selectedEventId)
 
   const [error, setError] = useState('')
   const [positions, setPositions] = useState<Record<Position, PositionState>>({
@@ -84,7 +84,7 @@ export default function GameRecordCreatePage() {
         west_point: Number(west.point),
         north_point: Number(north.point),
         group_id: groupId,
-        contest_id: selectedContestId,
+        event_id: selectedEventId,
       })
       navigate(`/groups/${id}`)
     } catch {
@@ -110,16 +110,16 @@ export default function GameRecordCreatePage() {
         <>
           {error && <p className="text-red-600 mb-4">{error}</p>}
 
-          {selectableContests.length > 0 && (
+          {selectableEvents.length > 0 && (
             <div className="mb-5">
-              <label className="block font-bold mb-1.5 text-sm">랭킹전 (선택)</label>
+              <label className="block font-bold mb-1.5 text-sm">이벤트 (선택)</label>
               <select
-                value={selectedContestId ?? ''}
-                onChange={(e) => setSelectedContestId(e.target.value ? Number(e.target.value) : null)}
+                value={selectedEventId ?? ''}
+                onChange={(e) => setSelectedEventId(e.target.value ? Number(e.target.value) : null)}
                 className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
               >
                 <option value="">없음 (전체에 포함)</option>
-                {selectableContests.map((c) => (
+                {selectableEvents.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>

@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
-import { useContests } from '../hooks/useContests'
+import { useEvents } from '../hooks/useEvents'
 import { useMe } from '../hooks/useMe'
 import { useUpdateGroup } from '../hooks/mutations/useUpdateGroup'
 import { useUpdateMemberRole } from '../hooks/mutations/useUpdateMemberRole'
@@ -24,7 +24,7 @@ export default function GroupManagePage() {
   const groupId = id ? Number(id) : undefined
 
   const { data: group, isLoading, isError } = useGroupDetail(groupId)
-  const { data: contests = [] } = useContests(groupId)
+  const { data: events = [] } = useEvents(groupId)
   const { data: me } = useMe()
 
   const updateGroupMutation = useUpdateGroup(groupId!)
@@ -68,7 +68,7 @@ export default function GroupManagePage() {
       })
       setSaveSuccess(true)
     } catch {
-      setSaveError('Failed to save changes')
+      setSaveError('저장에 실패했습니다.')
     }
   }
 
@@ -79,7 +79,7 @@ export default function GroupManagePage() {
       setInviteExpiresAt(expires_at)
       setCopied(false)
     } catch {
-      alert('Failed to generate invite link')
+      alert('초대 링크 생성에 실패했습니다.')
     }
   }
 
@@ -94,7 +94,7 @@ export default function GroupManagePage() {
     try {
       await removeMemberMutation.mutateAsync(userId)
     } catch {
-      alert('Failed to remove member')
+      alert('멤버 강퇴에 실패했습니다.')
     }
   }
 
@@ -102,12 +102,12 @@ export default function GroupManagePage() {
     try {
       await updateRoleMutation.mutateAsync({ userId, role })
     } catch {
-      alert('Failed to update role')
+      alert('역할 변경에 실패했습니다.')
     }
   }
 
   function handleLeave() {
-    if (!window.confirm('정말 이 그룹에서 탈퇴하시겠습니까?')) return
+    if (!window.confirm('정말 이 모임에서 탈퇴하시겠습니까?')) return
     leaveGroupMutation.mutate()
   }
 
@@ -125,17 +125,17 @@ export default function GroupManagePage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="mt-6 text-red-600">Failed to load group</p>
+        <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
       ) : group ? (
         <>
-          <h2 className="mt-6 mb-7">Manage: {group.name}</h2>
+          <h2 className="mt-6 mb-7">모임 관리: {group.name}</h2>
 
           {/* Group Settings */}
           <section className="mb-10">
-            <h3 className="mt-0 mb-4 text-base">Group Settings</h3>
+            <h3 className="mt-0 mb-4 text-base">모임 설정</h3>
             <form onSubmit={handleSave} className="flex flex-col gap-3">
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1">Name *</label>
+                <label className="block text-[13px] text-gray-600 mb-1">이름 *</label>
                 <input
                   type="text"
                   value={name}
@@ -145,7 +145,7 @@ export default function GroupManagePage() {
                 />
               </div>
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1">Description</label>
+                <label className="block text-[13px] text-gray-600 mb-1">설명</label>
                 <input
                   type="text"
                   value={description}
@@ -154,7 +154,7 @@ export default function GroupManagePage() {
                 />
               </div>
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1.5">Join Policy</label>
+                <label className="block text-[13px] text-gray-600 mb-1.5">가입 정책</label>
                 <div className="flex gap-4 text-sm items-center">
                   <label className="cursor-pointer">
                     <input
@@ -165,7 +165,7 @@ export default function GroupManagePage() {
                       onChange={() => { setJoinPolicy('public'); setSaveSuccess(false) }}
                       className="mr-1"
                     />
-                    Public
+                    공개
                   </label>
                   <label className="cursor-pointer">
                     <input
@@ -176,41 +176,41 @@ export default function GroupManagePage() {
                       onChange={() => { setJoinPolicy('private'); setSaveSuccess(false) }}
                       className="mr-1"
                     />
-                    Private
+                    비공개
                   </label>
                 </div>
               </div>
               {saveError && <p className="text-red-600 m-0 text-sm">{saveError}</p>}
-              {saveSuccess && <p className="text-green-700 m-0 text-sm">Saved successfully.</p>}
+              {saveSuccess && <p className="text-green-700 m-0 text-sm">저장되었습니다.</p>}
               <button
                 type="submit"
                 disabled={updateGroupMutation.isPending}
                 className="px-4 py-2 cursor-pointer self-start"
               >
-                {updateGroupMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {updateGroupMutation.isPending ? '저장 중...' : '저장'}
               </button>
             </form>
           </section>
 
-          {/* Contests */}
+          {/* Events */}
           <section className="mb-10">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="m-0 text-base">랭킹전 관리</h3>
+              <h3 className="m-0 text-base">이벤트 관리</h3>
               <button
-                onClick={() => navigate(`/groups/${id}/contests/new`)}
+                onClick={() => navigate(`/groups/${id}/events/new`)}
                 className="text-[13px] px-3 py-1 cursor-pointer"
               >
-                랭킹전 만들기
+                이벤트 만들기
               </button>
             </div>
-            {contests.length === 0 ? (
-              <p className="text-sm text-gray-400 m-0">아직 랭킹전이 없습니다.</p>
+            {events.length === 0 ? (
+              <p className="text-sm text-gray-400 m-0">아직 이벤트가 없습니다.</p>
             ) : (
               <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
-                {contests.map((c) => (
+                {events.map((c) => (
                   <li
                     key={c.id}
-                    onClick={() => navigate(`/contests/${c.id}`)}
+                    onClick={() => navigate(`/events/${c.id}`)}
                     className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm cursor-pointer"
                   >
                     <span>{c.name}</span>
@@ -239,13 +239,13 @@ export default function GroupManagePage() {
 
           {/* Invite Link */}
           <section className="mb-10">
-            <h3 className="mt-0 mb-4 text-base">Invite Link</h3>
+            <h3 className="mt-0 mb-4 text-base">초대 링크</h3>
             <button
               onClick={handleGenerateInvite}
               disabled={generateInviteMutation.isPending}
               className="px-3.5 py-1.5 cursor-pointer text-sm"
             >
-              {generateInviteMutation.isPending ? 'Generating...' : inviteUrl ? 'Regenerate Link' : '초대 링크 생성'}
+              {generateInviteMutation.isPending ? '생성 중...' : inviteUrl ? '링크 재생성' : '초대 링크 생성'}
             </button>
             {inviteUrl && (
               <div className="mt-3 flex flex-col gap-1.5">
@@ -269,7 +269,7 @@ export default function GroupManagePage() {
 
           {/* Member Management */}
           <section>
-            <h3 className="mt-0 mb-4 text-base">Members ({group.members.length})</h3>
+            <h3 className="mt-0 mb-4 text-base">멤버 ({group.members.length})</h3>
             <ul className="list-none p-0 m-0 flex flex-col gap-2">
               {[...group.members].sort((a, b) => {
                 const order = { owner: 0, admin: 1, member: 2 }
@@ -303,7 +303,7 @@ export default function GroupManagePage() {
                           onClick={() => handleRoleChange(m.id, m.role === 'member' ? 'admin' : 'member')}
                           className="text-xs px-2 py-0.5 cursor-pointer bg-transparent border border-gray-600 rounded"
                         >
-                          {m.role === 'member' ? 'Make Admin' : 'Make Member'}
+                          {m.role === 'member' ? '관리자로 변경' : '멤버로 변경'}
                         </button>
                       )}
                       {canKick && (
@@ -335,13 +335,13 @@ export default function GroupManagePage() {
               <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
               <button
                 onClick={() => {
-                  if (!window.confirm('정말로 이 그룹을 삭제하시겠습니까? 모든 데이터가 삭제됩니다.')) return
+                  if (!window.confirm('정말로 이 모임을 삭제하시겠습니까? 모든 데이터가 삭제됩니다.')) return
                   deleteGroupMutation.mutate(groupId!)
                 }}
                 disabled={deleteGroupMutation.isPending}
                 className="px-5 py-2 text-sm cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
               >
-                {deleteGroupMutation.isPending ? '삭제 중...' : '그룹 삭제'}
+                {deleteGroupMutation.isPending ? '삭제 중...' : '모임 삭제'}
               </button>
             </section>
           )}

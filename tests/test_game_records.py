@@ -5,8 +5,8 @@ _GROUP_PAYLOAD = {
     "join_policy": "public",
 }
 
-_CONTEST_PAYLOAD = {
-    "name": "Test Contest",
+_EVENT_PAYLOAD = {
+    "name": "Test Event",
     "ranking_type": "score",
     "uma_1st": 30,
     "uma_2nd": 10,
@@ -21,7 +21,7 @@ _CONTEST_PAYLOAD = {
 
 async def _login(
     client: AsyncClient, username: str, password: str = "password123"
-) -> dict[str, str]:
+) -> dict:
     creds = {"username": username, "password": password}
     r = await client.post("/auth/register", json=creds)
     user_id = r.json()["id"]
@@ -31,7 +31,7 @@ async def _login(
 
 
 async def _setup_game(client: AsyncClient) -> dict:
-    """Create 4 players, a group, a contest and return IDs."""
+    """Create 4 players, a group, an event and return IDs."""
     p1 = await _login(client, "player1")
     p2 = await _login(client, "player2")
     p3 = await _login(client, "player3")
@@ -40,23 +40,23 @@ async def _setup_game(client: AsyncClient) -> dict:
     group_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=p1["headers"])
     group_id = group_r.json()["id"]
 
-    contest_r = await client.post(
-        "/contests",
-        json={**_CONTEST_PAYLOAD, "group_id": group_id},
+    event_r = await client.post(
+        "/events",
+        json={**_EVENT_PAYLOAD, "group_id": group_id},
         headers=p1["headers"],
     )
-    contest_id = contest_r.json()["id"]
+    event_id = event_r.json()["id"]
 
     return {
         "player_ids": [p1["id"], p2["id"], p3["id"], p4["id"]],
         "creator_headers": p1["headers"],
         "other_headers": p2["headers"],
         "group_id": group_id,
-        "contest_id": contest_id,
+        "event_id": event_id,
     }
 
 
-def _record_payload(player_ids: list[int], group_id: int, contest_id: int) -> dict:
+def _record_payload(player_ids: list[int], group_id: int, event_id: int) -> dict:
     return {
         "east_player_id": player_ids[0],
         "south_player_id": player_ids[1],
@@ -67,35 +67,35 @@ def _record_payload(player_ids: list[int], group_id: int, contest_id: int) -> di
         "west_point": 20000,
         "north_point": 10000,
         "group_id": group_id,
-        "contest_id": contest_id,
+        "event_id": event_id,
     }
 
 
 async def test_create_game_record_success(client: AsyncClient) -> None:
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
 
     r = await client.post("/game-records", json=payload, headers=ctx["creator_headers"])
     assert r.status_code == 201
     data = r.json()
     assert data["east_point"] == 40000
-    assert data["contest_id"] == ctx["contest_id"]
+    assert data["event_id"] == ctx["event_id"]
 
 
 async def test_create_game_record_unauthorized(client: AsyncClient) -> None:
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
 
     r = await client.post("/game-records", json=payload)
     assert r.status_code == 401
 
 
-async def test_list_game_records_by_contest(client: AsyncClient) -> None:
+async def test_list_game_records_by_event(client: AsyncClient) -> None:
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
     await client.post("/game-records", json=payload, headers=ctx["creator_headers"])
 
-    r = await client.get(f"/game-records?contest_id={ctx['contest_id']}")
+    r = await client.get(f"/game-records?event_id={ctx['event_id']}")
     assert r.status_code == 200
     data = r.json()
     assert data["total"] >= 1
@@ -104,7 +104,7 @@ async def test_list_game_records_by_contest(client: AsyncClient) -> None:
 async def test_update_game_record_by_group_owner(client: AsyncClient) -> None:
     # creator == group owner → 수정 허용
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
     create_r = await client.post(
         "/game-records", json=payload, headers=ctx["creator_headers"]
     )
@@ -122,7 +122,7 @@ async def test_update_game_record_by_group_owner(client: AsyncClient) -> None:
 async def test_update_game_record_by_member_forbidden(client: AsyncClient) -> None:
     # 일반 member → 403
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
     create_r = await client.post(
         "/game-records", json=payload, headers=ctx["creator_headers"]
     )
@@ -141,7 +141,7 @@ async def test_update_game_record_by_member_forbidden(client: AsyncClient) -> No
 async def test_delete_game_record_by_group_owner(client: AsyncClient) -> None:
     # group owner → 삭제 허용
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
     create_r = await client.post(
         "/game-records", json=payload, headers=ctx["creator_headers"]
     )
@@ -155,7 +155,7 @@ async def test_delete_game_record_by_group_owner(client: AsyncClient) -> None:
 
 async def test_get_game_record_success(client: AsyncClient) -> None:
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
     create_r = await client.post(
         "/game-records", json=payload, headers=ctx["creator_headers"]
     )
@@ -173,7 +173,7 @@ async def test_get_game_record_not_found(client: AsyncClient) -> None:
 
 async def test_create_game_record_invalid_point_sum(client: AsyncClient) -> None:
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
     payload["east_point"] = 50000  # sum = 50000+30000+20000+10000 = 110000
 
     r = await client.post("/game-records", json=payload, headers=ctx["creator_headers"])
@@ -182,7 +182,7 @@ async def test_create_game_record_invalid_point_sum(client: AsyncClient) -> None
 
 async def test_create_game_record_non_member_forbidden(client: AsyncClient) -> None:
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
 
     # player2 is not a group member
     r = await client.post(
@@ -194,7 +194,7 @@ async def test_create_game_record_non_member_forbidden(client: AsyncClient) -> N
 async def test_delete_game_record_by_member_forbidden(client: AsyncClient) -> None:
     # 일반 member → 403
     ctx = await _setup_game(client)
-    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["contest_id"])
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
     create_r = await client.post(
         "/game-records", json=payload, headers=ctx["creator_headers"]
     )

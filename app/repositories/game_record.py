@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from app.models.contest import Contest, ContestType
+from app.models.event import Event, EventType
 from app.models.game_record import GameRecord
 from app.repositories.base import BaseRepository
 from app.schemas.game_record import GameRecordCreate, GameRecordUpdate
@@ -32,7 +32,7 @@ class GameRecordRepository(BaseRepository):
             west_point=data.west_point,
             north_point=data.north_point,
             group_id=data.group_id,
-            contest_id=data.contest_id,
+            event_id=data.event_id,
             game_link=data.game_link,
             played_at=played_at,
         )
@@ -55,7 +55,7 @@ class GameRecordRepository(BaseRepository):
         offset: int,
         limit: int,
         group_id: int | None = None,
-        contest_id: int | None = None,
+        event_id: int | None = None,
         is_aggregate: bool = False,
         period_start: datetime | None = None,
         period_end: datetime | None = None,
@@ -63,11 +63,11 @@ class GameRecordRepository(BaseRepository):
         if is_aggregate and group_id is not None:
             stmt = _with_players(
                 select(GameRecord)
-                .outerjoin(Contest, GameRecord.contest_id == Contest.id)
+                .outerjoin(Event, GameRecord.event_id == Event.id)
                 .where(GameRecord.group_id == group_id)
                 .where(
-                    (GameRecord.contest_id.is_(None))
-                    | (Contest.contest_type == ContestType.regular)
+                    (GameRecord.event_id.is_(None))
+                    | (Event.event_type == EventType.regular)
                 )
             )
             if period_start is not None:
@@ -78,8 +78,8 @@ class GameRecordRepository(BaseRepository):
             stmt = _with_players(select(GameRecord))
             if group_id is not None:
                 stmt = stmt.where(GameRecord.group_id == group_id)
-            if contest_id is not None:
-                stmt = stmt.where(GameRecord.contest_id == contest_id)
+            if event_id is not None:
+                stmt = stmt.where(GameRecord.event_id == event_id)
         stmt = stmt.order_by(GameRecord.played_at.desc()).offset(offset).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
@@ -87,7 +87,7 @@ class GameRecordRepository(BaseRepository):
     async def count(
         self,
         group_id: int | None = None,
-        contest_id: int | None = None,
+        event_id: int | None = None,
         is_aggregate: bool = False,
         period_start: datetime | None = None,
         period_end: datetime | None = None,
@@ -96,11 +96,11 @@ class GameRecordRepository(BaseRepository):
             stmt = (
                 select(func.count())
                 .select_from(GameRecord)
-                .outerjoin(Contest, GameRecord.contest_id == Contest.id)
+                .outerjoin(Event, GameRecord.event_id == Event.id)
                 .where(GameRecord.group_id == group_id)
                 .where(
-                    (GameRecord.contest_id.is_(None))
-                    | (Contest.contest_type == ContestType.regular)
+                    (GameRecord.event_id.is_(None))
+                    | (Event.event_type == EventType.regular)
                 )
             )
             if period_start is not None:
@@ -111,8 +111,8 @@ class GameRecordRepository(BaseRepository):
             stmt = select(func.count()).select_from(GameRecord)
             if group_id is not None:
                 stmt = stmt.where(GameRecord.group_id == group_id)
-            if contest_id is not None:
-                stmt = stmt.where(GameRecord.contest_id == contest_id)
+            if event_id is not None:
+                stmt = stmt.where(GameRecord.event_id == event_id)
         result = await self.db.execute(stmt)
         return result.scalar_one()
 

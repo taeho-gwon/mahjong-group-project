@@ -27,10 +27,10 @@ async def list_game_records(
     page: int = Query(default=1, ge=1),
     size: int = Query(default=20, ge=1, le=100),
     group_id: int | None = Query(default=None),
-    contest_id: int | None = Query(default=None),
+    event_id: int | None = Query(default=None),
     game_record_service: GameRecordService = Depends(get_game_record_service),
 ) -> PaginatedGameRecordResponse:
-    return await game_record_service.list_game_records(page, size, group_id, contest_id)
+    return await game_record_service.list_game_records(page, size, group_id, event_id)
 
 
 @router.get("/{record_id}", response_model=GameRecordResponse)

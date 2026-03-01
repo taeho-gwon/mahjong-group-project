@@ -4,6 +4,139 @@
 
 ---
 
+## [2026-03-02] @agent-frontend ✅ DONE — UI 라벨 "그룹" → "모임" 전체 변경
+
+### Changed
+- 토스트 메시지: useCreateGroup, useUpdateGroup, useDeleteGroup, useJoinGroup, useLeaveGroup — "그룹" → "모임"
+- GroupDetailPage — "그룹 탈퇴"→"모임 탈퇴", confirm 문구, Join Policy/Owner/Members/Created 한글화
+- GroupManagePage — "Manage:"→"모임 관리:", "Group Settings"→"모임 설정", 폼 라벨/버튼/에러메시지 한글화, "그룹 삭제"→"모임 삭제"
+- GroupCreatePage — "Create Group"→"모임 만들기", placeholder/Join Policy/에러메시지/버튼 한글화
+- MyPage — "My Groups"→"내 모임", "Create Group"→"모임 만들기", 빈 상태 문구 한글화, 프로필 라벨 한글화
+- MainPage — "Mahjong Groups"→"마작 모임", "My Page"→"마이페이지", 에러/빈상태 문구 한글화
+- UserProfilePage — "공통 소속 그룹"→"공통 소속 모임"
+- 코드 내부(변수명, API 경로, URL 라우트)는 Group 유지
+- `npm run build` 에러 없음, UI에서 "그룹" 텍스트 0건 확인
+
+---
+
+## [2026-03-02] @agent-frontend ✅ DONE — Contest → Event 전체 리네이밍
+
+### Changed
+- 파일 리네이밍 (11개): api/contests→events, hooks/useContests→useEvents 등, pages/Contest*→Event*
+- 타입/인터페이스: ContestResponse→EventResponse, ContestCreate→EventCreate, ContestUpdate→EventUpdate, ContestType→EventType
+- 함수/훅: createContest→createEvent, useContests→useEvents 등 전체
+- API 경로: /contests→/events, /contests/{id}/close→/events/{id}/close
+- URL 라우트 (App.tsx): /contests/→/events/, /groups/:id/contests/new→/groups/:id/events/new
+- UI 라벨: "랭킹전"→"이벤트", "컨테스트"→"이벤트" (모든 사용자 노출 텍스트)
+- Query Key: ['contests',...]→['events',...], ['contest',...]→['event',...]
+- 소비 페이지 업데이트: GroupDetailPage, GroupManagePage, GroupRankingPage, GameRecordCreatePage, GameRecordEditPage, GameRecordManagePage
+- `npm run build` 에러 없음, 코드에서 contest/Contest/랭킹전 문자열 제거 확인
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — 그룹 생성 페이지 분리
+
+### Changed
+- `src/pages/GroupCreatePage.tsx` — 신규 생성 (`/groups/new`), MyPage에서 그룹 생성 폼 분리
+  - 생성 성공 시 해당 그룹 상세 페이지로 자동 이동
+- `src/pages/MyPage.tsx` — 생성 폼 제거, "My Groups" 헤더 옆에 `+ Create Group` 링크 버튼 추가
+- `src/App.tsx` — `/groups/new` 라우트 추가
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — 그룹 생성 폼에서 우마 입력 제거
+
+### Changed
+- `src/api/groups.ts` — `createGroup()` 함수에서 uma 파라미터 제거
+- `src/hooks/mutations/useCreateGroup.ts` — mutation 타입에서 uma 필드 제거
+- `src/pages/GroupCreatePage.tsx` — 우마 입력 필드(1~4위), 관련 state, validation 모두 제거
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — Contest 종료 UI + Auto-Rolling Aggregate
+
+### Added
+- `src/api/contests.ts` — `PresetType` 타입, `is_closed`/`preset_type` 필드, `closeContest()` 함수 추가
+- `src/hooks/mutations/useCloseContest.ts` — 마감 mutation 훅
+- `src/hooks/useAutoRollAggregates.ts` — 기간 만료 aggregate 자동 마감 + 다음 기간 생성 훅
+
+### Changed
+- `src/pages/ContestCreatePage.tsx` — `computePeriod` 기간 계산 수정 (시작~끝 전체 기간), `preset_type` 전송
+- `src/pages/ContestManagePage.tsx` — 마감 버튼 추가, 마감된 contest 수정 폼 비활성화 + 배너
+- `src/pages/ContestDetailPage.tsx` — 마감 배지 표시
+- `src/pages/GroupDetailPage.tsx` — 활성/완료 contest 섹션 분리, auto-roll 훅 호출
+- `src/pages/GameRecordCreatePage.tsx` — 마감된 contest 드롭다운에서 제외
+
+---
+
+### 4. `ContestCreatePage.tsx` 수정
+
+**`computePeriod` 함수 변경:**
+- 기존: 기간 시작 ~ 오늘 (end = 당일 23:59:59)
+- 변경: 기간 시작 ~ 기간 끝 (전체 기간)
+  - `daily`: 오늘 00:00 → 내일 00:00
+  - `weekly`: 이번 주 월요일 00:00 → 다음 주 월요일 00:00
+  - `monthly`: 이번 달 1일 00:00 → 다음 달 1일 00:00
+  - `yearly`: 올해 1/1 00:00 → 내년 1/1 00:00
+
+**생성 시 `preset_type` 포함하여 전송:**
+- aggregate 선택 시: `preset_type` 값 포함 (all/daily/weekly/monthly/yearly/custom)
+- 비-aggregate: `preset_type` 전송하지 않음 (또는 null)
+
+---
+
+### 5. `ContestManagePage.tsx` 수정
+
+**마감 버튼 추가:**
+- 위험 구역(Danger Zone)에 "랭킹전 마감" 버튼 추가
+- `is_closed`가 이미 true이면 버튼 비활성화 또는 숨김
+- 클릭 시 confirm → `useCloseContest` mutation 실행
+- 마감된 contest는 수정 폼 전체 비활성화 (disabled)
+- 상단에 "마감됨" 배너 표시
+
+---
+
+### 6. `ContestDetailPage.tsx` 수정
+
+**마감 배지 표시:**
+- `is_closed === true`일 때 contest 이름 옆에 "마감" 배지 표시
+- 예: `<span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">마감</span>`
+
+---
+
+### 7. `GroupDetailPage.tsx` 수정
+
+**`useAutoRollAggregates` 훅 사용:**
+- contests 로드 후 auto-roll 훅 호출
+
+**활성/완료 contest 섹션 분리:**
+- 활성 contest: `is_closed === false`
+- 완료 contest: `is_closed === true` (접힌 상태로 표시, 토글 가능)
+
+---
+
+### 8. `GameRecordCreatePage.tsx` 수정
+
+**마감 contest 제외:**
+- contest 드롭다운에서 `is_closed === true`인 contest 제외
+- 기존 aggregate 제외 로직과 함께 적용:
+  ```ts
+  contests.filter(c => c.contest_type !== 'aggregate' && !c.is_closed)
+  ```
+
+---
+
+### 완료 조건
+- [ ] `npm run build` 에러 없음
+- [ ] 마감 버튼 동작: contest 마감 → 완료 목록 이동
+- [ ] 마감 contest 수정 폼 비활성화
+- [ ] 마감 contest에 게임 기록 추가 불가 (드롭다운에서 미표시)
+- [ ] aggregate auto-roll 동작 (기간 만료 감지 → 마감 + 새 기간 생성)
+- [ ] `frontend/CHANGELOG.md` DONE 기록
+- [ ] `docs/status.md` 업데이트
+
+---
+
 ## [2026-03-01] @agent-frontend
 
 ### Migrated

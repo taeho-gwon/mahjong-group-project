@@ -2,31 +2,32 @@ from datetime import datetime
 
 from pydantic import BaseModel, model_validator
 
-from app.models.contest import ContestType, RankingType
+from app.models.event import EventType, PresetType, RankingType
 from app.schemas.common import UmaFields
 
 
-class ContestCreate(UmaFields):
+class EventCreate(UmaFields):
     name: str
     group_id: int | None = None
     ranking_type: RankingType = RankingType.score
-    contest_type: ContestType = ContestType.regular
+    event_type: EventType = EventType.regular
     scoring_1st: int = 4
     scoring_2nd: int = 2
     scoring_3rd: int = 1
     scoring_4th: int = 0
     period_start: datetime | None = None
     period_end: datetime | None = None
+    preset_type: PresetType | None = None
 
     @model_validator(mode="after")
-    def check_period_order(self) -> "ContestCreate":
+    def check_period_order(self) -> "EventCreate":
         if self.period_start is not None and self.period_end is not None:
             if self.period_start >= self.period_end:
                 raise ValueError("period_start must be before period_end")
         return self
 
 
-class ContestUpdate(BaseModel):
+class EventUpdate(BaseModel):
     name: str | None = None
     group_id: int | None = None
     ranking_type: RankingType | None = None
@@ -40,7 +41,7 @@ class ContestUpdate(BaseModel):
     scoring_4th: int | None = None
 
     @model_validator(mode="after")
-    def validate_uma_fields(self) -> "ContestUpdate":
+    def validate_uma_fields(self) -> "EventUpdate":
         uma_values = [self.uma_1st, self.uma_2nd, self.uma_3rd, self.uma_4th]
         provided = [v for v in uma_values if v is not None]
         if provided and len(provided) != 4:
@@ -50,7 +51,7 @@ class ContestUpdate(BaseModel):
         return self
 
 
-class ContestResponse(BaseModel):
+class EventResponse(BaseModel):
     model_config = {"from_attributes": True}
 
     id: int
@@ -58,7 +59,7 @@ class ContestResponse(BaseModel):
     group_id: int | None
     created_by_id: int
     ranking_type: RankingType
-    contest_type: ContestType
+    event_type: EventType
     uma_1st: int
     uma_2nd: int
     uma_3rd: int
@@ -70,5 +71,7 @@ class ContestResponse(BaseModel):
     period_start: datetime | None
     period_end: datetime | None
     is_default: bool
+    is_closed: bool
+    preset_type: PresetType | None
     created_at: datetime
     updated_at: datetime

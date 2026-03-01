@@ -5,12 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.user import User
-from app.repositories.contest import ContestRepository
+from app.repositories.event import EventRepository
 from app.repositories.game_record import GameRecordRepository
 from app.repositories.group import GroupRepository
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
-from app.services.contest import ContestService
+from app.services.event import EventService
 from app.services.game_record import GameRecordService
 from app.services.group import GroupService
 from app.services.user import UserService
@@ -33,15 +33,15 @@ def get_auth_service(
     return AuthService(user_repo)
 
 
-def get_contest_repository(db: AsyncSession = Depends(get_db)) -> ContestRepository:
-    return ContestRepository(db)
+def get_event_repository(db: AsyncSession = Depends(get_db)) -> EventRepository:
+    return EventRepository(db)
 
 
 def get_group_service(
     group_repo: GroupRepository = Depends(get_group_repository),
-    contest_repo: ContestRepository = Depends(get_contest_repository),
+    event_repo: EventRepository = Depends(get_event_repository),
 ) -> GroupService:
-    return GroupService(group_repo, contest_repo)
+    return GroupService(group_repo, event_repo)
 
 
 def get_game_record_repository(
@@ -53,15 +53,16 @@ def get_game_record_repository(
 def get_game_record_service(
     game_record_repo: GameRecordRepository = Depends(get_game_record_repository),
     group_repo: GroupRepository = Depends(get_group_repository),
-    contest_repo: ContestRepository = Depends(get_contest_repository),
+    event_repo: EventRepository = Depends(get_event_repository),
 ) -> GameRecordService:
-    return GameRecordService(game_record_repo, group_repo, contest_repo)
+    return GameRecordService(game_record_repo, group_repo, event_repo)
 
 
-def get_contest_service(
-    contest_repo: ContestRepository = Depends(get_contest_repository),
-) -> ContestService:
-    return ContestService(contest_repo)
+def get_event_service(
+    event_repo: EventRepository = Depends(get_event_repository),
+    group_repo: GroupRepository = Depends(get_group_repository),
+) -> EventService:
+    return EventService(event_repo, group_repo)
 
 
 def get_user_service(

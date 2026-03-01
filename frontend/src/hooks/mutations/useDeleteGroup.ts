@@ -11,7 +11,7 @@ export function useDeleteGroup() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myGroups'] })
       queryClient.invalidateQueries({ queryKey: ['publicGroups'] })
-      toast.success('그룹이 삭제됐습니다')
+      toast.success('모임이 삭제됐습니다')
       navigate('/', { replace: true })
     },
     onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세요'),

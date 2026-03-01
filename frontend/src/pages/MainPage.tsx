@@ -31,9 +31,9 @@ export default function MainPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="m-0 text-xl font-bold">Mahjong Groups</h1>
+        <h1 className="m-0 text-xl font-bold">마작 모임</h1>
         <nav className="flex gap-3 items-center">
-          <Link to="/mypage" className="text-sm">My Page</Link>
+          <Link to="/mypage" className="text-sm">마이페이지</Link>
           <button onClick={handleLogout} className="px-2.5 py-1 text-sm cursor-pointer">
             Logout
           </button>
@@ -43,9 +43,9 @@ export default function MainPage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="text-red-600">Failed to load groups</p>
+        <p className="text-red-600">모임 목록을 불러올 수 없습니다.</p>
       ) : groups.length === 0 ? (
-        <p className="text-gray-400">No public groups yet.</p>
+        <p className="text-gray-400">아직 공개 모임이 없습니다.</p>
       ) : (
         <ul className="list-none p-0 m-0 flex flex-col gap-2">
           {groups.map((g) => {

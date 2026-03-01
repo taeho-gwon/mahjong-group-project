@@ -20,7 +20,7 @@ class GameRecordCreate(BaseModel):
     west_point: int
     north_point: int
     group_id: int | None = None
-    contest_id: int | None = None
+    event_id: int | None = None
     game_link: str | None = None
     played_at: datetime | None = None
 
@@ -60,7 +60,7 @@ class GameRecordResponse(BaseModel):
 
     id: int
     group_id: int | None
-    contest_id: int | None
+    event_id: int | None
     created_by_id: int
     east_player: PlayerInfo
     south_player: PlayerInfo

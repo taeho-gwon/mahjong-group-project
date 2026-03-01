@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
-import { useContests } from '../hooks/useContests'
+import { useEvents } from '../hooks/useEvents'
 import { useMe } from '../hooks/useMe'
 import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
+import { useAutoRollAggregates } from '../hooks/useAutoRollAggregates'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -17,14 +19,20 @@ export default function GroupDetailPage() {
   const groupId = id ? Number(id) : undefined
 
   const { data: group, isLoading, isError } = useGroupDetail(groupId)
-  const { data: contests = [] } = useContests(groupId)
+  const { data: events = [] } = useEvents(groupId)
   const { data: user } = useMe()
   const leaveGroupMutation = useLeaveGroup(groupId!)
+
+  useAutoRollAggregates(events, groupId)
+
+  const activeEvents = events.filter((c) => !c.is_closed)
+  const closedEvents = events.filter((c) => c.is_closed)
+  const [showClosed, setShowClosed] = useState(false)
 
   const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
 
   function handleLeave() {
-    if (!window.confirm('정말 이 그룹에서 탈퇴하시겠습니까?')) return
+    if (!window.confirm('정말 이 모임에서 탈퇴하시겠습니까?')) return
     leaveGroupMutation.mutate()
   }
 
@@ -58,7 +66,7 @@ export default function GroupDetailPage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="mt-6 text-red-600">Failed to load group</p>
+        <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
       ) : group ? (
         <>
           {/* Group Info */}
@@ -74,34 +82,34 @@ export default function GroupDetailPage() {
             )}
             <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
               <div>
-                <strong>Join Policy:</strong>{' '}
+                <strong>가입 정책:</strong>{' '}
                 <span className={`inline-block text-xs px-2 py-0.5 rounded ${
                   group.join_policy === 'public'
                     ? 'bg-green-50 text-green-700'
                     : 'bg-red-50 text-red-600'
                 }`}>
-                  {group.join_policy === 'public' ? 'Public' : 'Private'}
+                  {group.join_policy === 'public' ? '공개' : '비공개'}
                 </span>
               </div>
-              <div><strong>Owner:</strong> {group.members.find((m) => m.role === 'owner')?.username ?? '-'}</div>
-              <div><strong>Members:</strong> {group.members.length}</div>
-              <div><strong>Created:</strong> {new Date(group.created_at).toLocaleDateString()}</div>
+              <div><strong>소유자:</strong> {group.members.find((m) => m.role === 'owner')?.username ?? '-'}</div>
+              <div><strong>멤버:</strong> {group.members.length}명</div>
+              <div><strong>생성일:</strong> {new Date(group.created_at).toLocaleDateString()}</div>
             </div>
           </section>
 
-          {/* Contests */}
+          {/* Events */}
           <section className="mb-8">
             <div className="mb-3">
-              <h3 className="m-0">랭킹전</h3>
+              <h3 className="m-0">이벤트</h3>
             </div>
-            {contests.length === 0 ? (
-              <p className="text-sm text-gray-400 m-0">아직 랭킹전이 없습니다.</p>
+            {activeEvents.length === 0 ? (
+              <p className="text-sm text-gray-400 m-0">활성 이벤트이 없습니다.</p>
             ) : (
               <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
-                {contests.map((c) => (
+                {activeEvents.map((c) => (
                   <li
                     key={c.id}
-                    onClick={() => navigate(`/contests/${c.id}`)}
+                    onClick={() => navigate(`/events/${c.id}`)}
                     className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm cursor-pointer"
                   >
                     <span>{c.name}</span>
@@ -112,11 +120,41 @@ export default function GroupDetailPage() {
                 ))}
               </ul>
             )}
+
+            {closedEvents.length > 0 && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowClosed((prev) => !prev)}
+                  className="text-sm text-gray-500 bg-transparent border-none cursor-pointer p-0"
+                >
+                  {showClosed ? '▾' : '▸'} 완료된 이벤트 ({closedEvents.length})
+                </button>
+                {showClosed && (
+                  <ul className="list-none p-0 m-0 mt-2 flex flex-col gap-1.5">
+                    {closedEvents.map((c) => (
+                      <li
+                        key={c.id}
+                        onClick={() => navigate(`/events/${c.id}`)}
+                        className="flex justify-between items-center border border-gray-200 rounded-md px-4 py-2.5 text-sm cursor-pointer opacity-60"
+                      >
+                        <span className="flex items-center gap-2">
+                          {c.name}
+                          <span className="bg-gray-500 text-white text-xs px-1.5 py-0.5 rounded">마감</span>
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {c.ranking_type === 'match_point' ? '승점' : '점수'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Members */}
           <section>
-            <h3 className="mt-0 mb-3">Members</h3>
+            <h3 className="mt-0 mb-3">멤버</h3>
             <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
               {[...group.members].sort((a, b) => {
                 const order = { owner: 0, admin: 1, member: 2 }
@@ -149,7 +187,7 @@ export default function GroupDetailPage() {
                 disabled={leaveGroupMutation.isPending}
                 className="text-sm px-4 py-2 cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
               >
-                {leaveGroupMutation.isPending ? '탈퇴 중...' : '그룹 탈퇴'}
+                {leaveGroupMutation.isPending ? '탈퇴 중...' : '모임 탈퇴'}
               </button>
             </section>
           )}

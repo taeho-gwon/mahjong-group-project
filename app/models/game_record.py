@@ -4,7 +4,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.contest import Contest
+from app.models.event import Event
 from app.models.user import User
 
 
@@ -34,8 +34,8 @@ class GameRecord(Base):
     created_by_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    contest_id: Mapped[int | None] = mapped_column(
-        ForeignKey("contests.id", ondelete="SET NULL"), index=True, nullable=True
+    event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("events.id", ondelete="SET NULL"), index=True, nullable=True
     )
     game_link: Mapped[str | None] = mapped_column(String(500), nullable=True)
     played_at: Mapped[datetime] = mapped_column(
@@ -58,4 +58,4 @@ class GameRecord(Base):
         lazy="noload", foreign_keys=[north_player_id]
     )
     created_by: Mapped[User] = relationship(lazy="noload", foreign_keys=[created_by_id])
-    contest: Mapped[Contest | None] = relationship(lazy="noload")
+    event: Mapped[Event | None] = relationship(lazy="noload")
