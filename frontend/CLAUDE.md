@@ -21,6 +21,34 @@ Mahjong group management React SPA
 
 ---
 
+## 일하는 방식
+
+### 작업 시작 전
+1. `frontend/CHANGELOG.md`에서 `TODO(@agent-frontend)` 항목 확인
+2. 해당 항목의 스펙(파일명, 구현 방식, 완료 조건)을 읽고 작업 범위 파악
+3. 백엔드 API 의존성이 있는 경우 `app/CHANGELOG.md`에서 해당 작업 완료 여부 확인
+
+### 작업 중
+- **소유 영역만 수정**: `frontend/`
+- `app/`, `infra/` 는 읽기만 가능, 절대 수정 금지
+- API 스펙은 `docs/api-contract.md` 기준 준수
+
+### 작업 완료 후
+`frontend/CHANGELOG.md`의 해당 TODO 항목을 완료 기록으로 업데이트:
+```markdown
+## [YYYY-MM-DD] @agent-frontend ✅ DONE
+### Added
+- useDeleteGameRecord 훅 추가
+- ContestDetailPage 게임 기록 목록 + 삭제 버튼
+```
+
+### 범위 외 요청 발생 시
+직접 처리하지 말고 해당 CHANGELOG에 태그 남기기:
+- 새 API 필요 → `app/CHANGELOG.md`에 `TODO(@agent-backend)` 기록
+- Breaking API 변경 → `docs/api-contract.md` + `@agent-manager` 태그
+
+---
+
 ## Stack
 
 - React + Vite + TypeScript

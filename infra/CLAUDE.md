@@ -18,6 +18,35 @@
 
 ---
 
+## 일하는 방식
+
+### 작업 시작 전
+1. `infra/CHANGELOG.md`에서 `TODO(@agent-devops)` 항목 확인
+2. 해당 항목의 스펙을 읽고 작업 범위 파악
+3. 마이그레이션 작업이면 `app/CHANGELOG.md`에서 모델 변경 내용 확인
+
+### 작업 중
+- **소유 영역만 수정**: `infra/`, `alembic.ini`
+- `app/models/` 는 읽기만 가능 (마이그레이션 생성 시 참조용)
+- `frontend/`, `app/services/` 절대 수정 금지
+- Breaking 마이그레이션은 반드시 Manager 승인 후 진행
+
+### 작업 완료 후
+`infra/CHANGELOG.md`의 해당 TODO 항목을 완료 기록으로 업데이트:
+```markdown
+## [YYYY-MM-DD] @agent-devops ✅ DONE
+### Added
+- game_records 테이블 마이그레이션 적용
+  - `uv run alembic current` 로 정상 동작 확인
+```
+
+### 범위 외 요청 발생 시
+직접 처리하지 말고 해당 CHANGELOG에 태그 남기기:
+- 모델 변경 필요 → `app/CHANGELOG.md`에 `TODO(@agent-backend)` 기록
+- Breaking 변경 → `docs/decisions/`에 ADR 작성 후 `@agent-manager` 승인 요청
+
+---
+
 ## 주요 명령어
 
 ```bash

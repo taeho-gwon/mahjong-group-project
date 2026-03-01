@@ -24,6 +24,33 @@ Mahjong game management backend API server
 
 ---
 
+## 일하는 방식
+
+### 작업 시작 전
+1. `app/CHANGELOG.md`에서 `TODO(@agent-backend)` 항목 확인
+2. 해당 항목의 스펙(파일명, 구현 방식, 완료 조건)을 읽고 작업 범위 파악
+
+### 작업 중
+- **소유 영역만 수정**: `app/`, `tests/`, `pyproject.toml`
+- `infra/`, `frontend/` 는 읽기만 가능, 절대 수정 금지
+- 모델 변경 시 → 핸드오프 절차 준수 (아래 "Migration 핸드오프" 참조)
+
+### 작업 완료 후
+`app/CHANGELOG.md`의 해당 TODO 항목을 완료 기록으로 업데이트:
+```markdown
+## [YYYY-MM-DD] @agent-backend ✅ DONE
+### Added
+- PUT /game-records/{id} 구현 완료
+  - **영향**: @agent-frontend — 수정 UI 구현 가능
+```
+
+### 범위 외 요청 발생 시
+직접 처리하지 말고 해당 CHANGELOG에 태그 남기기:
+- API 계약 변경 필요 → `docs/api-contract.md` 업데이트 + `@agent-manager` 태그
+- 프론트엔드 연동 필요 → `frontend/CHANGELOG.md`에 `TODO(@agent-frontend)` 기록
+
+---
+
 ## Communication
 
 - **Language**: Communicate in Korean, code/comments in English
