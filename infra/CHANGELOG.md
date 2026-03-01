@@ -4,6 +4,18 @@
 
 ---
 
+## [2026-03-02] @agent-devops ✅ DONE — nginx HTTP → HTTPS 강제 리다이렉트
+
+### 확인 결과
+- `nginx.conf` port 80 server block에 `return 301 https://$host$request_uri;` 이미 설정됨
+- `curl http://mjgroup.duckdns.org/` → 301 → `https://mjgroup.duckdns.org/` 정상 리다이렉트 확인
+
+### 완료 조건
+- [x] `http://mjgroup.duckdns.org` 접속 시 HTTPS로 리다이렉트 확인
+- [x] `infra/CHANGELOG.md` DONE 기록
+
+---
+
 ## [2026-03-02] @agent-devops ✅ DONE — nginx proxy 규칙을 /api/ prefix로 변경
 
 ### Changed

@@ -52,6 +52,9 @@
 | **FE 게임 기록 중복 선택 방지** | ✅ | FE | 드롭다운 disabled + 제출 차단 |
 | **안내문 API 인증 제거** | ✅ | BE | GET /announcements 비로그인 허용 |
 | **FE 안내문을 로그인/회원가입/메인에 표시** | ✅ | FE | AnnouncementSection 공통 컴포넌트 + 3개 페이지 |
+| **nginx HTTP → HTTPS 리다이렉트 확인** | ✅ | DevOps | 이미 설정됨, 동작 확인 완료 |
+| **안내문 API 응답 타입 수정 (FE)** | ✅ | DevOps | items wrapper → 배열 직접 소비 |
+| **auth API /api prefix 수정 (FE)** | ✅ | DevOps | login/register 경로 수정 |
 
 ---
 
@@ -59,6 +62,9 @@
 
 | 작업 | 담당 | 완료일 |
 |------|------|--------|
+| auth API /api prefix 수정 (login/register 경로) | DevOps | 2026-03-02 |
+| 안내문 API 응답 타입 수정 (items wrapper → 배열) | DevOps | 2026-03-02 |
+| nginx HTTP → HTTPS 리다이렉트 확인 (이미 설정됨) | DevOps | 2026-03-02 |
 | FE 안내문을 로그인/회원가입/메인 페이지에 표시 (AnnouncementSection 컴포넌트) | FE | 2026-03-02 |
 | 안내문 API 인증 제거 (GET /announcements 비로그인 허용) | BE | 2026-03-02 |
 | FE 게임 기록 동일 인물 중복 선택 방지 (disabled + 제출 차단) | FE | 2026-03-02 |
