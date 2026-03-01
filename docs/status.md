@@ -47,7 +47,9 @@
 | **게임 기록 중복 플레이어 방지** | ✅ | BE | 생성/수정 시 4명 중복 체크 |
 | **announcements migration** | ✅ | DevOps | e72e21f9f8a2 적용 완료 |
 | **nginx /api/ proxy 규칙 변경** | ✅ | DevOps | location /api/ prefix match |
-| **FE API base URL /api prefix 추가** | ⏳ | FE | BE 변경에 따른 후속 작업 |
+| **FE API base URL /api prefix 추가** | ✅ | FE | src/api/client.ts BASE_URL 변경 |
+| **FE 메인 페이지 안내문 표시** | ✅ | FE | API 연동 + MainPage 안내 섹션 |
+| **FE 게임 기록 중복 선택 방지** | ✅ | FE | 드롭다운 disabled + 제출 차단 |
 
 ---
 
@@ -55,6 +57,9 @@
 
 | 작업 | 담당 | 완료일 |
 |------|------|--------|
+| FE 게임 기록 동일 인물 중복 선택 방지 (disabled + 제출 차단) | FE | 2026-03-02 |
+| FE API base URL /api prefix 추가 (client.ts) | FE | 2026-03-02 |
+| FE 메인 페이지 안내문 표시 (useAnnouncements + MainPage 섹션) | FE | 2026-03-02 |
 | nginx /api/ proxy 규칙 변경 (location /api/ prefix match) | DevOps | 2026-03-02 |
 | announcements 테이블 migration (e72e21f9f8a2) | DevOps | 2026-03-02 |
 | 게임 기록 중복 플레이어 방지 (생성/수정 시 4명 중복 체크, 62 tests) | BE | 2026-03-02 |
