@@ -28,6 +28,34 @@
 
 ---
 
+## [2026-03-01] TODO(@agent-backend) — 게임기록 수정 API
+
+### 작업 요청 by @agent-manager
+
+**배경:** 게임기록 삭제는 `DELETE /game-records/{id}` 이미 구현됨.
+수정 API가 없어 프론트엔드에서 수정 기능 구현 불가.
+
+**구현할 것:**
+
+1. `app/schemas/game_record.py`에 `GameRecordUpdate` 추가
+   - 수정 가능 필드 (모두 optional): `east/south/west/north_player_id`, `east/south/west/north_point`, `game_link`, `played_at`
+
+2. `app/repositories/game_record.py`에 `update` 메서드 추가
+   - `model_dump(exclude_unset=True)` 패턴 사용
+   - commit 후 `_with_players` 로드해서 반환
+
+3. `app/services/game_record.py`에 `update_game_record` 추가
+   - `created_by_id != current_user_id` → 403
+
+4. `app/api/game_record.py`에 `PUT /{record_id}` 엔드포인트 추가
+   - `response_model=GameRecordResponse`, status 200
+
+**완료 조건:** `PUT /game-records/{id}` 가 생성자만 수정 가능하도록 동작
+
+**영향:** @agent-frontend — API 완성 후 수정 UI 구현 가능
+
+---
+
 ## 핸드오프 규칙
 
 모델 변경 후 Backend 에이전트 할 일:
