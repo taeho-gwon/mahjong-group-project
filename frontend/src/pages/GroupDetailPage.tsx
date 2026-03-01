@@ -105,16 +105,8 @@ export default function GroupDetailPage() {
 
           {/* Contests */}
           <section style={{ marginBottom: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <h3 style={{ margin: 0 }}>랭킹전</h3>
-              {myRole !== null && (
-                <button
-                  onClick={() => navigate(`/groups/${id}/contests/new`)}
-                  style={{ fontSize: '13px', padding: '4px 12px', cursor: 'pointer' }}
-                >
-                  랭킹전 만들기
-                </button>
-              )}
             </div>
             {contests.length === 0 ? (
               <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 랭킹전이 없습니다.</p>

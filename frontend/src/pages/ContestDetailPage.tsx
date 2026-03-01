@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getContest, deleteContest } from '../api/contests'
 import type { ContestResponse } from '../api/contests'
 import { getMe } from '../api/auth'
-import type { UserResponse } from '../api/auth'
 import { listGameRecords } from '../api/gameRecords'
 import type { GameRecordResponse } from '../api/gameRecords'
+import { getGroup } from '../api/groups'
 
 async function fetchAllGameRecords(contestId: number): Promise<GameRecordResponse[]> {
   const PAGE_SIZE = 50
@@ -85,7 +85,7 @@ export default function ContestDetailPage() {
   const navigate = useNavigate()
 
   const [contest, setContest] = useState<ContestResponse | null>(null)
-  const [me, setMe] = useState<UserResponse | null>(null)
+  const [myRole, setMyRole] = useState<string | null>(null)
   const [ranking, setRanking] = useState<RankingEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -93,11 +93,17 @@ export default function ContestDetailPage() {
 
   useEffect(() => {
     if (!contestId) return
-    Promise.all([getContest(Number(contestId)), getMe(), fetchAllGameRecords(Number(contestId))])
-      .then(([c, user, records]) => {
+    getContest(Number(contestId))
+      .then((c) => Promise.all([
+        Promise.resolve(c),
+        getMe(),
+        fetchAllGameRecords(Number(contestId)),
+        c.group_id !== null ? getGroup(c.group_id) : Promise.resolve(null),
+      ]))
+      .then(([c, user, records, group]) => {
         setContest(c)
-        setMe(user)
         setRanking(computeRanking(c, records))
+        setMyRole(group?.members.find((m) => m.id === user.id)?.role ?? null)
       })
       .catch(() => setError('Failed to load contest'))
       .finally(() => setLoading(false))
@@ -125,7 +131,7 @@ export default function ContestDetailPage() {
         >
           ← Back
         </button>
-        {contest && me && me.id === contest.created_by_id && (
+        {contest && (myRole === 'owner' || myRole === 'admin') && (
           <button
             onClick={handleDelete}
             disabled={deleting}

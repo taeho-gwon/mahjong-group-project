@@ -5,6 +5,8 @@ import { getGroup, updateGroup, removeMember, updateMemberRole, generateInviteLi
 import type { GroupDetailResponse } from '../api/groups'
 import { getMe } from '../api/auth'
 import type { UserResponse } from '../api/auth'
+import { listContests } from '../api/contests'
+import type { ContestResponse } from '../api/contests'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -24,16 +26,13 @@ export default function GroupManagePage() {
 
   const [group, setGroup] = useState<GroupDetailResponse | null>(null)
   const [me, setMe] = useState<UserResponse | null>(null)
+  const [contests, setContests] = useState<ContestResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [joinPolicy, setJoinPolicy] = useState<'public' | 'private'>('public')
-  const [uma1st, setUma1st] = useState(30)
-  const [uma2nd, setUma2nd] = useState(10)
-  const [uma3rd, setUma3rd] = useState(-10)
-  const [uma4th, setUma4th] = useState(-30)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -44,8 +43,8 @@ export default function GroupManagePage() {
 
   useEffect(() => {
     if (!id) return
-    Promise.all([getGroup(Number(id)), getMe()])
-      .then(([g, user]) => {
+    Promise.all([getGroup(Number(id)), getMe(), listContests(Number(id))])
+      .then(([g, user, contestList]) => {
         const myMember = g.members.find((m) => m.id === user.id)
         if (!myMember || (myMember.role !== 'owner' && myMember.role !== 'admin')) {
           navigate(`/groups/${id}`, { replace: true })
@@ -53,13 +52,10 @@ export default function GroupManagePage() {
         }
         setGroup(g)
         setMe(user)
+        setContests(contestList)
         setName(g.name)
         setDescription(g.description ?? '')
         setJoinPolicy(g.join_policy)
-        setUma1st(g.uma_1st)
-        setUma2nd(g.uma_2nd)
-        setUma3rd(g.uma_3rd)
-        setUma4th(g.uma_4th)
       })
       .catch(() => setError('Failed to load group'))
       .finally(() => setLoading(false))
@@ -68,10 +64,6 @@ export default function GroupManagePage() {
   async function handleSave(e: FormEvent) {
     e.preventDefault()
     if (!group) return
-    if (uma1st + uma2nd + uma3rd + uma4th !== 0) {
-      setSaveError('우마 합계는 0이어야 합니다.')
-      return
-    }
     setSaveError('')
     setSaveSuccess(false)
     setSaving(true)
@@ -80,10 +72,6 @@ export default function GroupManagePage() {
         name,
         description: description || null,
         join_policy: joinPolicy,
-        uma_1st: uma1st,
-        uma_2nd: uma2nd,
-        uma_3rd: uma3rd,
-        uma_4th: uma4th,
       })
       setGroup((prev) => prev ? { ...prev, ...updated } : prev)
       setSaveSuccess(true)
@@ -91,20 +79,6 @@ export default function GroupManagePage() {
       setSaveError('Failed to save changes')
     } finally {
       setSaving(false)
-    }
-  }
-
-  async function handleGenerateInvite() {
-    if (!group) return
-    setGeneratingInvite(true)
-    try {
-      const { invite_token } = await generateInviteLink(group.id)
-      setInviteToken(invite_token)
-      setCopied(false)
-    } catch {
-      alert('Failed to generate invite link')
-    } finally {
-      setGeneratingInvite(false)
     }
   }
 
@@ -127,6 +101,20 @@ export default function GroupManagePage() {
     navigator.clipboard.writeText(`${window.location.origin}/join?token=${token}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleGenerateInvite() {
+    if (!group) return
+    setGeneratingInvite(true)
+    try {
+      const { invite_token } = await generateInviteLink(group.id)
+      setInviteToken(invite_token)
+      setCopied(false)
+    } catch {
+      alert('Failed to generate invite link')
+    } finally {
+      setGeneratingInvite(false)
+    }
   }
 
   async function handleRemoveMember(userId: number) {
@@ -231,26 +219,6 @@ export default function GroupManagePage() {
                   </label>
                 </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '6px' }}>
-                  Uma (합계: {uma1st + uma2nd + uma3rd + uma4th}, 합계 0이어야 함)
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                  {([['1위', uma1st, setUma1st], ['2위', uma2nd, setUma2nd], ['3위', uma3rd, setUma3rd], ['4위', uma4th, setUma4th]] as const).map(
-                    ([label, value, setter]) => (
-                      <div key={label}>
-                        <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '2px' }}>{label}</label>
-                        <input
-                          type="number"
-                          value={value}
-                          onChange={(e) => { setter(Number(e.target.value)); setSaveSuccess(false) }}
-                          style={{ padding: '6px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
-                        />
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
               {saveError && <p style={{ color: 'red', margin: 0, fontSize: '14px' }}>{saveError}</p>}
               {saveSuccess && <p style={{ color: '#2d7a3a', margin: 0, fontSize: '14px' }}>Saved successfully.</p>}
               <button
@@ -261,6 +229,46 @@ export default function GroupManagePage() {
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </form>
+          </section>
+
+          {/* Contests */}
+          <section style={{ marginBottom: '40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px' }}>랭킹전 관리</h3>
+              <button
+                onClick={() => navigate(`/groups/${id}/contests/new`)}
+                style={{ fontSize: '13px', padding: '4px 12px', cursor: 'pointer' }}
+              >
+                랭킹전 만들기
+              </button>
+            </div>
+            {contests.length === 0 ? (
+              <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 랭킹전이 없습니다.</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {contests.map((c) => (
+                  <li
+                    key={c.id}
+                    onClick={() => navigate(`/contests/${c.id}`)}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      border: '1px solid #ccc',
+                      borderRadius: '6px',
+                      padding: '10px 14px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>{c.name}</span>
+                    <span style={{ fontSize: '12px', color: '#888' }}>
+                      {c.ranking_type === 'match_point' ? '승점' : '점수'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           {/* Invite Link */}
@@ -303,25 +311,13 @@ export default function GroupManagePage() {
                       {m.username}{isMe && <span style={{ color: '#888', fontSize: '12px' }}> (me)</span>}
                     </span>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{
-                        fontSize: '12px',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        ...ROLE_STYLE[m.role],
-                      }}>
+                      <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '4px', ...ROLE_STYLE[m.role] }}>
                         {ROLE_LABEL[m.role] ?? m.role}
                       </span>
                       {canChangeRole && (
                         <button
                           onClick={() => handleRoleChange(m.id, m.role === 'member' ? 'admin' : 'member')}
-                          style={{
-                            fontSize: '12px',
-                            padding: '3px 8px',
-                            cursor: 'pointer',
-                            background: 'none',
-                            border: '1px solid #555',
-                            borderRadius: '4px',
-                          }}
+                          style={{ fontSize: '12px', padding: '3px 8px', cursor: 'pointer', background: 'none', border: '1px solid #555', borderRadius: '4px' }}
                         >
                           {m.role === 'member' ? 'Make Admin' : 'Make Member'}
                         </button>
@@ -329,15 +325,7 @@ export default function GroupManagePage() {
                       {canKick && (
                         <button
                           onClick={() => handleRemoveMember(m.id)}
-                          style={{
-                            fontSize: '12px',
-                            padding: '3px 8px',
-                            cursor: 'pointer',
-                            color: '#c0392b',
-                            background: 'none',
-                            border: '1px solid #c0392b',
-                            borderRadius: '4px',
-                          }}
+                          style={{ fontSize: '12px', padding: '3px 8px', cursor: 'pointer', color: '#c0392b', background: 'none', border: '1px solid #c0392b', borderRadius: '4px' }}
                         >
                           강퇴
                         </button>
@@ -345,15 +333,7 @@ export default function GroupManagePage() {
                       {isMe && myRole !== 'owner' && (
                         <button
                           onClick={handleLeave}
-                          style={{
-                            fontSize: '12px',
-                            padding: '3px 8px',
-                            cursor: 'pointer',
-                            color: '#c0392b',
-                            background: 'none',
-                            border: '1px solid #c0392b',
-                            borderRadius: '4px',
-                          }}
+                          style={{ fontSize: '12px', padding: '3px 8px', cursor: 'pointer', color: '#c0392b', background: 'none', border: '1px solid #c0392b', borderRadius: '4px' }}
                         >
                           탈퇴
                         </button>
