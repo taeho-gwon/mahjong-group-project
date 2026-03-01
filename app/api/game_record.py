@@ -5,6 +5,7 @@ from app.models.user import User
 from app.schemas.game_record import (
     GameRecordCreate,
     GameRecordResponse,
+    GameRecordUpdate,
     PaginatedGameRecordResponse,
 )
 from app.services.game_record import GameRecordService
@@ -38,6 +39,18 @@ async def get_game_record(
     game_record_service: GameRecordService = Depends(get_game_record_service),
 ) -> GameRecordResponse:
     return await game_record_service.get_game_record(record_id)
+
+
+@router.put("/{record_id}", response_model=GameRecordResponse)
+async def update_game_record(
+    record_id: int,
+    data: GameRecordUpdate,
+    current_user: User = Depends(get_current_user),
+    game_record_service: GameRecordService = Depends(get_game_record_service),
+) -> GameRecordResponse:
+    return await game_record_service.update_game_record(
+        record_id, current_user.id, data
+    )
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)

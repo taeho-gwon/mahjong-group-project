@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.game_record import GameRecord
 from app.repositories.base import BaseRepository
-from app.schemas.game_record import GameRecordCreate
+from app.schemas.game_record import GameRecordCreate, GameRecordUpdate
 
 
 def _with_players(stmt):  # type: ignore[no-untyped-def]
@@ -74,6 +74,16 @@ class GameRecordRepository(BaseRepository):
         if contest_id is not None:
             stmt = stmt.where(GameRecord.contest_id == contest_id)
         result = await self.db.execute(stmt)
+        return result.scalar_one()
+
+    async def update(self, record: GameRecord, data: GameRecordUpdate) -> GameRecord:
+        for field, value in data.model_dump(exclude_unset=True).items():
+            setattr(record, field, value)
+        await self.db.commit()
+
+        result = await self.db.execute(
+            _with_players(select(GameRecord).where(GameRecord.id == record.id))
+        )
         return result.scalar_one()
 
     async def delete(self, record: GameRecord) -> None:

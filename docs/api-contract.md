@@ -174,7 +174,72 @@ Auth:     Required (생성자)
 
 ## 게임 기록 (`/game-records`)
 
-> 세부 API는 기능 구현 시 업데이트 예정
+### POST /game-records
+```json
+Request:  {
+  "east_player_id": 1, "south_player_id": 2, "west_player_id": 3, "north_player_id": 4,
+  "east_point": 35000, "south_point": 25000, "west_point": 20000, "north_point": 20000,
+  "group_id": 1,
+  "contest_id": 1,
+  "game_link": "string|null",
+  "played_at": "datetime|null"
+}
+Response: GameRecordResponse
+Status:   201
+Auth:     Required
+```
+
+### GET /game-records
+```
+Query:    page=1&size=20&group_id={id}&contest_id={id}
+Response: { "items": [GameRecordResponse], "total": 100, "page": 1, "size": 20 }
+Status:   200
+Note:     group_id, contest_id 중 하나 이상 지정 권장
+```
+
+### GET /game-records/{id}
+```
+Response: GameRecordResponse
+Status:   200
+```
+
+### PUT /game-records/{id}
+```json
+Request:  {
+  "east_player_id"?: 1, "south_player_id"?: 2, "west_player_id"?: 3, "north_player_id"?: 4,
+  "east_point"?: 35000, "south_point"?: 25000, "west_point"?: 20000, "north_point"?: 20000,
+  "game_link"?: "string|null",
+  "played_at"?: "datetime|null"
+}
+Response: GameRecordResponse
+Status:   200
+Auth:     Required (해당 그룹의 owner/admin만 가능)
+```
+
+### DELETE /game-records/{id}
+```
+Status:   204
+Auth:     Required (해당 그룹의 owner/admin만 가능)
+```
+
+---
+
+### GameRecordResponse
+```json
+{
+  "id": 1,
+  "group_id": 1,
+  "contest_id": 1,
+  "created_by_id": 1,
+  "east_player":  { "id": 1, "username": "string" },
+  "south_player": { "id": 2, "username": "string" },
+  "west_player":  { "id": 3, "username": "string" },
+  "north_player": { "id": 4, "username": "string" },
+  "east_point": 35000, "south_point": 25000, "west_point": 20000, "north_point": 20000,
+  "game_link": "string|null",
+  "played_at": "datetime",
+  "created_at": "datetime"
+}
 
 ---
 

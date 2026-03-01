@@ -25,6 +25,19 @@ class GameRecordCreate(BaseModel):
     played_at: datetime | None = None
 
 
+class GameRecordUpdate(BaseModel):
+    east_player_id: int | None = None
+    south_player_id: int | None = None
+    west_player_id: int | None = None
+    north_player_id: int | None = None
+    east_point: int | None = None
+    south_point: int | None = None
+    west_point: int | None = None
+    north_point: int | None = None
+    game_link: str | None = None
+    played_at: datetime | None = None
+
+
 class GameRecordResponse(BaseModel):
     model_config = {"from_attributes": True}
 

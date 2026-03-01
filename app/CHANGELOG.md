@@ -38,46 +38,29 @@
 
 ---
 
-## TODO(@agent-backend) — API 통합 테스트 작성
+## [2026-03-01] @agent-backend ✅ DONE — 게임기록 수정/삭제 권한 변경
 
-### 작업 요청 by @agent-manager
+### Changed
+- `PUT /game-records/{id}`, `DELETE /game-records/{id}` 권한 변경
+  - 기존: 생성자(`created_by_id`)만 허용
+  - 변경: 해당 그룹의 `owner` 또는 `admin`만 허용
+- `GameRecordService`에 `GroupRepository` 추가 주입
+- `app/api/deps.py`의 `get_game_record_service` DI에 `group_repo` 추가
+- 테스트 업데이트: `test_game_records.py` 권한 시나리오 반영
+- **영향**: @agent-frontend — 수정/삭제는 그룹 owner/admin 권한 필요
 
-**배경:** 현재 테스트가 없어 리팩토링/기능 추가 시 회귀 검증 불가.
-`tests/conftest.py`에 async httpx 클라이언트 픽스처가 있으므로 바로 작성 가능.
+---
 
-**구현할 것:**
+## [2026-03-01] @agent-backend ✅ DONE — API 통합 테스트 작성
 
-**1. `tests/test_auth.py`**
-- `POST /auth/register` — 정상 가입, 중복 username 409
-- `POST /auth/login` — 정상 로그인, 잘못된 비밀번호 401
-- `POST /auth/refresh` — 정상 갱신, 만료/위조 토큰 401
-- `GET /auth/me` — 정상 조회, 토큰 없음 401
-
-**2. `tests/test_groups.py`**
-- `POST /groups` — 생성, 인증 없음 401
-- `GET /groups` — 공개 그룹 목록
-- `GET /groups/{id}` — 상세 조회, 없는 id 404
-- `POST /groups/{id}/join` — public 그룹 가입, private 그룹 거부
-- `DELETE /groups/{id}` — owner만 삭제 가능, member 시도 403
-
-**3. `tests/test_contests.py`**
-- `POST /contests` — 생성, 인증 없음 401
-- `GET /contests?group_id=` — 목록 조회
-- `PUT /contests/{id}` — 생성자만 수정 가능, 타인 403
-- `DELETE /contests/{id}` — 생성자만 삭제 가능, 타인 403
-
-**4. `tests/test_game_records.py`**
-- `POST /game-records` — 생성, 인증 없음 401
-- `GET /game-records?contest_id=` — 목록 조회
-- `PUT /game-records/{id}` — 생성자만 수정 가능, 타인 403
-- `DELETE /game-records/{id}` — 생성자만 삭제 가능, 타인 403
-
-**규칙:**
-- 각 테스트는 독립적으로 실행 가능해야 함 (픽스처로 데이터 격리)
-- 테스트 DB는 별도 설정 (`conftest.py` 확인 후 필요시 추가)
-- `uv run pytest` 전체 통과가 완료 조건
-
-**완료 조건:** `uv run pytest` 실행 시 전체 통과, 주요 엔드포인트 happy/error path 커버
+### Added
+- `tests/conftest.py` 재구성: NullPool 기반 test DB, setup_db(autouse), client/auth_headers 픽스처
+- `tests/test_auth.py` — 8개 테스트
+- `tests/test_groups.py` — 8개 테스트
+- `tests/test_contests.py` — 7개 테스트
+- `tests/test_game_records.py` — 7개 테스트
+- 31개 전체 통과 (`uv run pytest` 기준)
+- 테스트 DB: `mahjong_test` (port 5433, 별도 생성 필요)
 
 ---
 

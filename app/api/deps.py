@@ -46,8 +46,9 @@ def get_game_record_repository(
 
 def get_game_record_service(
     game_record_repo: GameRecordRepository = Depends(get_game_record_repository),
+    group_repo: GroupRepository = Depends(get_group_repository),
 ) -> GameRecordService:
-    return GameRecordService(game_record_repo)
+    return GameRecordService(game_record_repo, group_repo)
 
 
 def get_contest_repository(db: AsyncSession = Depends(get_db)) -> ContestRepository:
