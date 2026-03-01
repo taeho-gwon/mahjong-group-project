@@ -7,9 +7,8 @@
 
 ## 현재 진행 가능한 작업
 
-| 작업 | 담당 | 상태 | 참조 |
-|------|------|------|------|
-| 게임기록 수정/삭제 권한 변경 (owner/admin만 허용, 생성자 제외) | @agent-backend | 🔄 진행 가능 | `app/CHANGELOG.md` TODO 참조 |
+현재 할당된 작업 없음.
+
 ---
 
 ## 완료된 작업
@@ -29,6 +28,7 @@
 | Group 관리 페이지 (멤버 역할 변경, 강퇴) | @agent-frontend | 2026-03-01 |
 | 마이그레이션 완료 (users, groups, contests, game_records 포함) | @agent-devops | 2026-03-01 |
 | 백엔드 API 통합 테스트 작성 (31개 통과) | @agent-backend | 2026-03-01 |
+| 게임기록 수정/삭제 권한 변경 (owner/admin 전용) | @agent-backend | 2026-03-01 |
 
 ---
 

@@ -40,6 +40,13 @@
   - `uv run alembic current` 로 정상 동작 확인
 ```
 
+### 완료 기준 (Definition of Done)
+
+다음 항목을 모두 충족해야 DONE으로 기록:
+- [ ] `uv run alembic current` 정상 동작 확인
+- [ ] `infra/CHANGELOG.md`에 DONE 기록
+- [ ] `docs/status.md` 담당 항목 상태 업데이트
+
 ### 범위 외 요청 발생 시
 직접 처리하지 말고 해당 CHANGELOG에 태그 남기기:
 - 모델 변경 필요 → `app/CHANGELOG.md`에 `TODO(@agent-backend)` 기록

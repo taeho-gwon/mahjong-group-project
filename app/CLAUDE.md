@@ -44,6 +44,15 @@ Mahjong game management backend API server
   - **영향**: @agent-frontend — 수정 UI 구현 가능
 ```
 
+### 완료 기준 (Definition of Done)
+
+다음 항목을 모두 충족해야 DONE으로 기록:
+- [ ] `uv run pytest` 전체 통과
+- [ ] API 추가/변경 시 `docs/api-contract.md` 업데이트
+- [ ] `app/CHANGELOG.md`에 DONE 기록
+- [ ] 모델 변경 시 `infra/CHANGELOG.md`에 TODO 추가 (`@agent-devops` 태그)
+- [ ] `docs/status.md` 담당 항목 상태 업데이트
+
 ### 범위 외 요청 발생 시
 직접 처리하지 말고 해당 CHANGELOG에 태그 남기기:
 - API 계약 변경 필요 → `docs/api-contract.md` 업데이트 + `@agent-manager` 태그
