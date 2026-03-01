@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getContest, deleteContest } from '../api/contests'
 import type { ContestResponse } from '../api/contests'
@@ -66,6 +66,18 @@ function computeRanking(contest: ContestResponse, records: GameRecordResponse[])
     entries.sort((a, b) => b.totalScore - a.totalScore)
   }
   return entries
+}
+
+const thStyle: React.CSSProperties = {
+  padding: '8px 10px',
+  textAlign: 'center',
+  whiteSpace: 'nowrap',
+}
+
+const tdStyle: React.CSSProperties = {
+  padding: '10px 10px',
+  textAlign: 'center',
+  whiteSpace: 'nowrap',
 }
 
 export default function ContestDetailPage() {
@@ -159,42 +171,42 @@ export default function ContestDetailPage() {
             {ranking.length === 0 ? (
               <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 게임 기록이 없습니다.</p>
             ) : (
-              <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {ranking.map((entry, idx) => {
-                  const mainScore = contest.ranking_type === 'match_point'
-                    ? `${entry.matchPoint}pt`
-                    : `${entry.totalScore > 0 ? '+' : ''}${entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}`
-                  const isPositive = contest.ranking_type === 'match_point'
-                    ? entry.matchPoint >= 0
-                    : entry.totalScore >= 0
-                  return (
-                    <li
-                      key={entry.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        border: '1px solid #ccc',
-                        borderRadius: '6px',
-                        padding: '10px 14px',
-                        fontSize: '14px',
-                      }}
-                    >
-                      <span style={{ width: '24px', textAlign: 'right', fontWeight: 'bold', color: '#666' }}>{idx + 1}</span>
-                      <span style={{ flex: 1 }}>{entry.username}</span>
-                      <span style={{ color: isPositive ? '#2d7a3a' : '#c0392b', fontWeight: 'bold', minWidth: '60px', textAlign: 'right' }}>
-                        {mainScore}
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#888', minWidth: '80px', textAlign: 'right' }}>
-                        {entry.rankCounts.map((c, i) => `${i + 1}위×${c}`).join(' ')}
-                      </span>
-                      <span style={{ color: '#aaa', fontSize: '12px', minWidth: '40px', textAlign: 'right' }}>
-                        {entry.gameCount}게임
-                      </span>
-                    </li>
-                  )
-                })}
-              </ol>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #ccc', color: '#555', fontSize: '13px' }}>
+                    <th style={thStyle}>#</th>
+                    <th style={{ ...thStyle, textAlign: 'left' }}>이름</th>
+                    <th style={thStyle}>{contest.ranking_type === 'match_point' ? '승점' : '점수'}</th>
+                    <th style={thStyle}>1위</th>
+                    <th style={thStyle}>2위</th>
+                    <th style={thStyle}>3위</th>
+                    <th style={thStyle}>4위</th>
+                    <th style={thStyle}>게임</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ranking.map((entry, idx) => {
+                    const mainScore = contest.ranking_type === 'match_point'
+                      ? `${entry.matchPoint}pt`
+                      : `${entry.totalScore > 0 ? '+' : ''}${entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}`
+                    const isPositive = contest.ranking_type === 'match_point'
+                      ? entry.matchPoint >= 0
+                      : entry.totalScore >= 0
+                    return (
+                      <tr key={entry.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ ...tdStyle, color: '#888', fontWeight: 'bold' }}>{idx + 1}</td>
+                        <td style={{ ...tdStyle, textAlign: 'left' }}>{entry.username}</td>
+                        <td style={{ ...tdStyle, fontWeight: 'bold', color: isPositive ? '#2d7a3a' : '#c0392b' }}>{mainScore}</td>
+                        <td style={tdStyle}>{entry.rankCounts[0]}</td>
+                        <td style={tdStyle}>{entry.rankCounts[1]}</td>
+                        <td style={tdStyle}>{entry.rankCounts[2]}</td>
+                        <td style={tdStyle}>{entry.rankCounts[3]}</td>
+                        <td style={{ ...tdStyle, color: '#aaa' }}>{entry.gameCount}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             )}
           </section>
         </>
