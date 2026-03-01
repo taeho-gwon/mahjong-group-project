@@ -7,13 +7,13 @@ import type { UserResponse } from '../api/auth'
 import { listGameRecords } from '../api/gameRecords'
 import type { GameRecordResponse } from '../api/gameRecords'
 
-async function fetchAllGameRecords(groupId: number): Promise<GameRecordResponse[]> {
+async function fetchAllGameRecords(contestId: number): Promise<GameRecordResponse[]> {
   const PAGE_SIZE = 50
-  const first = await listGameRecords(groupId, 1, PAGE_SIZE)
+  const first = await listGameRecords(undefined, 1, PAGE_SIZE, contestId)
   const results = [...first.items]
   const totalPages = Math.ceil(first.total / PAGE_SIZE)
   for (let page = 2; page <= totalPages; page++) {
-    const res = await listGameRecords(groupId, page, PAGE_SIZE)
+    const res = await listGameRecords(undefined, page, PAGE_SIZE, contestId)
     results.push(...res.items)
   }
   return results
@@ -35,7 +35,6 @@ function computeRanking(contest: ContestResponse, records: GameRecordResponse[])
   const playerMap = new Map<number, RankingEntry>()
 
   for (const rec of records) {
-    if (rec.contest_id !== contest.id) continue
     const seats = [
       { player: rec.east_player, point: rec.east_point },
       { player: rec.south_player, point: rec.south_point },
@@ -82,15 +81,11 @@ export default function ContestDetailPage() {
 
   useEffect(() => {
     if (!contestId) return
-    getContest(Number(contestId))
-      .then((c) => {
-        if (c.group_id === null) throw new Error('Contest has no group')
-        return Promise.all([Promise.resolve(c), getMe(), fetchAllGameRecords(c.group_id)])
-      })
-      .then(([c, user, allRecords]) => {
+    Promise.all([getContest(Number(contestId)), getMe(), fetchAllGameRecords(Number(contestId))])
+      .then(([c, user, records]) => {
         setContest(c)
         setMe(user)
-        setRanking(computeRanking(c, allRecords))
+        setRanking(computeRanking(c, records))
       })
       .catch(() => setError('Failed to load contest'))
       .finally(() => setLoading(false))

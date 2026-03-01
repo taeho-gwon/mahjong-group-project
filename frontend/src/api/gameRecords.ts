@@ -57,11 +57,15 @@ export async function createGameRecord(data: GameRecordCreate): Promise<GameReco
 }
 
 export async function listGameRecords(
-  groupId: number,
+  groupId?: number,
   page = 1,
   size = 200,
+  contestId?: number,
 ): Promise<PaginatedGameRecordResponse> {
-  const res = await apiFetch(`/game-records?group_id=${groupId}&page=${page}&size=${size}`)
+  const params = new URLSearchParams({ page: String(page), size: String(size) })
+  if (groupId !== undefined) params.set('group_id', String(groupId))
+  if (contestId !== undefined) params.set('contest_id', String(contestId))
+  const res = await apiFetch(`/game-records?${params}`)
   if (!res.ok) throw new Error('Failed to fetch game records')
   return res.json()
 }

@@ -104,25 +104,31 @@ export default function GroupDetailPage() {
           </section>
 
           {/* Ranking */}
-          <section style={{ marginBottom: '32px' }}>
-            <h3 style={{ margin: '0 0 12px' }}>랭킹</h3>
-            <div
-              onClick={() => navigate(`/groups/${id}/ranking`)}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                border: '1px solid #ccc',
-                borderRadius: '6px',
-                padding: '10px 14px',
-                fontSize: '14px',
-                cursor: 'pointer',
-              }}
-            >
-              <span>전체 랭킹</span>
-              <span style={{ fontSize: '12px', color: '#888' }}>점수</span>
-            </div>
-          </section>
+          {(() => {
+            const totalContest = contests.find((c) => c.name === '전체 랭킹')
+            if (!totalContest) return null
+            return (
+              <section style={{ marginBottom: '32px' }}>
+                <h3 style={{ margin: '0 0 12px' }}>랭킹</h3>
+                <div
+                  onClick={() => navigate(`/contests/${totalContest.id}`)}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    border: '1px solid #ccc',
+                    borderRadius: '6px',
+                    padding: '10px 14px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>전체 랭킹</span>
+                  <span style={{ fontSize: '12px', color: '#888' }}>점수</span>
+                </div>
+              </section>
+            )
+          })()}
 
           {/* Contests */}
           <section style={{ marginBottom: '32px' }}>
