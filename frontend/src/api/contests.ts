@@ -24,7 +24,7 @@ export interface ContestResponse {
 
 export interface ContestCreate {
   name: string
-  contest_type?: 'regular' | 'independent'
+  contest_type?: ContestType
   group_id?: number | null
   ranking_type?: RankingType
   uma_1st: number
@@ -60,6 +60,7 @@ export async function getContest(id: number): Promise<ContestResponse> {
 
 export interface ContestUpdate {
   name?: string
+  contest_type?: ContestType
   ranking_type?: RankingType
   uma_1st?: number
   uma_2nd?: number

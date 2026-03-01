@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
-import type { RankingType } from '../api/contests'
+import type { RankingType, ContestType } from '../api/contests'
 import { useContest } from '../hooks/useContest'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useMe } from '../hooks/useMe'
@@ -22,6 +22,7 @@ export default function ContestManagePage() {
   const deleteContestMutation = useDeleteContest(contest?.group_id)
 
   const [name, setName] = useState('')
+  const [contestType, setContestType] = useState<ContestType>('regular')
   const [rankingType, setRankingType] = useState<RankingType>('score')
   const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
   const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
@@ -40,6 +41,7 @@ export default function ContestManagePage() {
       return
     }
     setName(contest.name)
+    setContestType(contest.contest_type)
     setRankingType(contest.ranking_type)
     setUma({ uma_1st: contest.uma_1st, uma_2nd: contest.uma_2nd, uma_3rd: contest.uma_3rd, uma_4th: contest.uma_4th })
     setScoring({ scoring_1st: contest.scoring_1st, scoring_2nd: contest.scoring_2nd, scoring_3rd: contest.scoring_3rd, scoring_4th: contest.scoring_4th })
@@ -54,7 +56,7 @@ export default function ContestManagePage() {
     setSaveError('')
     setSaveSuccess(false)
     try {
-      await updateContestMutation.mutateAsync({ name, ranking_type: rankingType, ...uma, ...scoring })
+      await updateContestMutation.mutateAsync({ name, contest_type: contestType, ranking_type: rankingType, ...uma, ...scoring })
       setSaveSuccess(true)
     } catch {
       setSaveError('저장에 실패했습니다.')
@@ -99,6 +101,19 @@ export default function ContestManagePage() {
                 required
                 className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
               />
+            </div>
+
+            <div>
+              <label className="block font-bold mb-1.5 text-sm">랭킹전 타입</label>
+              <select
+                value={contestType}
+                onChange={(e) => { setContestType(e.target.value as ContestType); setSaveSuccess(false) }}
+                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+              >
+                <option value="regular">일반 랭킹전 (regular)</option>
+                <option value="independent">독립 랭킹전 (independent)</option>
+                <option value="overall">전체 랭킹 (overall)</option>
+              </select>
             </div>
 
             <div>
@@ -168,18 +183,16 @@ export default function ContestManagePage() {
 
           <hr className="my-10 border-gray-100" />
 
-          {contest?.contest_type !== 'overall' && (
-            <div>
-              <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
-              <button
-                onClick={handleDelete}
-                disabled={deleteContestMutation.isPending}
-                className="px-5 py-2 text-sm cursor-pointer text-red-600 border-red-600"
-              >
-                {deleteContestMutation.isPending ? '삭제 중...' : '랭킹전 삭제'}
-              </button>
-            </div>
-          )}
+          <div>
+            <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
+            <button
+              onClick={handleDelete}
+              disabled={deleteContestMutation.isPending}
+              className="px-5 py-2 text-sm cursor-pointer text-red-600 border-red-600"
+            >
+              {deleteContestMutation.isPending ? '삭제 중...' : '랭킹전 삭제'}
+            </button>
+          </div>
         </>
       ) : null}
     </div>

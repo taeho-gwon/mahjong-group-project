@@ -12,7 +12,7 @@ export default function ContestCreatePage() {
   const createContestMutation = useCreateContest(groupId)
 
   const [name, setName] = useState('')
-  const [contestType, setContestType] = useState<Exclude<ContestType, 'overall'>>('regular')
+  const [contestType, setContestType] = useState<ContestType>('regular')
   const [rankingType, setRankingType] = useState<RankingType>('score')
   const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
   const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
@@ -76,11 +76,12 @@ export default function ContestCreatePage() {
           <label className="block font-bold mb-1.5 text-sm">랭킹전 타입</label>
           <select
             value={contestType}
-            onChange={(e) => setContestType(e.target.value as Exclude<ContestType, 'overall'>)}
+            onChange={(e) => setContestType(e.target.value as ContestType)}
             className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
           >
             <option value="regular">일반 랭킹전 (regular)</option>
             <option value="independent">독립 랭킹전 (independent)</option>
+            <option value="overall">전체 랭킹 (overall)</option>
           </select>
         </div>
 
