@@ -132,14 +132,14 @@ Auth:     Required (owner)
 Query:    page=1&size=20
 Response: [AnnouncementResponse]
 Status:   200
-Auth:     Required
+Auth:     Not required
 ```
 
 ### GET /announcements/{id}
 ```
 Response: AnnouncementResponse
 Status:   200
-Auth:     Required
+Auth:     Not required
 ```
 
 ### AnnouncementResponse

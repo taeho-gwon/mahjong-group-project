@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { register } from '../api/auth'
+import AnnouncementSection from '../components/AnnouncementSection'
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('')
@@ -30,7 +31,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
+    <div className="flex flex-col justify-center items-center min-h-screen">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-[300px]">
         <h2 className="mb-2 text-xl font-bold">Register</h2>
         <input
@@ -65,6 +66,9 @@ export default function RegisterPage() {
           Already have an account? <Link to="/login">Login</Link>
         </p>
       </form>
+      <div className="w-[300px]">
+        <AnnouncementSection />
+      </div>
     </div>
   )
 }

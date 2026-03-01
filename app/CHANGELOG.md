@@ -4,6 +4,19 @@
 
 ---
 
+## [2026-03-02] @agent-backend ✅ DONE — 안내문 API 인증 제거
+
+### Changed
+- `app/api/announcement.py` — 두 엔드포인트에서 `get_current_user` 의존성 제거
+  - `GET /announcements`, `GET /announcements/{id}` 인증 불필요
+
+### 완료 조건
+- [x] `uv run pytest` 전체 통과 (62개)
+- [x] 인증 없이 `GET /announcements` 조회 가능
+- [x] `app/CHANGELOG.md` DONE 기록
+
+---
+
 ## [2026-03-02] @agent-backend ✅ DONE — API 경로에 /api prefix 추가
 
 ### Changed

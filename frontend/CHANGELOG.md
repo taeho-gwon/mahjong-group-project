@@ -4,6 +4,23 @@
 
 ---
 
+## [2026-03-02] @agent-frontend ✅ DONE — 안내문을 로그인/회원가입/메인 페이지에 표시
+
+### Added
+- `src/components/AnnouncementSection.tsx` — 안내문 표시 공통 컴포넌트 (useAnnouncements 훅 사용)
+
+### Changed
+- `src/pages/MainPage.tsx` — 인라인 안내문 코드 → `AnnouncementSection` 컴포넌트로 교체
+- `src/pages/LoginPage.tsx` — 폼 아래에 `AnnouncementSection` 추가
+- `src/pages/RegisterPage.tsx` — 폼 아래에 `AnnouncementSection` 추가
+
+### 완료 조건
+- [x] `npm run build` 에러 없음
+- [x] 로그인/회원가입/메인 3개 페이지에서 안내문 표시
+- [x] `frontend/CHANGELOG.md` DONE 기록
+
+---
+
 ## [2026-03-02] @agent-frontend ✅ DONE — API base URL에 /api prefix 추가
 
 ### Changed

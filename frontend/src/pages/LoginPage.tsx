@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../api/auth'
 import { useAuthStore } from '../stores/authStore'
+import AnnouncementSection from '../components/AnnouncementSection'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -28,7 +29,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
+    <div className="flex flex-col justify-center items-center min-h-screen">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-[300px]">
         <h2 className="mb-2 text-xl font-bold">Login</h2>
         <input
@@ -55,6 +56,9 @@ export default function LoginPage() {
           Don't have an account? <Link to="/register">Register</Link>
         </p>
       </form>
+      <div className="w-[300px]">
+        <AnnouncementSection />
+      </div>
     </div>
   )
 }

@@ -50,6 +50,8 @@
 | **FE API base URL /api prefix 추가** | ✅ | FE | src/api/client.ts BASE_URL 변경 |
 | **FE 메인 페이지 안내문 표시** | ✅ | FE | API 연동 + MainPage 안내 섹션 |
 | **FE 게임 기록 중복 선택 방지** | ✅ | FE | 드롭다운 disabled + 제출 차단 |
+| **안내문 API 인증 제거** | ✅ | BE | GET /announcements 비로그인 허용 |
+| **FE 안내문을 로그인/회원가입/메인에 표시** | ✅ | FE | AnnouncementSection 공통 컴포넌트 + 3개 페이지 |
 
 ---
 
@@ -57,6 +59,8 @@
 
 | 작업 | 담당 | 완료일 |
 |------|------|--------|
+| FE 안내문을 로그인/회원가입/메인 페이지에 표시 (AnnouncementSection 컴포넌트) | FE | 2026-03-02 |
+| 안내문 API 인증 제거 (GET /announcements 비로그인 허용) | BE | 2026-03-02 |
 | FE 게임 기록 동일 인물 중복 선택 방지 (disabled + 제출 차단) | FE | 2026-03-02 |
 | FE API base URL /api prefix 추가 (client.ts) | FE | 2026-03-02 |
 | FE 메인 페이지 안내문 표시 (useAnnouncements + MainPage 섹션) | FE | 2026-03-02 |
