@@ -20,11 +20,8 @@
 
 ---
 
-## 마이그레이션 대기 목록
+## 마이그레이션 완료 목록
 
-Backend 에이전트가 모델을 변경하면 여기에 TODO 추가:
-
-<!-- TODO(@agent-devops): 아래 변경사항에 대한 migration이 완료됨 -->
 - [x] users 테이블 초기 생성
 - [x] groups + group_members 테이블
 - [x] Group.uma_* 컬럼 추가
