@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useContest } from '../hooks/useContest'
 import { useContestGameRecords } from '../hooks/useContestGameRecords'
@@ -106,6 +106,9 @@ export default function ContestDetailPage() {
               }`}>
                 {contest.contest_type === 'overall' ? '전체 랭킹' : contest.contest_type === 'independent' ? '독립' : '일반'}
               </span>
+              {contest.contest_type === 'independent' && (
+                <span className="text-xs text-gray-400">전체 랭킹 미합산</span>
+              )}
             </div>
             <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
               <div>
@@ -158,7 +161,7 @@ export default function ContestDetailPage() {
                     return (
                       <tr key={entry.id} className="border-b border-gray-100">
                         <td className="px-2.5 py-2.5 text-center text-gray-400 font-bold whitespace-nowrap">{idx + 1}</td>
-                        <td className="px-2.5 py-2.5 text-left whitespace-nowrap">{entry.username}</td>
+                        <td className="px-2.5 py-2.5 text-left whitespace-nowrap"><Link to={`/users/${entry.id}`} className="no-underline text-inherit">{entry.username}</Link></td>
                         <td className={`px-2.5 py-2.5 text-center font-bold whitespace-nowrap ${isPositive ? 'text-green-700' : 'text-red-600'}`}>{mainScore}</td>
                         <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[0]}</td>
                         <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[1]}</td>
@@ -193,7 +196,7 @@ export default function ContestDetailPage() {
                       ].map(({ label, player, point }) => (
                         <div key={label}>
                           <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                          <div className="font-medium">{player.username}</div>
+                          <Link to={`/users/${player.id}`} className="font-medium no-underline text-inherit">{player.username}</Link>
                           <div className="text-xs text-gray-600">{point.toLocaleString()}</div>
                         </div>
                       ))}

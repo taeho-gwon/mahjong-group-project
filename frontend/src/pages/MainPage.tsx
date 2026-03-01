@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { usePublicGroups } from '../hooks/usePublicGroups'
+import { useMyGroups } from '../hooks/useMyGroups'
+import { useJoinGroup } from '../hooks/mutations/useJoinGroup'
 import { useAuthStore } from '../stores/authStore'
 
 const PAGE_SIZE = 10
@@ -9,8 +11,13 @@ const PAGE_SIZE = 10
 export default function MainPage() {
   const [page, setPage] = useState(1)
   const navigate = useNavigate()
+  const accessToken = useAuthStore((s) => s.accessToken)
   const clearTokens = useAuthStore((s) => s.clearTokens)
   const { data, isLoading, isError } = usePublicGroups(page)
+  const { data: myGroups } = useMyGroups()
+  const joinGroupMutation = useJoinGroup()
+
+  const myGroupIds = new Set(myGroups?.map((g) => g.id) ?? [])
 
   const groups = data?.items ?? []
   const total = data?.total ?? 0
@@ -41,22 +48,40 @@ export default function MainPage() {
         <p className="text-gray-400">No public groups yet.</p>
       ) : (
         <ul className="list-none p-0 m-0 flex flex-col gap-2">
-          {groups.map((g) => (
-            <li key={g.id}>
-              <Link
-                to={`/groups/${g.id}`}
-                className="block border border-gray-300 rounded-md p-[14px] no-underline text-inherit"
-              >
-                <div className="font-bold text-[15px]">{g.name}</div>
-                {g.description && (
-                  <div className="text-gray-600 mt-1 text-sm">{g.description}</div>
+          {groups.map((g) => {
+            const isJoined = myGroupIds.has(g.id)
+            return (
+              <li key={g.id} className="flex items-center border border-gray-300 rounded-md">
+                <Link
+                  to={`/groups/${g.id}`}
+                  className="flex-1 p-[14px] no-underline text-inherit"
+                >
+                  <div className="font-bold text-[15px]">{g.name}</div>
+                  {g.description && (
+                    <div className="text-gray-600 mt-1 text-sm">{g.description}</div>
+                  )}
+                  <div className="text-xs text-gray-400 mt-1.5">
+                    {new Date(g.created_at).toLocaleDateString()}
+                  </div>
+                </Link>
+                {accessToken && (
+                  <div className="pr-3 shrink-0">
+                    {isJoined ? (
+                      <span className="text-xs text-gray-400 px-2 py-1">가입됨</span>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.preventDefault(); joinGroupMutation.mutate(g.id) }}
+                        disabled={joinGroupMutation.isPending}
+                        className="text-xs px-3 py-1.5 cursor-pointer rounded border border-blue-500 text-blue-600 bg-transparent"
+                      >
+                        가입
+                      </button>
+                    )}
+                  </div>
                 )}
-                <div className="text-xs text-gray-400 mt-1.5">
-                  {new Date(g.created_at).toLocaleDateString()}
-                </div>
-              </Link>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
 

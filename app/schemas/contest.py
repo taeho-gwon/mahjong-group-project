@@ -15,6 +15,8 @@ class ContestCreate(UmaFields):
     scoring_2nd: int = 2
     scoring_3rd: int = 1
     scoring_4th: int = 0
+    period_start: datetime | None = None
+    period_end: datetime | None = None
 
 
 class ContestUpdate(BaseModel):
@@ -58,5 +60,8 @@ class ContestResponse(BaseModel):
     scoring_2nd: int
     scoring_3rd: int
     scoring_4th: int
+    period_start: datetime | None
+    period_end: datetime | None
+    is_default: bool
     created_at: datetime
     updated_at: datetime

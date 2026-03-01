@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import aliased, selectinload
 
 from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
 from app.repositories.base import BaseRepository
@@ -123,3 +123,17 @@ class GroupRepository(BaseRepository):
         await self.db.commit()
         await self.db.refresh(group)
         return group
+
+    async def list_shared_groups(
+        self, user_id_a: int, user_id_b: int
+    ) -> list[Group]:
+        m1 = aliased(GroupMember)
+        m2 = aliased(GroupMember)
+        result = await self.db.execute(
+            select(Group)
+            .join(m1, m1.group_id == Group.id)
+            .join(m2, m2.group_id == Group.id)
+            .where(m1.user_id == user_id_a, m2.user_id == user_id_b)
+            .order_by(Group.id)
+        )
+        return list(result.scalars().all())

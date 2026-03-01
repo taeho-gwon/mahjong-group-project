@@ -54,7 +54,8 @@ class PaginatedGroupResponse(BaseModel):
 
 
 class InviteLinkResponse(BaseModel):
-    invite_token: str
+    invite_url: str
+    expires_at: datetime
 
 
 class JoinByInviteRequest(BaseModel):

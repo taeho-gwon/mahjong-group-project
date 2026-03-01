@@ -56,9 +56,11 @@ class GameRecordRepository(BaseRepository):
         limit: int,
         group_id: int | None = None,
         contest_id: int | None = None,
-        is_overall: bool = False,
+        is_aggregate: bool = False,
+        period_start: datetime | None = None,
+        period_end: datetime | None = None,
     ) -> list[GameRecord]:
-        if is_overall and group_id is not None:
+        if is_aggregate and group_id is not None:
             stmt = _with_players(
                 select(GameRecord)
                 .outerjoin(Contest, GameRecord.contest_id == Contest.id)
@@ -68,6 +70,10 @@ class GameRecordRepository(BaseRepository):
                     | (Contest.contest_type == ContestType.regular)
                 )
             )
+            if period_start is not None:
+                stmt = stmt.where(GameRecord.played_at >= period_start)
+            if period_end is not None:
+                stmt = stmt.where(GameRecord.played_at < period_end)
         else:
             stmt = _with_players(select(GameRecord))
             if group_id is not None:
@@ -82,9 +88,11 @@ class GameRecordRepository(BaseRepository):
         self,
         group_id: int | None = None,
         contest_id: int | None = None,
-        is_overall: bool = False,
+        is_aggregate: bool = False,
+        period_start: datetime | None = None,
+        period_end: datetime | None = None,
     ) -> int:
-        if is_overall and group_id is not None:
+        if is_aggregate and group_id is not None:
             stmt = (
                 select(func.count())
                 .select_from(GameRecord)
@@ -95,6 +103,10 @@ class GameRecordRepository(BaseRepository):
                     | (Contest.contest_type == ContestType.regular)
                 )
             )
+            if period_start is not None:
+                stmt = stmt.where(GameRecord.played_at >= period_start)
+            if period_end is not None:
+                stmt = stmt.where(GameRecord.played_at < period_end)
         else:
             stmt = select(func.count()).select_from(GameRecord)
             if group_id is not None:

@@ -60,19 +60,31 @@ class GameRecordService:
         contest_id: int | None = None,
     ) -> PaginatedGameRecordResponse:
         offset = (page - 1) * size
-        is_overall = False
-        overall_group_id = group_id
+        is_aggregate = False
+        aggregate_group_id = group_id
+        period_start = None
+        period_end = None
         if contest_id is not None:
             contest = await self.contest_repo.get_by_id(contest_id)
-            if contest and contest.contest_type == ContestType.overall:
-                is_overall = True
-                overall_group_id = contest.group_id
-        if is_overall:
+            if contest and contest.contest_type == ContestType.aggregate:
+                is_aggregate = True
+                aggregate_group_id = contest.group_id
+                period_start = contest.period_start
+                period_end = contest.period_end
+        if is_aggregate:
             items = await self.game_record_repo.list(
-                offset, size, group_id=overall_group_id, is_overall=True
+                offset,
+                size,
+                group_id=aggregate_group_id,
+                is_aggregate=True,
+                period_start=period_start,
+                period_end=period_end,
             )
             total = await self.game_record_repo.count(
-                group_id=overall_group_id, is_overall=True
+                group_id=aggregate_group_id,
+                is_aggregate=True,
+                period_start=period_start,
+                period_end=period_end,
             )
         else:
             items = await self.game_record_repo.list(offset, size, group_id, contest_id)

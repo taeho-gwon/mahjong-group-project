@@ -1,8 +1,9 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useContests } from '../hooks/useContests'
 import { useMe } from '../hooks/useMe'
+import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -18,8 +19,14 @@ export default function GroupDetailPage() {
   const { data: group, isLoading, isError } = useGroupDetail(groupId)
   const { data: contests = [] } = useContests(groupId)
   const { data: user } = useMe()
+  const leaveGroupMutation = useLeaveGroup(groupId!)
 
   const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
+
+  function handleLeave() {
+    if (!window.confirm('정말 이 그룹에서 탈퇴하시겠습니까?')) return
+    leaveGroupMutation.mutate()
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -119,7 +126,7 @@ export default function GroupDetailPage() {
                   key={m.id}
                   className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm"
                 >
-                  <span className={m.role === 'owner' ? 'font-bold' : ''}>{m.username}</span>
+                  <Link to={`/users/${m.id}`} className={`no-underline text-inherit ${m.role === 'owner' ? 'font-bold' : ''}`}>{m.username}</Link>
                   <span className={`text-xs px-2 py-0.5 rounded ${
                     m.role === 'owner'
                       ? 'bg-yellow-100 text-yellow-700'
@@ -133,6 +140,19 @@ export default function GroupDetailPage() {
               ))}
             </ul>
           </section>
+
+          {/* Leave Group */}
+          {myRole && myRole !== 'owner' && (
+            <section className="mt-10 border-t border-gray-100 pt-6">
+              <button
+                onClick={handleLeave}
+                disabled={leaveGroupMutation.isPending}
+                className="text-sm px-4 py-2 cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
+              >
+                {leaveGroupMutation.isPending ? '탈퇴 중...' : '그룹 탈퇴'}
+              </button>
+            </section>
+          )}
         </>
       ) : null}
     </div>

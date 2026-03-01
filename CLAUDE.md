@@ -52,6 +52,16 @@
 - 보안 관련 변경
 - 배포 환경 설정 변경
 
+### 거버넌스
+파일 소유권, CHANGELOG 프로토콜, 교차 영역 작업 규칙, 충돌 방지 규칙은 `AGENTS.md`에 정의되어 있습니다. 모든 에이전트는 이 규칙을 준수해야 합니다.
+
+**Manager의 쓰기 범위:**
+- `CLAUDE.md`, `AGENTS.md` — 프로젝트 규칙
+- `docs/decisions/` — ADR 작성
+- `docs/architecture.md` — 아키텍처 문서
+- `app/CHANGELOG.md`, `frontend/CHANGELOG.md`, `infra/CHANGELOG.md` — TODO 작성만
+- 소스 코드(`app/`, `frontend/`, `infra/`) — **수정 금지**
+
 ---
 
 ## 프로젝트 개요

@@ -13,6 +13,7 @@ from app.services.auth import AuthService
 from app.services.contest import ContestService
 from app.services.game_record import GameRecordService
 from app.services.group import GroupService
+from app.services.user import UserService
 from app.utils.security import decode_token
 
 _bearer = HTTPBearer()
@@ -61,6 +62,13 @@ def get_contest_service(
     contest_repo: ContestRepository = Depends(get_contest_repository),
 ) -> ContestService:
     return ContestService(contest_repo)
+
+
+def get_user_service(
+    user_repo: UserRepository = Depends(get_user_repository),
+    group_repo: GroupRepository = Depends(get_group_repository),
+) -> UserService:
+    return UserService(user_repo, group_repo)
 
 
 async def get_current_user(

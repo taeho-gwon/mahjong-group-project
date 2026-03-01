@@ -126,6 +126,29 @@ Auth:     Required (owner)
 
 ---
 
+## 유저 (`/users`)
+
+### GET /users/{id}
+```
+Response: UserProfileResponse
+Status:   200
+Auth:     Required
+```
+
+### UserProfileResponse
+```json
+{
+  "id": 1,
+  "username": "string",
+  "created_at": "datetime",
+  "shared_groups": [{ "id": 1, "name": "string" }]
+}
+```
+
+> `shared_groups`: 조회자와 대상 유저가 모두 소속된 그룹 목록
+
+---
+
 ## 컨테스트 (`/contests`)
 
 ### POST /contests
@@ -133,10 +156,12 @@ Auth:     Required (owner)
 Request:  {
   "group_id": 1,
   "name": "string",
-  "description": "string|null",
   "ranking_type": "score|match_point",
+  "contest_type": "aggregate|regular|independent",
   "uma_1st": 30, "uma_2nd": 10, "uma_3rd": -10, "uma_4th": -30,
-  "scoring_1st": 4, "scoring_2nd": 2, "scoring_3rd": 1, "scoring_4th": 0
+  "scoring_1st": 4, "scoring_2nd": 2, "scoring_3rd": 1, "scoring_4th": 0,
+  "period_start": "datetime|null",
+  "period_end": "datetime|null"
 }
 Response: ContestResponse
 Status:   201
@@ -283,15 +308,18 @@ Auth:     Required (해당 그룹의 owner/admin만 가능)
   "created_by_id": 1,
   "name": "string",
   "ranking_type": "score|match_point",
-  "contest_type": "overall|regular|independent",
+  "contest_type": "aggregate|regular|independent",
   "uma_1st": 30, "uma_2nd": 10, "uma_3rd": -10, "uma_4th": -30,
   "scoring_1st": 4, "scoring_2nd": 2, "scoring_3rd": 1, "scoring_4th": 0,
+  "period_start": "datetime|null",
+  "period_end": "datetime|null",
+  "is_default": false,
   "created_at": "datetime",
   "updated_at": "datetime"
 }
 ```
 
-> **주의**: `contest_type=overall`인 Contest는 그룹 생성 시 자동 생성됨. 직접 생성(`POST /contests`)하거나 삭제(`DELETE /contests/{id}`) 불가 (400 반환)
+> **주의**: `is_default=true`인 Contest는 그룹 생성 시 자동 생성됨. 삭제(`DELETE /contests/{id}`) 불가 (400 반환). `aggregate` 타입 Contest는 직접 생성 가능 (`is_default`는 항상 `false`)
 
 ---
 

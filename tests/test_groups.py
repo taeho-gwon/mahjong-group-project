@@ -94,7 +94,9 @@ async def test_delete_group_by_member_forbidden(client: AsyncClient) -> None:
     assert r.status_code == 403
 
 
-async def test_create_group_creates_overall_contest(client: AsyncClient) -> None:
+async def test_create_group_creates_default_aggregate_contest(
+    client: AsyncClient,
+) -> None:
     headers = await _login(client, "owner")
     create_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=headers)
     group_id = create_r.json()["id"]
@@ -102,6 +104,9 @@ async def test_create_group_creates_overall_contest(client: AsyncClient) -> None
     r = await client.get(f"/contests?group_id={group_id}")
     assert r.status_code == 200
     contests = r.json()
-    overall = [c for c in contests if c["contest_type"] == "overall"]
-    assert len(overall) == 1
-    assert overall[0]["name"] == "전체 랭킹"
+    aggregate = [
+        c for c in contests
+        if c["contest_type"] == "aggregate" and c["is_default"] is True
+    ]
+    assert len(aggregate) == 1
+    assert aggregate[0]["name"] == "전체 랭킹"

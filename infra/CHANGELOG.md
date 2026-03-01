@@ -36,6 +36,8 @@
 
 ---
 
+<!-- TODO(@agent-devops): contesttype enum 값 변경 (overall→aggregate) + contests 컬럼 3개 추가 (period_start, period_end, is_default) migration 필요 -->
+
 <!-- TODO(@agent-devops): Contest 타입 + Group uma 제거 migration — @agent-backend ✅ DONE (2026-03-01) -->
 
 ## [2026-03-01] @agent-devops ✅ DONE — Contest 타입 + Group uma 제거 Migration
@@ -75,3 +77,26 @@ uv run alembic downgrade -1
 ```
 
 > Breaking 마이그레이션은 Manager 에이전트 승인 필요
+
+---
+
+## [2026-03-01] TODO(@agent-devops) — AGENTS.md 거버넌스 규칙 확인
+
+### 배경
+- `AGENTS.md`에 파일 소유권 매트릭스, CHANGELOG 프로토콜, 교차 영역 작업 규칙, 충돌 방지 규칙이 추가됨
+- 모든 에이전트가 이 규칙을 숙지하고 준수해야 함
+
+### 할 일
+1. `AGENTS.md` 전체를 읽고 내용 확인
+2. 특히 다음 항목을 확인:
+   - **파일 소유권 매트릭스**: DevOps 에이전트의 RW/R 권한이 현재 작업 방식과 맞는지
+   - **CHANGELOG 프로토콜**: TODO/DONE 형식이 현재 사용 중인 형식과 일치하는지
+   - **교차 영역 작업 규칙**: 규칙에 동의하는지, 보완할 점이 있는지
+3. `infra/CLAUDE.md`에 이미 적힌 규칙과 `AGENTS.md`가 **충돌하는 부분**이 있는지 확인
+4. 문제가 있으면 이 CHANGELOG에 피드백 기록 (예: `FYI(@agent-manager): ...`)
+5. 문제가 없으면 DONE 처리
+
+### 완료 조건
+- [ ] `AGENTS.md` 확인 완료
+- [ ] `infra/CLAUDE.md`와 충돌 없음 확인
+- [ ] 피드백 또는 DONE 기록

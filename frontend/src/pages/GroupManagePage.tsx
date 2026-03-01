@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { leaveGroup } from '../api/groups'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useContests } from '../hooks/useContests'
@@ -10,6 +9,7 @@ import { useUpdateGroup } from '../hooks/mutations/useUpdateGroup'
 import { useUpdateMemberRole } from '../hooks/mutations/useUpdateMemberRole'
 import { useRemoveMember } from '../hooks/mutations/useRemoveMember'
 import { useGenerateInviteLink } from '../hooks/mutations/useGenerateInviteLink'
+import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -30,6 +30,7 @@ export default function GroupManagePage() {
   const updateRoleMutation = useUpdateMemberRole(groupId!)
   const removeMemberMutation = useRemoveMember(groupId!)
   const generateInviteMutation = useGenerateInviteLink(groupId!)
+  const leaveGroupMutation = useLeaveGroup(groupId!)
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -103,14 +104,9 @@ export default function GroupManagePage() {
     }
   }
 
-  async function handleLeave() {
-    if (!group) return
-    try {
-      await leaveGroup(group.id)
-      navigate('/', { replace: true })
-    } catch {
-      alert('Failed to leave group')
-    }
+  function handleLeave() {
+    if (!window.confirm('정말 이 그룹에서 탈퇴하시겠습니까?')) return
+    leaveGroupMutation.mutate()
   }
 
   const myRole = group && me ? group.members.find((m) => m.id === me.id)?.role : undefined
@@ -273,7 +269,10 @@ export default function GroupManagePage() {
           <section>
             <h3 className="mt-0 mb-4 text-base">Members ({group.members.length})</h3>
             <ul className="list-none p-0 m-0 flex flex-col gap-2">
-              {group.members.map((m) => {
+              {[...group.members].sort((a, b) => {
+                const order = { owner: 0, admin: 1, member: 2 }
+                return (order[a.role as keyof typeof order] ?? 3) - (order[b.role as keyof typeof order] ?? 3)
+              }).map((m) => {
                 const isMe = m.id === me?.id
                 const isMemberOwner = m.role === 'owner'
                 const canKick = !isMe && m.role === 'member' && (myRole === 'owner' || myRole === 'admin')
@@ -285,7 +284,7 @@ export default function GroupManagePage() {
                     className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm"
                   >
                     <span className={isMemberOwner ? 'font-bold' : ''}>
-                      {m.username}{isMe && <span className="text-gray-400 text-xs"> (me)</span>}
+                      <Link to={`/users/${m.id}`} className="no-underline text-inherit">{m.username}</Link>{isMe && <span className="text-gray-400 text-xs"> (me)</span>}
                     </span>
                     <div className="flex gap-2 items-center">
                       <span className={`text-xs px-2 py-0.5 rounded ${

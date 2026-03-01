@@ -315,6 +315,148 @@ onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세
 
 ---
 
+## [2026-03-01] @agent-frontend ✅ DONE — 버그 수정 3건
+
+### 버그 1: 초대 링크 응답 타입 확인
+- `src/api/groups.ts`의 `generateInviteLink` 반환 타입이 이미 `{ invite_url: string; expires_at: string }`로 일치 — 변경 불필요
+
+### 버그 2: GroupRankingPage — overall contest를 타입으로 탐색
+- `src/pages/GroupRankingPage.tsx`에서 `c.name === '전체 랭킹'` → `c.contest_type === 'overall'`로 변경
+
+### 버그 3: ContestCreate/ManagePage — overall 타입 선택지 제거
+- `src/pages/ContestCreatePage.tsx` — contest_type 드롭다운에서 overall 옵션 제거
+- `src/pages/ContestManagePage.tsx` — overall 타입 contest일 때 타입 변경 셀렉트 숨김, 삭제 버튼 숨김
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — independent vs regular 차이 UI 반영
+
+### Changed
+- `src/pages/ContestCreatePage.tsx` — contest_type select 아래에 합산 여부 설명 문구 추가
+- `src/pages/ContestManagePage.tsx` — 동일하게 설명 문구 추가
+- `src/pages/ContestDetailPage.tsx` — independent 배지 옆에 "전체 랭킹 미합산" 텍스트 추가
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — Access Token 자동 갱신 (401 인터셉터)
+
+### Changed
+- `src/api/client.ts` — `apiFetch`에 401 인터셉터 추가
+  - 401 응답 시 refreshToken으로 `POST /auth/refresh` 호출
+  - refresh 성공 → 새 토큰 저장 + 원래 요청 재시도
+  - refresh 실패 → `clearTokens()` + `/login` 페이지 이동
+  - `refreshPromise` 패턴으로 동시 다발 401 시 refresh 한 번만 호출
+  - `/auth/*` 경로는 인터셉터 건너뛰어 재귀 방지
+- `src/stores/authStore.ts` — `clearTokens()` 이미 존재, 변경 불필요
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — 그룹 탈퇴 UX 개선
+
+### Added
+- `src/hooks/mutations/useLeaveGroup.ts` — 탈퇴 mutation 훅 (invalidate + 토스트 + 홈 이동)
+- `src/pages/GroupDetailPage.tsx` — 멤버(owner 제외) 하단에 "그룹 탈퇴" 버튼 추가 (confirm 후 mutation)
+
+### Changed
+- `src/pages/GroupManagePage.tsx` — 직접 `leaveGroup()` 호출 → `useLeaveGroup` mutation 훅으로 교체
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — 멤버 목록 정렬 순서 통일 (owner → admin → member)
+
+### Changed
+- `src/pages/GroupManagePage.tsx` — 멤버 목록에 역할 우선순위 정렬 추가 (owner → admin → member)
+- `src/pages/GroupDetailPage.tsx` — 이미 정렬 적용됨, 변경 없음
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — 유저 프로필 페이지
+
+### Added
+- `src/api/users.ts` — `getUserProfile(userId)` API 함수 (`GET /users/{userId}`)
+- `src/hooks/useUserProfile.ts` — 쿼리 훅 (queryKey: `['user', userId]`)
+- `src/pages/UserProfilePage.tsx` — 유저 프로필 페이지 (유저명, 가입일, 공통 소속 그룹 목록, 본인이면 마이페이지 링크)
+- `App.tsx` — `/users/:userId` 라우트 추가
+
+### Changed
+- `GroupDetailPage.tsx` — 멤버 목록 유저명에 `/users/{id}` 링크 추가
+- `GroupManagePage.tsx` — 멤버 목록 유저명에 링크 추가
+- `ContestDetailPage.tsx` — 랭킹 테이블 + 게임 기록 플레이어명에 링크 추가
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — 공개 그룹 가입 버튼
+
+### Added
+- `src/api/groups.ts` — `joinGroup(groupId)` 함수 추가 (`POST /groups/{id}/join`)
+- `src/hooks/mutations/useJoinGroup.ts` — 가입 mutation 훅 (invalidate + 토스트 + 그룹 상세 이동)
+- `src/pages/MainPage.tsx` — 공개 그룹 목록에 가입 버튼 추가
+  - 로그인 상태에서만 표시
+  - 이미 가입한 그룹은 "가입됨" 텍스트 표시
+  - 미가입 그룹에 "가입" 버튼 → 클릭 시 mutation 실행
+
+---
+
+## [2026-03-01] TODO(@agent-frontend) — aggregate 타입 리네이밍 + 기간 프리셋 UI (선행: @agent-backend aggregate 작업 완료 후)
+
+### 배경
+- 백엔드에서 `contest_type: overall` → `aggregate`로 변경됨
+- aggregate contest에 `period_start`, `period_end`, `is_default` 필드 추가
+- 사용자가 aggregate contest를 직접 생성 가능해짐 (기간 지정)
+
+### 수정 범위
+
+#### 1. `src/api/contests.ts` — 타입 업데이트
+- `ContestResponse`의 `contest_type`: `'overall'` → `'aggregate'`
+- `period_start: string | null`, `period_end: string | null`, `is_default: boolean` 추가
+- `ContestCreate`에 `period_start`, `period_end` 추가
+
+#### 2. 코드베이스 전체 `overall` → `aggregate` 치환
+- `contest_type === 'overall'` → `contest_type === 'aggregate'`
+- GroupRankingPage, ContestDetailPage, ContestCreatePage, ContestManagePage, GameRecordCreatePage 등
+
+#### 3. `src/pages/ContestCreatePage.tsx` — aggregate 생성 UI
+- contest_type에 `aggregate` 옵션 추가: "집계 랭킹 (aggregate)"
+  - 설명: "다른 랭킹전의 기록을 모아서 기간별로 집계합니다"
+- aggregate 선택 시 기간 설정 UI 표시:
+  - **프리셋 버튼**: 일간 / 주간 / 월간 / 연간 / 전체 / 직접 설정
+  - 프리셋 선택 시 `period_start`, `period_end` 자동 계산
+  - "직접 설정" 선택 시 날짜 입력 필드 2개 표시
+  - "전체" 선택 시 둘 다 null
+- regular/independent 선택 시 기간 UI 숨김
+
+#### 4. `src/pages/ContestManagePage.tsx`
+- aggregate contest 수정 시 기간 변경 가능
+- `is_default=true`인 aggregate: 삭제 버튼 숨김 (기존 overall 삭제 방지 로직 유지)
+- `is_default=false`인 aggregate: 삭제 가능
+
+#### 5. `src/pages/GroupRankingPage.tsx`
+- `contest_type === 'overall'` → `contest_type === 'aggregate'`
+- default aggregate 찾기: `c.contest_type === 'aggregate' && c.is_default`
+
+#### 6. `src/pages/ContestDetailPage.tsx`
+- 배지: `aggregate` → "집계" 표시
+- aggregate contest일 때 기간 표시 (예: "2026.03.01 ~ 2026.03.31" 또는 "전체 기간")
+
+### 완료 조건
+- [ ] `npm run build` 에러 없음
+- [ ] 모든 `overall` 참조가 `aggregate`로 변경됨
+- [ ] aggregate contest 생성 시 기간 프리셋 UI 동작
+- [ ] is_default aggregate 삭제 불가, 일반 aggregate 삭제 가능
+- [ ] `frontend/CHANGELOG.md` DONE 기록
+
+---
+
+## [2026-03-01] @agent-frontend ✅ DONE — AGENTS.md 거버넌스 규칙 확인
+
+### 확인 결과
+- **파일 소유권 매트릭스**: FE는 `frontend/` RW, `app/`·`infra/` R — `frontend/CLAUDE.md`의 "소유 영역만 수정" 규칙과 일치
+- **CHANGELOG 프로토콜**: TODO/DONE 형식 일치 (TODO는 Manager만 작성, DONE은 FE가 업데이트)
+- **교차 영역 규칙**: "남의 코드를 직접 수정하지 않는다" — `frontend/CLAUDE.md`의 "범위 외 요청" 규칙과 일치
+- **충돌 없음**: `AGENTS.md`와 `frontend/CLAUDE.md` 간 규칙 충돌 발견되지 않음
+
+---
+
 ## 참고
 
 - API 클라이언트: `src/api/client.ts` → Zustand store에서 accessToken 읽음

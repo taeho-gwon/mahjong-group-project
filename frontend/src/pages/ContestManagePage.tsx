@@ -103,18 +103,24 @@ export default function ContestManagePage() {
               />
             </div>
 
-            <div>
-              <label className="block font-bold mb-1.5 text-sm">랭킹전 타입</label>
-              <select
-                value={contestType}
-                onChange={(e) => { setContestType(e.target.value as ContestType); setSaveSuccess(false) }}
-                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
-              >
-                <option value="regular">일반 랭킹전 (regular)</option>
-                <option value="independent">독립 랭킹전 (independent)</option>
-                <option value="overall">전체 랭킹 (overall)</option>
-              </select>
-            </div>
+            {contest?.contest_type !== 'overall' && (
+              <div>
+                <label className="block font-bold mb-1.5 text-sm">랭킹전 타입</label>
+                <select
+                  value={contestType}
+                  onChange={(e) => { setContestType(e.target.value as ContestType); setSaveSuccess(false) }}
+                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                >
+                  <option value="regular">일반 랭킹전 (regular)</option>
+                  <option value="independent">독립 랭킹전 (independent)</option>
+                </select>
+                <p className="mt-1.5 mb-0 text-xs text-gray-500">
+                  {contestType === 'regular'
+                    ? '기록이 전체 랭킹에 합산됩니다.'
+                    : '기록이 전체 랭킹에 합산되지 않습니다. (연습전, 이벤트전 등)'}
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block font-bold mb-1.5 text-sm">랭킹 방식</label>
@@ -181,18 +187,22 @@ export default function ContestManagePage() {
             </button>
           </form>
 
-          <hr className="my-10 border-gray-100" />
+          {contest?.contest_type !== 'overall' && (
+            <>
+              <hr className="my-10 border-gray-100" />
 
-          <div>
-            <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
-            <button
-              onClick={handleDelete}
-              disabled={deleteContestMutation.isPending}
-              className="px-5 py-2 text-sm cursor-pointer text-red-600 border-red-600"
-            >
-              {deleteContestMutation.isPending ? '삭제 중...' : '랭킹전 삭제'}
-            </button>
-          </div>
+              <div>
+                <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteContestMutation.isPending}
+                  className="px-5 py-2 text-sm cursor-pointer text-red-600 border-red-600"
+                >
+                  {deleteContestMutation.isPending ? '삭제 중...' : '랭킹전 삭제'}
+                </button>
+              </div>
+            </>
+          )}
         </>
       ) : null}
     </div>

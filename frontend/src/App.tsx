@@ -15,6 +15,7 @@ import ContestCreatePage from './pages/ContestCreatePage'
 import ContestDetailPage from './pages/ContestDetailPage'
 import ContestManagePage from './pages/ContestManagePage'
 import GroupRankingPage from './pages/GroupRankingPage'
+import UserProfilePage from './pages/UserProfilePage'
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           <Route path="/contests/:contestId/manage" element={<ContestManagePage />} />
           <Route path="/game-records/:recordId/edit" element={<GameRecordEditPage />} />
           <Route path="/groups/:groupId/records/manage" element={<GameRecordManagePage />} />
+          <Route path="/users/:userId" element={<UserProfilePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

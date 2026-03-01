@@ -40,15 +40,16 @@ class ContestRepository(BaseRepository):
         await self.db.delete(contest)
         await self.db.commit()
 
-    async def create_overall(
+    async def create_default_aggregate(
         self, group_id: int, created_by_id: int, uma: UmaFields
     ) -> Contest:
         contest = Contest(
             name="전체 랭킹",
-            contest_type=ContestType.overall,
+            contest_type=ContestType.aggregate,
             ranking_type=RankingType.score,
             group_id=group_id,
             created_by_id=created_by_id,
+            is_default=True,
             uma_1st=uma.uma_1st,
             uma_2nd=uma.uma_2nd,
             uma_3rd=uma.uma_3rd,
@@ -63,11 +64,14 @@ class ContestRepository(BaseRepository):
         await self.db.refresh(contest)
         return contest
 
-    async def get_overall_by_group(self, group_id: int) -> Contest | None:
+    async def get_default_aggregate_by_group(
+        self, group_id: int
+    ) -> Contest | None:
         result = await self.db.execute(
             select(Contest).where(
                 Contest.group_id == group_id,
-                Contest.contest_type == ContestType.overall,
+                Contest.contest_type == ContestType.aggregate,
+                Contest.is_default.is_(True),
             )
         )
         return result.scalar_one_or_none()

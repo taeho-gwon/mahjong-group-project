@@ -10,13 +10,13 @@ export default function GroupRankingPage() {
 
   useEffect(() => {
     if (!contests) return
-    const totalContest = contests.find((c) => c.name === '전체 랭킹')
-    if (!totalContest) return
-    navigate(`/contests/${totalContest.id}`, { replace: true })
+    const overallContest = contests.find((c) => c.contest_type === 'overall')
+    if (!overallContest) return
+    navigate(`/contests/${overallContest.id}`, { replace: true })
   }, [contests, navigate])
 
   if (isError) return <p className="p-6 text-red-600">Failed to load contests</p>
-  if (contests && !contests.find((c) => c.name === '전체 랭킹')) {
+  if (contests && !contests.find((c) => c.contest_type === 'overall')) {
     return <p className="p-6 text-red-600">전체 랭킹을 찾을 수 없습니다.</p>
   }
   return <Spinner />

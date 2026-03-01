@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,7 +16,7 @@ class RankingType(StrEnum):
 
 
 class ContestType(StrEnum):
-    overall = "overall"
+    aggregate = "aggregate"
     regular = "regular"
     independent = "independent"
 
@@ -43,6 +43,16 @@ class Contest(Base):
         default=ContestType.regular,
         server_default="regular",
         nullable=False,
+    )
+
+    period_start: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
+    period_end: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
+    is_default: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
     )
 
     # 우마 (그룹 우마 override)

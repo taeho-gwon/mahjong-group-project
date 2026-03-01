@@ -15,3 +15,17 @@ class UserResponse(BaseModel):
     username: str
     is_active: bool
     created_at: datetime
+
+
+class SharedGroupInfo(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: int
+    name: str
+
+
+class UserProfileResponse(BaseModel):
+    id: int
+    username: str
+    created_at: datetime
+    shared_groups: list[SharedGroupInfo]

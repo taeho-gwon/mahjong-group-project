@@ -81,8 +81,12 @@ export default function ContestCreatePage() {
           >
             <option value="regular">일반 랭킹전 (regular)</option>
             <option value="independent">독립 랭킹전 (independent)</option>
-            <option value="overall">전체 랭킹 (overall)</option>
           </select>
+          <p className="mt-1.5 mb-0 text-xs text-gray-500">
+            {contestType === 'regular'
+              ? '기록이 전체 랭킹에 합산됩니다.'
+              : '기록이 전체 랭킹에 합산되지 않습니다. (연습전, 이벤트전 등)'}
+          </p>
         </div>
 
         <div>

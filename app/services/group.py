@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 
+from app.config import settings
 from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
 from app.repositories.contest import ContestRepository
 from app.repositories.group import GroupRepository
@@ -36,7 +37,7 @@ class GroupService:
     async def create_group(self, owner_id: int, data: GroupCreate) -> Group:
         group = await self.group_repo.create(owner_id, data)
         await self.group_repo.add_member(group.id, owner_id, role=MemberRole.owner)
-        await self.contest_repo.create_overall(group.id, owner_id, data)
+        await self.contest_repo.create_default_aggregate(group.id, owner_id, data)
         return group
 
     async def get_group(self, group_id: int) -> Group:
@@ -133,7 +134,9 @@ class GroupService:
         token = secrets.token_urlsafe(32)
         expires_at = datetime.now(UTC) + timedelta(days=INVITE_TOKEN_TTL_DAYS)
         await self.group_repo.set_invite_token(group, token, expires_at)
-        return InviteLinkResponse(invite_token=token)
+        base_url = settings.allowed_origins[0].rstrip("/")
+        invite_url = f"{base_url}/join?token={token}"
+        return InviteLinkResponse(invite_url=invite_url, expires_at=expires_at)
 
     async def join_via_invite(self, token: str, user_id: int) -> Group:
         group = await self.group_repo.get_by_invite_token(token)

@@ -104,7 +104,7 @@ async def test_update_contest_by_other_forbidden(client: AsyncClient) -> None:
             "uma_2nd": 20,
             "uma_3rd": -20,
             "uma_4th": -50,
-        },  # noqa: E501
+        },
         headers=other_headers,
     )
     assert r.status_code == 403
@@ -129,22 +129,55 @@ async def test_delete_contest_by_other_forbidden(client: AsyncClient) -> None:
     assert r.status_code == 403
 
 
-async def test_create_overall_contest_directly_forbidden(client: AsyncClient) -> None:
+async def test_create_aggregate_contest_success(client: AsyncClient) -> None:
     headers = await _login(client, "owner")
     group_id = await _create_group(client, headers)
-    payload = {**_CONTEST_PAYLOAD, "group_id": group_id, "contest_type": "overall"}
+    payload = {
+        **_CONTEST_PAYLOAD,
+        "group_id": group_id,
+        "name": "2026 Season",
+        "contest_type": "aggregate",
+        "period_start": "2026-01-01T00:00:00Z",
+        "period_end": "2026-07-01T00:00:00Z",
+    }
 
     r = await client.post("/contests", json=payload, headers=headers)
-    assert r.status_code == 400
+    assert r.status_code == 201
+    data = r.json()
+    assert data["contest_type"] == "aggregate"
+    assert data["is_default"] is False
+    assert data["period_start"] is not None
+    assert data["period_end"] is not None
 
 
-async def test_delete_overall_contest_forbidden(client: AsyncClient) -> None:
+async def test_delete_default_contest_forbidden(client: AsyncClient) -> None:
     headers = await _login(client, "owner")
     group_id = await _create_group(client, headers)
 
-    # 그룹 생성 시 overall contest가 자동 생성됨
+    # Group creation auto-creates a default aggregate contest
     list_r = await client.get(f"/contests?group_id={group_id}")
-    overall = next(c for c in list_r.json() if c["contest_type"] == "overall")
+    default = next(
+        c for c in list_r.json()
+        if c["contest_type"] == "aggregate" and c["is_default"] is True
+    )
 
-    r = await client.delete(f"/contests/{overall['id']}", headers=headers)
+    r = await client.delete(f"/contests/{default['id']}", headers=headers)
     assert r.status_code == 400
+
+
+async def test_delete_non_default_aggregate_success(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    payload = {
+        **_CONTEST_PAYLOAD,
+        "group_id": group_id,
+        "name": "Season Aggregate",
+        "contest_type": "aggregate",
+    }
+
+    r = await client.post("/contests", json=payload, headers=headers)
+    assert r.status_code == 201
+    contest_id = r.json()["id"]
+
+    r = await client.delete(f"/contests/{contest_id}", headers=headers)
+    assert r.status_code == 204
