@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.models.group import JoinPolicy, MemberRole
+
+
 class MemberInfo(BaseModel):
     model_config = {"from_attributes": True}
 

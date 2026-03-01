@@ -112,6 +112,16 @@ class GameRecordService:
     ) -> GameRecord:
         record = await self.get_game_record(record_id)
         await self._require_group_editor(record.group_id, current_user_id)
+        directions = ("east", "south", "west", "north")
+        player_ids = [
+            getattr(data, f"{d}_player_id") or getattr(record, f"{d}_player_id")
+            for d in directions
+        ]
+        if len(set(player_ids)) != 4:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="All four players must be different",
+            )
         return await self.game_record_repo.update(record, data)
 
     async def delete_game_record(self, record_id: int, current_user_id: int) -> None:

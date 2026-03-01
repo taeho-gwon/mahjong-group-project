@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.config import settings
 
 # Import all models here so Alembic can detect them
-from app.models import event, game_record, group, user  # noqa: F401
+from app.models import announcement, event, game_record, group, user  # noqa: F401
 from app.models.base import Base
 
 config = context.config

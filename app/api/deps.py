@@ -5,10 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.user import User
+from app.repositories.announcement import AnnouncementRepository
 from app.repositories.event import EventRepository
 from app.repositories.game_record import GameRecordRepository
 from app.repositories.group import GroupRepository
 from app.repositories.user import UserRepository
+from app.services.announcement import AnnouncementService
 from app.services.auth import AuthService
 from app.services.event import EventService
 from app.services.game_record import GameRecordService
@@ -17,6 +19,18 @@ from app.services.user import UserService
 from app.utils.security import decode_token
 
 _bearer = HTTPBearer()
+
+
+def get_announcement_repository(
+    db: AsyncSession = Depends(get_db),
+) -> AnnouncementRepository:
+    return AnnouncementRepository(db)
+
+
+def get_announcement_service(
+    announcement_repo: AnnouncementRepository = Depends(get_announcement_repository),
+) -> AnnouncementService:
+    return AnnouncementService(announcement_repo)
 
 
 def get_user_repository(db: AsyncSession = Depends(get_db)) -> UserRepository:

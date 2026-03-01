@@ -4,6 +4,62 @@
 
 ---
 
+## [2026-03-02] @agent-backend ✅ DONE — API 경로에 /api prefix 추가
+
+### Changed
+- `app/main.py` — `app.include_router(router, prefix="/api")` 추가
+  - 모든 API 경로: `/auth/...` → `/api/auth/...`, `/groups` → `/api/groups`, `/events` → `/api/events` 등
+- 테스트 URL 경로 전부 `/api/...`로 업데이트 (conftest.py + 5개 테스트 파일)
+- `docs/api-contract.md` — Base URL에 `/api` prefix 반영
+
+### 완료 조건
+- [x] `uv run pytest` 전체 통과 (60개)
+- [x] 모든 API 경로가 `/api/...`로 동작 확인
+- [x] `docs/api-contract.md` 업데이트
+- [x] `app/CHANGELOG.md` DONE 기록
+- **영향**: @agent-frontend — API base URL에 `/api` prefix 추가 필요
+- **영향**: @agent-devops — nginx proxy 규칙 `/api/` 로 변경 필요
+
+---
+
+## [2026-03-02] @agent-backend ✅ DONE — 안내문 조회 API
+
+### Added
+- `Announcement` 모델 (`app/models/announcement.py`): id, title, content, is_active, created_at, updated_at
+- `AnnouncementResponse` 스키마 (`app/schemas/announcement.py`)
+- `AnnouncementRepository` (`app/repositories/announcement.py`): get_by_id, list_active (페이지네이션)
+- `AnnouncementService` (`app/services/announcement.py`): get_announcement (404 처리), list_announcements (page/size)
+- `GET /announcements` — 안내문 목록 조회 (page/size 쿼리, 인증 필수, is_active=true만, 최신순)
+- `GET /announcements/{id}` — 안내문 단건 조회 (인증 필수)
+- `app/api/deps.py` — get_announcement_repository, get_announcement_service DI 추가
+- `app/api/router.py` — announcement_router 등록
+
+### 완료 조건
+- [x] `uv run pytest` 전체 통과 (60개)
+- [x] `docs/api-contract.md` 업데이트
+- [x] `app/CHANGELOG.md` DONE 기록
+- [x] `infra/CHANGELOG.md`에 TODO(@agent-devops) migration 이미 기록됨
+- **영향**: @agent-devops — migration 필요 (announcements 테이블)
+- **영향**: @agent-frontend — `GET /announcements`, `GET /announcements/{id}` API 사용 가능
+
+---
+
+## [2026-03-02] @agent-backend ✅ DONE — 게임 기록 동일 인물 중복 참가 방지
+
+### Added
+- `GameRecordCreate` 스키마에 `@model_validator` 추가: 4명의 player_id 중복 시 422 반환
+- `GameRecordService.update_game_record()`: 기존 값과 병합 후 4명 전체에 대해 중복 체크, 중복 시 400 반환
+- 테스트 2개 추가 (60 → 62):
+  - 중복 player_id로 생성 시도 → 422 응답 확인
+  - 중복 player_id로 수정 시도 → 400 응답 확인
+
+### 완료 조건
+- [x] `uv run pytest` 전체 통과 (62개)
+- [x] 중복 플레이어 생성/수정 시 에러 반환 확인
+- [x] `app/CHANGELOG.md` DONE 기록
+
+---
+
 ## [2026-03-02] @agent-backend ✅ DONE — Contest → Event 전체 리네이밍
 
 ### Changed (Breaking)

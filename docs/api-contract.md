@@ -1,6 +1,6 @@
 # BE-FE API 계약서
 
-Base URL: `http://localhost:8000` (dev)
+Base URL: `http://localhost:8000/api` (dev)
 
 > **이 파일은 단일 진실 공급원(Single Source of Truth)입니다.**
 > API 변경 시 Backend 에이전트가 이 파일을 먼저 업데이트합니다.
@@ -122,6 +122,39 @@ Response: MemberInfo
 Status:   200
 Auth:     Required (owner)
 ```
+
+---
+
+## 안내문 (`/announcements`)
+
+### GET /announcements
+```
+Query:    page=1&size=20
+Response: [AnnouncementResponse]
+Status:   200
+Auth:     Required
+```
+
+### GET /announcements/{id}
+```
+Response: AnnouncementResponse
+Status:   200
+Auth:     Required
+```
+
+### AnnouncementResponse
+```json
+{
+  "id": 1,
+  "title": "string",
+  "content": "string",
+  "is_active": true,
+  "created_at": "datetime",
+  "updated_at": "datetime"
+}
+```
+
+> **주의**: 조회 전용 API. 안내문 생성/수정/삭제는 DB에서 직접 관리.
 
 ---
 

@@ -4,6 +4,46 @@
 
 ---
 
+## [2026-03-02] @agent-frontend ✅ DONE — API base URL에 /api prefix 추가
+
+### Changed
+- `src/api/client.ts` — `BASE_URL`에 `/api` suffix 추가: `(VITE_API_URL || '') + '/api'`
+- 모든 API 호출(`apiFetch` + `tryRefreshToken`)이 자동으로 `/api/...`로 요청됨
+
+### 완료 조건
+- [x] `npm run build` 에러 없음
+- [x] `frontend/CHANGELOG.md` DONE 기록
+
+---
+
+## [2026-03-02] @agent-frontend ✅ DONE — 메인 페이지 안내문 표시
+
+### Added
+- `src/api/announcements.ts` — `Announcement` 타입, `getAnnouncements(page, size)` 함수
+- `src/hooks/useAnnouncements.ts` — 안내문 목록 조회 쿼리 훅 (queryKey: `['announcements']`)
+- `src/pages/MainPage.tsx` — 모임 목록 하단에 안내문 섹션 (제목, 내용, 작성일 표시, 안내문 없으면 미표시)
+
+### 완료 조건
+- [x] `npm run build` 에러 없음
+- [x] `frontend/CHANGELOG.md` DONE 기록
+
+---
+
+## [2026-03-02] @agent-frontend ✅ DONE — 게임 기록 동일 인물 중복 선택 방지
+
+### Changed
+- `src/pages/GameRecordCreatePage.tsx` — 다른 자리에 선택된 멤버를 드롭다운에서 disabled + "(선택됨)" 표시, 중복 시 제출 버튼 비활성화
+- `src/pages/GameRecordEditPage.tsx` — 동일 로직 적용
+- `selectedPlayerIds(excludePos)`: 현재 자리를 제외한 선택된 플레이어 ID Set 반환
+- `hasDuplicatePlayers()`: 4자리 중 중복 ID 존재 여부 체크
+
+### 완료 조건
+- [x] `npm run build` 에러 없음
+- [x] 같은 멤버를 2개 이상 자리에 선택할 수 없음 (disabled + 제출 차단)
+- [x] `frontend/CHANGELOG.md` DONE 기록
+
+---
+
 ## [2026-03-02] @agent-frontend ✅ DONE — UI 라벨 "그룹" → "모임" 전체 변경
 
 ### Changed

@@ -60,10 +60,25 @@ export default function GameRecordEditPage() {
     setPositions((prev) => ({ ...prev, [pos]: { ...prev[pos], ...patch } }))
   }
 
+  function selectedPlayerIds(excludePos: Position): Set<number> {
+    const ids = new Set<number>()
+    for (const { key } of POSITIONS) {
+      if (key !== excludePos && positions[key].playerId != null) {
+        ids.add(positions[key].playerId!)
+      }
+    }
+    return ids
+  }
+
   function filteredMembers(pos: Position): MemberInfo[] {
     const search = positions[pos].search.toLowerCase()
     if (!search) return members
     return members.filter((m) => m.username.toLowerCase().includes(search))
+  }
+
+  function hasDuplicatePlayers(): boolean {
+    const ids = POSITIONS.map(({ key }) => positions[key].playerId).filter((id) => id != null)
+    return new Set(ids).size !== ids.length
   }
 
   async function handleSubmit() {
@@ -132,6 +147,7 @@ export default function GameRecordEditPage() {
               {POSITIONS.map(({ key, label }) => {
                 const pos = positions[key]
                 const filtered = filteredMembers(key)
+                const taken = selectedPlayerIds(key)
                 return (
                   <tr key={key}>
                     <td className="px-2.5 py-2 align-middle border-b border-gray-100">
@@ -154,8 +170,8 @@ export default function GameRecordEditPage() {
                       >
                         <option value="">-- 선택 --</option>
                         {filtered.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.username}
+                          <option key={m.id} value={m.id} disabled={taken.has(m.id)}>
+                            {m.username}{taken.has(m.id) ? ' (선택됨)' : ''}
                           </option>
                         ))}
                       </select>
@@ -194,7 +210,7 @@ export default function GameRecordEditPage() {
           <div className="flex justify-end">
             <button
               onClick={handleSubmit}
-              disabled={updateMutation.isPending || (['east', 'south', 'west', 'north'] as Position[]).reduce((acc, k) => acc + (Number(positions[k].point) || 0), 0) !== 100000}
+              disabled={updateMutation.isPending || hasDuplicatePlayers() || (['east', 'south', 'west', 'north'] as Position[]).reduce((acc, k) => acc + (Number(positions[k].point) || 0), 0) !== 100000}
               className="px-5 py-2 text-sm cursor-pointer disabled:opacity-50"
             >
               {updateMutation.isPending ? '처리 중...' : '저장'}

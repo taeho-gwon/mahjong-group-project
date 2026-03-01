@@ -4,6 +4,36 @@
 
 ---
 
+## [2026-03-02] @agent-devops ✅ DONE — nginx proxy 규칙을 /api/ prefix로 변경
+
+### Changed
+- `infra/docker/nginx.conf` — API proxy 규칙 단순화
+  - 기존: `location ~ ^/(auth|groups|events|game-records|users)(/|$)` (regex 패턴)
+  - 변경: `location /api/` (prefix match)
+  - 프론트엔드 SPA fallback (`try_files $uri $uri/ /index.html`) 유지
+- BE에 `/api` prefix 추가 완료 확인 후 적용
+
+### 완료 조건
+- [x] 새로고침 시 프론트엔드 페이지 정상 표시 (SPA fallback 유지)
+- [x] API 호출 `/api/...` 정상 프록시
+- [x] `infra/CHANGELOG.md` DONE 기록
+
+---
+
+## [2026-03-02] @agent-devops ✅ DONE — announcements 테이블 migration
+
+### Added
+- `infra/db/versions/e72e21f9f8a2_add_announcements_table.py` — announcements 테이블 마이그레이션
+  - 컬럼: `id`, `title` (String 255), `content` (Text), `is_active` (Boolean, default true), `created_at`, `updated_at`
+  - `upgrade()` / `downgrade()` 모두 구현
+- `infra/db/env.py` — `announcement` 모델 import 추가
+
+### 완료 조건
+- [x] `uv run alembic current` → `e72e21f9f8a2 (head)` ✅
+- [x] `infra/CHANGELOG.md` DONE 기록
+
+---
+
 ## [2026-03-02] @agent-devops ✅ DONE — Contest → Event 리네이밍 migration
 
 ### Migration 적용 — initial_schema 재생성 (데이터 초기화)
@@ -91,7 +121,8 @@
 
 ## 마이그레이션 현황
 
-- 현재 HEAD: `e7340feacebb` (initial_schema — Contest→Event 리네이밍 반영)
+- 현재 HEAD: `e72e21f9f8a2` (add_announcements_table)
+- `e7340feacebb` — initial_schema (Contest→Event 리네이밍 반영)
 - 이전 migration들은 초기화로 삭제됨
 
 ---

@@ -124,9 +124,7 @@ class GroupRepository(BaseRepository):
         await self.db.refresh(group)
         return group
 
-    async def list_shared_groups(
-        self, user_id_a: int, user_id_b: int
-    ) -> list[Group]:
+    async def list_shared_groups(self, user_id_a: int, user_id_b: int) -> list[Group]:
         m1 = aliased(GroupMember)
         m2 = aliased(GroupMember)
         result = await self.db.execute(

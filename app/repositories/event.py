@@ -69,9 +69,7 @@ class EventRepository(BaseRepository):
         await self.db.refresh(event)
         return event
 
-    async def get_default_aggregate_by_group(
-        self, group_id: int
-    ) -> Event | None:
+    async def get_default_aggregate_by_group(self, group_id: int) -> Event | None:
         result = await self.db.execute(
             select(Event).where(
                 Event.group_id == group_id,

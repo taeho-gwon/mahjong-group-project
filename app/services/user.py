@@ -6,9 +6,7 @@ from app.schemas.user import SharedGroupInfo, UserProfileResponse
 
 
 class UserService:
-    def __init__(
-        self, user_repo: UserRepository, group_repo: GroupRepository
-    ) -> None:
+    def __init__(self, user_repo: UserRepository, group_repo: GroupRepository) -> None:
         self.user_repo = user_repo
         self.group_repo = group_repo
 

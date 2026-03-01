@@ -42,6 +42,12 @@
 | **Contest → Event migration** | ✅ | DevOps | initial_schema 재생성 (e7340feacebb) |
 | **Contest → Event 리네이밍 (FE)** | ✅ | FE | 파일/코드/라우트/UI라벨 전체 완료 |
 | **UI 라벨 "그룹" → "모임" 변경** | ✅ | FE | 토스트/페이지제목/버튼/에러메시지 전체 완료 |
+| **안내문 조회 API** | ✅ | BE | GET /announcements, GET /announcements/{id} |
+| **API /api prefix 추가** | ✅ | BE | 모든 API 경로 /api/... 로 변경 (62 tests) |
+| **게임 기록 중복 플레이어 방지** | ✅ | BE | 생성/수정 시 4명 중복 체크 |
+| **announcements migration** | ✅ | DevOps | e72e21f9f8a2 적용 완료 |
+| **nginx /api/ proxy 규칙 변경** | ✅ | DevOps | location /api/ prefix match |
+| **FE API base URL /api prefix 추가** | ⏳ | FE | BE 변경에 따른 후속 작업 |
 
 ---
 
@@ -49,6 +55,11 @@
 
 | 작업 | 담당 | 완료일 |
 |------|------|--------|
+| nginx /api/ proxy 규칙 변경 (location /api/ prefix match) | DevOps | 2026-03-02 |
+| announcements 테이블 migration (e72e21f9f8a2) | DevOps | 2026-03-02 |
+| 게임 기록 중복 플레이어 방지 (생성/수정 시 4명 중복 체크, 62 tests) | BE | 2026-03-02 |
+| API /api prefix 추가 (main.py + 테스트 전체 경로 변경) | BE | 2026-03-02 |
+| 안내문 조회 API (GET /announcements, GET /announcements/{id}) | BE | 2026-03-02 |
 | UI 라벨 "그룹" → "모임" 전체 변경 | FE | 2026-03-02 |
 | Contest → Event 전체 리네이밍 (FE 파일/코드/라우트/UI라벨) | FE | 2026-03-02 |
 | Contest → Event migration (initial_schema 재생성) | DevOps | 2026-03-02 |
@@ -103,6 +114,8 @@
 | GET /users/{id} | ✅ | 2026-03-01 |
 | POST /groups/{id}/invite-link | ✅ | 2026-03-01 |
 | POST /events/{id}/close | ✅ | 2026-03-02 |
+| GET /announcements | ✅ | 2026-03-02 |
+| GET /announcements/{id} | ✅ | 2026-03-02 |
 
 ---
 

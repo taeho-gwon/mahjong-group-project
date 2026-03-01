@@ -31,6 +31,18 @@ class GameRecordCreate(BaseModel):
             raise ValueError(f"Sum of points must be 100000, got {total}")
         return self
 
+    @model_validator(mode="after")
+    def check_unique_players(self) -> "GameRecordCreate":
+        ids = [
+            self.east_player_id,
+            self.south_player_id,
+            self.west_player_id,
+            self.north_player_id,
+        ]
+        if len(set(ids)) != 4:
+            raise ValueError("All four players must be different")
+        return self
+
 
 class GameRecordUpdate(BaseModel):
     east_player_id: int | None = None
