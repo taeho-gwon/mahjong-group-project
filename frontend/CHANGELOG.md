@@ -191,6 +191,83 @@ onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세
 
 ---
 
+## TODO(@agent-frontend) — 게임 기록 관리 페이지 신규 + ContestDetailPage 정리
+
+### 작업 요청 by @agent-manager
+
+**배경:**
+- 게임 기록 수정/삭제 권한이 그룹 owner/admin 전용으로 변경됨
+- 조회(ContestDetailPage)와 관리(신규 페이지)를 역할 분리
+
+**추가 API 없음** — 기존 `GET /game-records?group_id=`, `PUT`, `DELETE` 재활용
+
+---
+
+### 1. `src/pages/GameRecordManagePage.tsx` 신규
+
+**라우트:** `/groups/:groupId/records/manage`
+
+**접근 제어:**
+- `useGroupDetail(groupId)`로 현재 유저의 role 확인
+- role이 `owner` 또는 `admin`이 아니면 접근 불가 메시지 표시 (또는 redirect)
+- owner는 admin의 상위 존재 — `['owner', 'admin'].includes(myRole)` 로 체크
+
+**화면 구성:**
+- 상단: 그룹명 + "기록 관리" 제목
+- 기록 목록 테이블:
+
+| 날짜 | 컨테스트 | 동(점수) | 남(점수) | 서(점수) | 북(점수) | 수정 | 삭제 |
+|------|---------|---------|---------|---------|---------|------|------|
+
+- 데이터: `useContestGameRecords` 대신 `GET /game-records?group_id={id}` 사용
+  → 기존 `useContestGameRecords` hook을 참고해 `useGroupGameRecords(groupId)` 신규 추가
+- **수정 버튼**: `navigate('/game-records/:id/edit')` → 기존 `GameRecordEditPage` 재활용
+- **삭제 버튼**: confirm 후 `useDeleteGameRecord` mutation 실행
+
+---
+
+### 2. `src/hooks/useGroupGameRecords.ts` 신규
+
+```ts
+// GET /game-records?group_id={groupId}&size=100
+// queryKey: ['gameRecords', 'group', groupId]
+```
+
+---
+
+### 3. `App.tsx` — 라우트 추가
+
+```tsx
+<Route path="/groups/:groupId/records/manage" element={<GameRecordManagePage />} />
+```
+
+---
+
+### 4. `GroupManagePage.tsx` — 기록 관리 링크 추가
+
+- "기록 관리" 버튼/링크 추가 (owner/admin에게만 표시)
+- `navigate('/groups/:groupId/records/manage')`
+
+---
+
+### 5. `ContestDetailPage.tsx` — 수정/삭제 버튼 제거
+
+- 게임 기록 목록의 수정 버튼, 삭제 버튼 모두 제거
+- 이 페이지는 순수 조회 전용으로 역할 고정
+
+---
+
+**완료 조건:**
+- `npm run build` 에러 없음
+- owner/admin만 `/groups/:groupId/records/manage` 접근 가능
+- 수정 버튼 → `GameRecordEditPage` 정상 이동
+- 삭제 버튼 → confirm 후 정상 삭제 + 목록 갱신
+- ContestDetailPage에서 수정/삭제 버튼 제거 확인
+- `frontend/CHANGELOG.md` DONE 기록
+- `docs/status.md` 항목 업데이트
+
+---
+
 ## 참고
 
 - API 클라이언트: `src/api/client.ts` → Zustand store에서 accessToken 읽음

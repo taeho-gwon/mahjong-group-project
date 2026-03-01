@@ -10,7 +10,8 @@
 | 작업 | 담당 | 상태 | 참조 |
 |------|------|------|------|
 | 게임기록 수정/삭제 권한 변경 (owner/admin만 허용, 생성자 제외) | @agent-backend | 🔄 진행 가능 | `app/CHANGELOG.md` TODO 참조 |
-| 백엔드 API 통합 테스트 작성 | @agent-backend | 🔄 진행 가능 | `app/CHANGELOG.md` TODO 참조 |
+| 게임 기록 관리 페이지 신규 + ContestDetailPage 정리 | @agent-frontend | 🔄 진행 가능 | `frontend/CHANGELOG.md` TODO 참조 |
+
 
 ---
 
@@ -29,6 +30,7 @@
 | UX 개선 (토스트 알림/로딩 스피너/점수 검증) | @agent-frontend | 2026-03-01 |
 | Group 관리 페이지 (멤버 역할 변경, 강퇴) | @agent-frontend | 2026-03-01 |
 | 마이그레이션 완료 (users, groups, contests, game_records 포함) | @agent-devops | 2026-03-01 |
+| 백엔드 API 통합 테스트 작성 (31개 통과) | @agent-backend | 2026-03-01 |
 
 ---
 
