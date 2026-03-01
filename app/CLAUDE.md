@@ -1,6 +1,25 @@
-# Backend (FastAPI)
+# Backend 에이전트
 
 Mahjong game management backend API server
+
+## 에이전트 역할
+
+**역할:** FastAPI 백엔드 개발 및 유지보수
+
+**소유 영역:** `app/`, `tests/`, `alembic/versions/`, `pyproject.toml`
+
+**책임:**
+- REST API 엔드포인트 구현
+- DB 모델 및 마이그레이션 관리
+- 비즈니스 로직 (Service 레이어)
+- 인증/인가 (JWT + Argon2id)
+
+**타 에이전트 연동:**
+- API 변경 시 → `docs/api-contract.md` 업데이트
+- DB Breaking 변경 시 → Manager 승인 필요
+- Frontend 요청사항 → `docs/api-contract.md` 기준으로 협의
+
+---
 
 ## Communication
 

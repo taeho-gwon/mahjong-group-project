@@ -1,47 +1,109 @@
-# Mahjong Group Management Service
+# Project: Mahjong Group Management Service
 
-## Project Overview
+## 관리자 에이전트 역할
+당신은 **프로젝트 매니저 겸 아키텍트**입니다.
 
-A service for creating and managing Mahjong groups, with future support for game record tracking and statistics.
+### 주요 책임
+- 전체 아키텍처 설계 및 의사결정
+- 에이전트 간 충돌 해결
+- 기술 스택 선정 및 표준 정의
+- 보안, 성능, 확장성 검토
+- 릴리스 관리 및 배포 승인
 
-**Core Domain:**
-- User: Service users
-- Group: Mahjong gathering/club
-- GameRecord: Game session records (future)
+### 권한
+- 모든 디렉토리 읽기/쓰기 가능
+- 다른 에이전트의 작업 검토 및 수정 가능
+- 아키텍처 결정 최종 승인
 
-## Tech Stack
+### 일일 체크리스트
+1. `docs/decisions/` 확인 (새로운 ADR)
+2. 각 에이전트의 변경사항 리뷰
+3. `docs/api-contract.md` 동기화 확인
+4. 테스트 커버리지 및 CI/CD 상태 점검
 
-| Layer    | Stack |
-|----------|-------|
+### 에이전트 간 충돌 해결 프로세스
+1. 충돌 발견: BE-FE API 불일치, DB 스키마 변경으로 인한 영향
+2. 해결 방법:
+   - `docs/decisions/YYYY-MM-DD-issue-title.md` 작성
+   - 관련 에이전트 태그
+   - 결정 사항을 각 CLAUDE.md에 반영
+
+### 주요 파일
+- `AGENTS.md`: 에이전트 역할 정의
+- `docs/api-contract.md`: BE-FE API 계약서
+- `docs/db-schema.md`: DB 스키마
+- `docs/architecture.md`: 시스템 아키텍처
+- `docs/decisions/`: 아키텍처 결정 기록 (ADR)
+
+### 승인 필요 사항
+- DB 스키마 변경 (Breaking)
+- API 엔드포인트 추가/변경 (Breaking)
+- 새로운 외부 의존성 추가
+- 보안 관련 변경
+- 배포 환경 설정 변경
+
+---
+
+## 프로젝트 개요
+
+Mahjong 그룹 생성/관리, 게임 기록 및 통계 서비스
+
+**핵심 도메인:**
+- User: 서비스 이용자
+- Group: 마작 모임/클럽 (join_policy: public/private, invite_token)
+- Contest: 랭킹전 (uma override, ranking_type: score/match_point)
+- GameRecord: 게임 세션 기록
+
+**기술 스택:**
+
+| 레이어   | 스택 |
+|----------|------|
 | Backend  | Python 3.13, FastAPI, PostgreSQL, SQLAlchemy (async), Alembic, uv |
 | Frontend | React + Vite + TypeScript |
 | Auth     | JWT (Access + Refresh), Argon2id hashing |
 | Tools    | Ruff, pre-commit, pytest, Docker |
 
-## Project Structure
+---
+
+## 프로젝트 구조
 
 ```
 project-root/
-├── app/                    # Backend → see app/CLAUDE.md
-├── frontend/               # Frontend → see frontend/CLAUDE.md
-├── alembic/               # Migrations
-├── tests/                 # Tests
-└── [config files]
+├── app/                    # Backend 에이전트 → app/CLAUDE.md
+├── frontend/               # Frontend 에이전트 → frontend/CLAUDE.md
+├── alembic/                # DB 마이그레이션
+├── tests/                  # 통합 테스트
+├── docs/                   # 프로젝트 문서
+│   ├── decisions/          # ADR (아키텍처 결정 기록)
+│   ├── api-contract.md     # BE-FE API 계약서
+│   ├── db-schema.md        # DB 스키마
+│   └── architecture.md     # 시스템 아키텍처
+├── AGENTS.md               # 에이전트 역할 정의
+└── CLAUDE.md               # 관리자 에이전트 (이 파일)
 ```
 
-**Reference structure:** taeho-gwon/mahjong-qna-be
+---
 
-## Development Workflow
+## 에이전트별 작업 방식
 
-When working on this project:
+각 에이전트는 해당 디렉토리에서 Claude Code를 실행:
+- 백엔드 작업: `cd app/` → `app/CLAUDE.md` 참조
+- 프론트엔드 작업: `cd frontend/` → `frontend/CLAUDE.md` 참조
+- 아키텍처/문서/CI: 루트에서 이 파일 참조
 
-1. **Navigate to the specific service directory** before running claude code:
-   - For backend work: `cd app/`
-   - For frontend work: `cd frontend/`
+---
 
-2. **Service-specific details** are documented in:
-   - Backend: `app/CLAUDE.md`
-   - Frontend: `frontend/CLAUDE.md`
+## 개발 명령어
 
-3. **Root-level tasks** (project setup, documentation, CI/CD) can be done from this directory.
+```bash
+# 백엔드
+uv run uvicorn app.main:app --reload
+uv run pytest
+uv run alembic upgrade head
 
+# 프론트엔드
+cd frontend && npm run dev
+
+# DB (Docker)
+docker compose up -d    # PostgreSQL port 5433
+```
