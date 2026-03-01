@@ -30,16 +30,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '300px' }}>
-        <h2 style={{ margin: '0 0 8px' }}>Register</h2>
+    <div className="flex justify-center items-center min-h-screen">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-[300px]">
+        <h2 className="mb-2 text-xl font-bold">Register</h2>
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
-          style={{ padding: '8px', fontSize: '14px' }}
+          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
         <input
           type="password"
@@ -47,7 +47,7 @@ export default function RegisterPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ padding: '8px', fontSize: '14px' }}
+          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
         <input
           type="password"
@@ -55,13 +55,13 @@ export default function RegisterPage() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
-          style={{ padding: '8px', fontSize: '14px' }}
+          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
-        {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ padding: '8px', fontSize: '14px', cursor: 'pointer' }}>
+        {error && <p className="text-red-600 m-0 text-sm">{error}</p>}
+        <button type="submit" disabled={loading} className="px-4 py-2.5 text-sm cursor-pointer">
           {loading ? 'Registering...' : 'Register'}
         </button>
-        <p style={{ margin: 0, textAlign: 'center', fontSize: '14px' }}>
+        <p className="m-0 text-center text-sm">
           Already have an account? <Link to="/login">Login</Link>
         </p>
       </form>

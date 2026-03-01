@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../api/auth'
+import { useAuthStore } from '../stores/authStore'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const setTokens = useAuthStore((s) => s.setTokens)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -16,8 +18,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const tokens = await login(username, password)
-      localStorage.setItem('access_token', tokens.access_token)
-      localStorage.setItem('refresh_token', tokens.refresh_token)
+      setTokens(tokens.access_token, tokens.refresh_token)
       navigate('/')
     } catch {
       setError('Invalid username or password')
@@ -27,16 +28,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '300px' }}>
-        <h2 style={{ margin: '0 0 8px' }}>Login</h2>
+    <div className="flex justify-center items-center min-h-screen">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-[300px]">
+        <h2 className="mb-2 text-xl font-bold">Login</h2>
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
-          style={{ padding: '8px', fontSize: '14px' }}
+          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
         <input
           type="password"
@@ -44,13 +45,13 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ padding: '8px', fontSize: '14px' }}
+          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
-        {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ padding: '8px', fontSize: '14px', cursor: 'pointer' }}>
+        {error && <p className="text-red-600 m-0 text-sm">{error}</p>}
+        <button type="submit" disabled={loading} className="px-4 py-2.5 text-sm cursor-pointer">
           {loading ? 'Logging in...' : 'Login'}
         </button>
-        <p style={{ margin: 0, textAlign: 'center', fontSize: '14px' }}>
+        <p className="m-0 text-center text-sm">
           Don't have an account? <Link to="/register">Register</Link>
         </p>
       </form>

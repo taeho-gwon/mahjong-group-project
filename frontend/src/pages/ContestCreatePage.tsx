@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { createContest } from '../api/contests'
 import type { RankingType } from '../api/contests'
+import { useCreateContest } from '../hooks/mutations/useCreateContest'
 
 export default function ContestCreatePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const groupId = id ? Number(id) : undefined
+
+  const createContestMutation = useCreateContest(groupId)
 
   const [name, setName] = useState('')
   const [rankingType, setRankingType] = useState<RankingType>('score')
   const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
   const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
   const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
 
   const umaSum = uma.uma_1st + uma.uma_2nd + uma.uma_3rd + uma.uma_4th
 
@@ -27,11 +29,10 @@ export default function ContestCreatePage() {
       return
     }
     setError('')
-    setSubmitting(true)
     try {
-      await createContest({
+      await createContestMutation.mutateAsync({
         name: name.trim(),
-        group_id: id ? Number(id) : null,
+        group_id: groupId ?? null,
         ranking_type: rankingType,
         ...uma,
         ...scoring,
@@ -39,43 +40,41 @@ export default function ContestCreatePage() {
       navigate(`/groups/${id}`)
     } catch {
       setError('랭킹전 생성에 실패했습니다.')
-    } finally {
-      setSubmitting(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="max-w-xl mx-auto px-4 py-6">
+      <div className="flex items-center mb-6">
         <button
           onClick={() => navigate(-1)}
-          style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit' }}
+          className="text-sm bg-transparent border-none cursor-pointer p-0"
         >
           ← Back
         </button>
-        <h2 style={{ margin: '0 0 0 16px' }}>랭킹전 만들기</h2>
+        <h2 className="m-0 ml-4">랭킹전 만들기</h2>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {error && <p className="text-red-600 m-0">{error}</p>}
 
         <div>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' }}>이름</label>
+          <label className="block font-bold mb-1.5 text-sm">이름</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="랭킹전 이름"
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
           />
         </div>
 
         <div>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' }}>랭킹 방식</label>
+          <label className="block font-bold mb-1.5 text-sm">랭킹 방식</label>
           <select
             value={rankingType}
             onChange={(e) => setRankingType(e.target.value as RankingType)}
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
           >
             <option value="score">점수 합산 (score)</option>
             <option value="match_point">승점 (match_point)</option>
@@ -83,21 +82,21 @@ export default function ContestCreatePage() {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' }}>
+          <label className="block font-bold mb-1.5 text-sm">
             우마{' '}
-            <span style={{ fontWeight: 'normal', color: umaSum === 0 ? '#2d7a3a' : '#c0392b', fontSize: '13px' }}>
+            <span className={`font-normal text-[13px] ${umaSum === 0 ? 'text-green-700' : 'text-red-600'}`}>
               (합계: {umaSum > 0 ? '+' : ''}{umaSum})
             </span>
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
+          <div className="grid grid-cols-4 gap-2">
             {(['uma_1st', 'uma_2nd', 'uma_3rd', 'uma_4th'] as const).map((key, idx) => (
               <div key={key}>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px', textAlign: 'center' }}>{idx + 1}위</div>
+                <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                 <input
                   type="number"
                   value={uma[key]}
                   onChange={(e) => setUma((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
-                  style={{ width: '100%', padding: '6px', boxSizing: 'border-box', textAlign: 'center' }}
+                  className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                 />
               </div>
             ))}
@@ -106,16 +105,16 @@ export default function ContestCreatePage() {
 
         {rankingType === 'match_point' && (
           <div>
-            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' }}>승점 배점</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
+            <label className="block font-bold mb-1.5 text-sm">승점 배점</label>
+            <div className="grid grid-cols-4 gap-2">
               {(['scoring_1st', 'scoring_2nd', 'scoring_3rd', 'scoring_4th'] as const).map((key, idx) => (
                 <div key={key}>
-                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px', textAlign: 'center' }}>{idx + 1}위</div>
+                  <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                   <input
                     type="number"
                     value={scoring[key]}
                     onChange={(e) => setScoring((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
-                    style={{ width: '100%', padding: '6px', boxSizing: 'border-box', textAlign: 'center' }}
+                    className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                   />
                 </div>
               ))}
@@ -123,13 +122,13 @@ export default function ContestCreatePage() {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="flex justify-end">
           <button
             type="submit"
-            disabled={submitting}
-            style={{ padding: '8px 20px', fontSize: '14px', cursor: submitting ? 'not-allowed' : 'pointer' }}
+            disabled={createContestMutation.isPending}
+            className="px-5 py-2 text-sm cursor-pointer"
           >
-            {submitting ? '생성 중...' : '생성'}
+            {createContestMutation.isPending ? '생성 중...' : '생성'}
           </button>
         </div>
       </form>

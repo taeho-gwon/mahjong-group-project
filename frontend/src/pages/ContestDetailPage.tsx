@@ -1,23 +1,10 @@
-import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getContest } from '../api/contests'
+import { useContest } from '../hooks/useContest'
+import { useContestGameRecords } from '../hooks/useContestGameRecords'
+import { useGroupDetail } from '../hooks/useGroupDetail'
+import { useMe } from '../hooks/useMe'
 import type { ContestResponse } from '../api/contests'
-import { getMe } from '../api/auth'
-import { listGameRecords } from '../api/gameRecords'
 import type { GameRecordResponse } from '../api/gameRecords'
-import { getGroup } from '../api/groups'
-
-async function fetchAllGameRecords(contestId: number): Promise<GameRecordResponse[]> {
-  const PAGE_SIZE = 50
-  const first = await listGameRecords(undefined, 1, PAGE_SIZE, contestId)
-  const results = [...first.items]
-  const totalPages = Math.ceil(first.total / PAGE_SIZE)
-  for (let page = 2; page <= totalPages; page++) {
-    const res = await listGameRecords(undefined, page, PAGE_SIZE, contestId)
-    results.push(...res.items)
-  }
-  return results
-}
 
 interface RankingEntry {
   id: number
@@ -68,74 +55,47 @@ function computeRanking(contest: ContestResponse, records: GameRecordResponse[])
   return entries
 }
 
-const thStyle: React.CSSProperties = {
-  padding: '8px 10px',
-  textAlign: 'center',
-  whiteSpace: 'nowrap',
-}
-
-const tdStyle: React.CSSProperties = {
-  padding: '10px 10px',
-  textAlign: 'center',
-  whiteSpace: 'nowrap',
-}
-
 export default function ContestDetailPage() {
   const { contestId } = useParams<{ contestId: string }>()
   const navigate = useNavigate()
+  const id = contestId ? Number(contestId) : undefined
 
-  const [contest, setContest] = useState<ContestResponse | null>(null)
-  const [myRole, setMyRole] = useState<string | null>(null)
-  const [ranking, setRanking] = useState<RankingEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { data: contest, isLoading, isError } = useContest(id)
+  const { data: records = [] } = useContestGameRecords(id)
+  const { data: group } = useGroupDetail(contest?.group_id ?? undefined)
+  const { data: user } = useMe()
 
-  useEffect(() => {
-    if (!contestId) return
-    getContest(Number(contestId))
-      .then((c) => Promise.all([
-        Promise.resolve(c),
-        getMe(),
-        fetchAllGameRecords(Number(contestId)),
-        c.group_id !== null ? getGroup(c.group_id) : Promise.resolve(null),
-      ]))
-      .then(([c, user, records, group]) => {
-        setContest(c)
-        setRanking(computeRanking(c, records))
-        setMyRole(group?.members.find((m) => m.id === user.id)?.role ?? null)
-      })
-      .catch(() => setError('Failed to load contest'))
-      .finally(() => setLoading(false))
-  }, [contestId])
+  const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
+  const ranking = contest ? computeRanking(contest, records) : []
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="flex justify-between items-center mb-6">
         <button
           onClick={() => navigate(-1)}
-          style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit' }}
+          className="text-sm bg-transparent border-none cursor-pointer p-0"
         >
           ← Back
         </button>
         {contest && (myRole === 'owner' || myRole === 'admin') && (
           <button
             onClick={() => navigate(`/contests/${contestId}/manage`)}
-            style={{ fontSize: '14px', padding: '6px 14px', cursor: 'pointer' }}
+            className="text-sm px-3.5 py-1.5 cursor-pointer"
           >
             관리
           </button>
         )}
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <p>Loading...</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>{error}</p>
+      ) : isError ? (
+        <p className="text-red-600">Failed to load contest</p>
       ) : contest ? (
         <>
-          <section style={{ marginBottom: '24px' }}>
-            <h2 style={{ margin: '0 0 8px' }}>{contest.name}</h2>
-            <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.8', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+          <section className="mb-6">
+            <h2 className="mt-0 mb-2">{contest.name}</h2>
+            <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
               <div>
                 <strong>랭킹 방식:</strong>{' '}
                 {contest.ranking_type === 'match_point' ? '승점 (match_point)' : '점수 합산 (score)'}
@@ -158,21 +118,21 @@ export default function ContestDetailPage() {
           </section>
 
           <section>
-            <h3 style={{ margin: '0 0 12px' }}>랭킹</h3>
+            <h3 className="mt-0 mb-3">랭킹</h3>
             {ranking.length === 0 ? (
-              <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 게임 기록이 없습니다.</p>
+              <p className="text-sm text-gray-400 m-0">아직 게임 기록이 없습니다.</p>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr style={{ borderBottom: '2px solid #ccc', color: '#555', fontSize: '13px' }}>
-                    <th style={thStyle}>#</th>
-                    <th style={{ ...thStyle, textAlign: 'left' }}>이름</th>
-                    <th style={thStyle}>{contest.ranking_type === 'match_point' ? '승점' : '점수'}</th>
-                    <th style={thStyle}>1위</th>
-                    <th style={thStyle}>2위</th>
-                    <th style={thStyle}>3위</th>
-                    <th style={thStyle}>4위</th>
-                    <th style={thStyle}>게임</th>
+                  <tr className="border-b-2 border-gray-300 text-gray-600 text-[13px]">
+                    <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
+                    <th className="px-2.5 py-2 text-left whitespace-nowrap">이름</th>
+                    <th className="px-2.5 py-2 text-center whitespace-nowrap">{contest.ranking_type === 'match_point' ? '승점' : '점수'}</th>
+                    <th className="px-2.5 py-2 text-center whitespace-nowrap">1위</th>
+                    <th className="px-2.5 py-2 text-center whitespace-nowrap">2위</th>
+                    <th className="px-2.5 py-2 text-center whitespace-nowrap">3위</th>
+                    <th className="px-2.5 py-2 text-center whitespace-nowrap">4위</th>
+                    <th className="px-2.5 py-2 text-center whitespace-nowrap">게임</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -184,15 +144,15 @@ export default function ContestDetailPage() {
                       ? entry.matchPoint >= 0
                       : entry.totalScore >= 0
                     return (
-                      <tr key={entry.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ ...tdStyle, color: '#888', fontWeight: 'bold' }}>{idx + 1}</td>
-                        <td style={{ ...tdStyle, textAlign: 'left' }}>{entry.username}</td>
-                        <td style={{ ...tdStyle, fontWeight: 'bold', color: isPositive ? '#2d7a3a' : '#c0392b' }}>{mainScore}</td>
-                        <td style={tdStyle}>{entry.rankCounts[0]}</td>
-                        <td style={tdStyle}>{entry.rankCounts[1]}</td>
-                        <td style={tdStyle}>{entry.rankCounts[2]}</td>
-                        <td style={tdStyle}>{entry.rankCounts[3]}</td>
-                        <td style={{ ...tdStyle, color: '#aaa' }}>{entry.gameCount}</td>
+                      <tr key={entry.id} className="border-b border-gray-100">
+                        <td className="px-2.5 py-2.5 text-center text-gray-400 font-bold whitespace-nowrap">{idx + 1}</td>
+                        <td className="px-2.5 py-2.5 text-left whitespace-nowrap">{entry.username}</td>
+                        <td className={`px-2.5 py-2.5 text-center font-bold whitespace-nowrap ${isPositive ? 'text-green-700' : 'text-red-600'}`}>{mainScore}</td>
+                        <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[0]}</td>
+                        <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[1]}</td>
+                        <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[2]}</td>
+                        <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[3]}</td>
+                        <td className="px-2.5 py-2.5 text-center text-gray-400 whitespace-nowrap">{entry.gameCount}</td>
                       </tr>
                     )
                   })}

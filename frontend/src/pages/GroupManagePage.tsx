@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getGroup, updateGroup, removeMember, updateMemberRole, generateInviteLink, leaveGroup } from '../api/groups'
-import type { GroupDetailResponse } from '../api/groups'
-import { getMe } from '../api/auth'
-import type { UserResponse } from '../api/auth'
-import { listContests } from '../api/contests'
-import type { ContestResponse } from '../api/contests'
+import { generateInviteLink, leaveGroup } from '../api/groups'
+import { useGroupDetail } from '../hooks/useGroupDetail'
+import { useContests } from '../hooks/useContests'
+import { useMe } from '../hooks/useMe'
+import { useUpdateGroup } from '../hooks/mutations/useUpdateGroup'
+import { useUpdateMemberRole } from '../hooks/mutations/useUpdateMemberRole'
+import { useRemoveMember } from '../hooks/mutations/useRemoveMember'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -14,26 +15,22 @@ const ROLE_LABEL: Record<string, string> = {
   member: 'Member',
 }
 
-const ROLE_STYLE: Record<string, { background: string; color: string }> = {
-  owner: { background: '#fff3cd', color: '#856404' },
-  admin: { background: '#e8f0fe', color: '#1a56db' },
-  member: { background: '#f1f3f4', color: '#555' },
-}
-
 export default function GroupManagePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const groupId = id ? Number(id) : undefined
 
-  const [group, setGroup] = useState<GroupDetailResponse | null>(null)
-  const [me, setMe] = useState<UserResponse | null>(null)
-  const [contests, setContests] = useState<ContestResponse[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { data: group, isLoading, isError } = useGroupDetail(groupId)
+  const { data: contests = [] } = useContests(groupId)
+  const { data: me } = useMe()
+
+  const updateGroupMutation = useUpdateGroup(groupId!)
+  const updateRoleMutation = useUpdateMemberRole(groupId!)
+  const removeMemberMutation = useRemoveMember(groupId!)
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [joinPolicy, setJoinPolicy] = useState<'public' | 'private'>('public')
-  const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
 
@@ -42,43 +39,30 @@ export default function GroupManagePage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!id) return
-    Promise.all([getGroup(Number(id)), getMe(), listContests(Number(id))])
-      .then(([g, user, contestList]) => {
-        const myMember = g.members.find((m) => m.id === user.id)
-        if (!myMember || (myMember.role !== 'owner' && myMember.role !== 'admin')) {
-          navigate(`/groups/${id}`, { replace: true })
-          return
-        }
-        setGroup(g)
-        setMe(user)
-        setContests(contestList)
-        setName(g.name)
-        setDescription(g.description ?? '')
-        setJoinPolicy(g.join_policy)
-      })
-      .catch(() => setError('Failed to load group'))
-      .finally(() => setLoading(false))
-  }, [id, navigate])
+    if (!group || !me) return
+    const myMember = group.members.find((m) => m.id === me.id)
+    if (!myMember || (myMember.role !== 'owner' && myMember.role !== 'admin')) {
+      navigate(`/groups/${id}`, { replace: true })
+      return
+    }
+    setName(group.name)
+    setDescription(group.description ?? '')
+    setJoinPolicy(group.join_policy)
+  }, [group, me, id, navigate])
 
   async function handleSave(e: FormEvent) {
     e.preventDefault()
-    if (!group) return
     setSaveError('')
     setSaveSuccess(false)
-    setSaving(true)
     try {
-      const updated = await updateGroup(group.id, {
+      await updateGroupMutation.mutateAsync({
         name,
         description: description || null,
         join_policy: joinPolicy,
       })
-      setGroup((prev) => prev ? { ...prev, ...updated } : prev)
       setSaveSuccess(true)
     } catch {
       setSaveError('Failed to save changes')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -118,23 +102,16 @@ export default function GroupManagePage() {
   }
 
   async function handleRemoveMember(userId: number) {
-    if (!group) return
     try {
-      await removeMember(group.id, userId)
-      setGroup((prev) => prev ? { ...prev, members: prev.members.filter((m) => m.id !== userId) } : prev)
+      await removeMemberMutation.mutateAsync(userId)
     } catch {
       alert('Failed to remove member')
     }
   }
 
   async function handleRoleChange(userId: number, role: 'admin' | 'member') {
-    if (!group) return
     try {
-      const updated = await updateMemberRole(group.id, userId, role)
-      setGroup((prev) => prev
-        ? { ...prev, members: prev.members.map((m) => m.id === userId ? { ...m, role: updated.role } : m) }
-        : prev
-      )
+      await updateRoleMutation.mutateAsync({ userId, role })
     } catch {
       alert('Failed to update role')
     }
@@ -153,116 +130,107 @@ export default function GroupManagePage() {
   const myRole = group && me ? group.members.find((m) => m.id === me.id)?.role : undefined
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px' }}>
+    <div className="max-w-2xl mx-auto px-4 py-6">
       <button
         onClick={() => navigate(`/groups/${id}`)}
-        style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit' }}
+        className="text-sm bg-transparent border-none cursor-pointer p-0"
       >
         ← Back
       </button>
 
-      {loading ? (
-        <p style={{ marginTop: '24px' }}>Loading...</p>
-      ) : error ? (
-        <p style={{ marginTop: '24px', color: 'red' }}>{error}</p>
+      {isLoading ? (
+        <p className="mt-6">Loading...</p>
+      ) : isError ? (
+        <p className="mt-6 text-red-600">Failed to load group</p>
       ) : group ? (
         <>
-          <h2 style={{ marginTop: '24px', marginBottom: '28px' }}>Manage: {group.name}</h2>
+          <h2 className="mt-6 mb-7">Manage: {group.name}</h2>
 
           {/* Group Settings */}
-          <section style={{ marginBottom: '40px' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Group Settings</h3>
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <section className="mb-10">
+            <h3 className="mt-0 mb-4 text-base">Group Settings</h3>
+            <form onSubmit={handleSave} className="flex flex-col gap-3">
               <div>
-                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '4px' }}>Name *</label>
+                <label className="block text-[13px] text-gray-600 mb-1">Name *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => { setName(e.target.value); setSaveSuccess(false) }}
                   required
-                  style={{ padding: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '4px' }}>Description</label>
+                <label className="block text-[13px] text-gray-600 mb-1">Description</label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => { setDescription(e.target.value); setSaveSuccess(false) }}
-                  style={{ padding: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '6px' }}>Join Policy</label>
-                <div style={{ display: 'flex', gap: '16px', fontSize: '14px', alignItems: 'center' }}>
-                  <label style={{ cursor: 'pointer' }}>
+                <label className="block text-[13px] text-gray-600 mb-1.5">Join Policy</label>
+                <div className="flex gap-4 text-sm items-center">
+                  <label className="cursor-pointer">
                     <input
                       type="radio"
                       name="joinPolicy"
                       value="public"
                       checked={joinPolicy === 'public'}
                       onChange={() => { setJoinPolicy('public'); setSaveSuccess(false) }}
-                      style={{ marginRight: '4px' }}
+                      className="mr-1"
                     />
                     Public
                   </label>
-                  <label style={{ cursor: 'pointer' }}>
+                  <label className="cursor-pointer">
                     <input
                       type="radio"
                       name="joinPolicy"
                       value="private"
                       checked={joinPolicy === 'private'}
                       onChange={() => { setJoinPolicy('private'); setSaveSuccess(false) }}
-                      style={{ marginRight: '4px' }}
+                      className="mr-1"
                     />
                     Private
                   </label>
                 </div>
               </div>
-              {saveError && <p style={{ color: 'red', margin: 0, fontSize: '14px' }}>{saveError}</p>}
-              {saveSuccess && <p style={{ color: '#2d7a3a', margin: 0, fontSize: '14px' }}>Saved successfully.</p>}
+              {saveError && <p className="text-red-600 m-0 text-sm">{saveError}</p>}
+              {saveSuccess && <p className="text-green-700 m-0 text-sm">Saved successfully.</p>}
               <button
                 type="submit"
-                disabled={saving}
-                style={{ padding: '8px 16px', cursor: 'pointer', alignSelf: 'flex-start' }}
+                disabled={updateGroupMutation.isPending}
+                className="px-4 py-2 cursor-pointer self-start"
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {updateGroupMutation.isPending ? 'Saving...' : 'Save Changes'}
               </button>
             </form>
           </section>
 
           {/* Contests */}
-          <section style={{ marginBottom: '40px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '16px' }}>랭킹전 관리</h3>
+          <section className="mb-10">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="m-0 text-base">랭킹전 관리</h3>
               <button
                 onClick={() => navigate(`/groups/${id}/contests/new`)}
-                style={{ fontSize: '13px', padding: '4px 12px', cursor: 'pointer' }}
+                className="text-[13px] px-3 py-1 cursor-pointer"
               >
                 랭킹전 만들기
               </button>
             </div>
             {contests.length === 0 ? (
-              <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 랭킹전이 없습니다.</p>
+              <p className="text-sm text-gray-400 m-0">아직 랭킹전이 없습니다.</p>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
                 {contests.map((c) => (
                   <li
                     key={c.id}
                     onClick={() => navigate(`/contests/${c.id}`)}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      border: '1px solid #ccc',
-                      borderRadius: '6px',
-                      padding: '10px 14px',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                    }}
+                    className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm cursor-pointer"
                   >
                     <span>{c.name}</span>
-                    <span style={{ fontSize: '12px', color: '#888' }}>
+                    <span className="text-xs text-gray-400">
                       {c.ranking_type === 'match_point' ? '승점' : '점수'}
                     </span>
                   </li>
@@ -272,13 +240,13 @@ export default function GroupManagePage() {
           </section>
 
           {/* Invite Link */}
-          <section style={{ marginBottom: '40px' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Invite Link</h3>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={handleCopyInvite} disabled={generatingInvite} style={{ padding: '6px 14px', cursor: 'pointer', fontSize: '14px' }}>
+          <section className="mb-10">
+            <h3 className="mt-0 mb-4 text-base">Invite Link</h3>
+            <div className="flex gap-2">
+              <button onClick={handleCopyInvite} disabled={generatingInvite} className="px-3.5 py-1.5 cursor-pointer text-sm">
                 {generatingInvite ? 'Generating...' : copied ? 'Copied!' : 'Copy Link'}
               </button>
-              <button onClick={handleGenerateInvite} disabled={generatingInvite} style={{ padding: '6px 14px', cursor: 'pointer', fontSize: '14px' }}>
+              <button onClick={handleGenerateInvite} disabled={generatingInvite} className="px-3.5 py-1.5 cursor-pointer text-sm">
                 {generatingInvite ? 'Generating...' : 'Regenerate Link'}
               </button>
             </div>
@@ -286,8 +254,8 @@ export default function GroupManagePage() {
 
           {/* Member Management */}
           <section>
-            <h3 style={{ margin: '0 0 16px', fontSize: '16px' }}>Members ({group.members.length})</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <h3 className="mt-0 mb-4 text-base">Members ({group.members.length})</h3>
+            <ul className="list-none p-0 m-0 flex flex-col gap-2">
               {group.members.map((m) => {
                 const isMe = m.id === me?.id
                 const isMemberOwner = m.role === 'owner'
@@ -297,27 +265,25 @@ export default function GroupManagePage() {
                 return (
                   <li
                     key={m.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      border: '1px solid #ccc',
-                      borderRadius: '6px',
-                      padding: '10px 14px',
-                      fontSize: '14px',
-                    }}
+                    className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm"
                   >
-                    <span style={{ fontWeight: isMemberOwner ? 'bold' : 'normal' }}>
-                      {m.username}{isMe && <span style={{ color: '#888', fontSize: '12px' }}> (me)</span>}
+                    <span className={isMemberOwner ? 'font-bold' : ''}>
+                      {m.username}{isMe && <span className="text-gray-400 text-xs"> (me)</span>}
                     </span>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '4px', ...ROLE_STYLE[m.role] }}>
+                    <div className="flex gap-2 items-center">
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        m.role === 'owner'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : m.role === 'admin'
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
                         {ROLE_LABEL[m.role] ?? m.role}
                       </span>
                       {canChangeRole && (
                         <button
                           onClick={() => handleRoleChange(m.id, m.role === 'member' ? 'admin' : 'member')}
-                          style={{ fontSize: '12px', padding: '3px 8px', cursor: 'pointer', background: 'none', border: '1px solid #555', borderRadius: '4px' }}
+                          className="text-xs px-2 py-0.5 cursor-pointer bg-transparent border border-gray-600 rounded"
                         >
                           {m.role === 'member' ? 'Make Admin' : 'Make Member'}
                         </button>
@@ -325,7 +291,7 @@ export default function GroupManagePage() {
                       {canKick && (
                         <button
                           onClick={() => handleRemoveMember(m.id)}
-                          style={{ fontSize: '12px', padding: '3px 8px', cursor: 'pointer', color: '#c0392b', background: 'none', border: '1px solid #c0392b', borderRadius: '4px' }}
+                          className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded"
                         >
                           강퇴
                         </button>
@@ -333,7 +299,7 @@ export default function GroupManagePage() {
                       {isMe && myRole !== 'owner' && (
                         <button
                           onClick={handleLeave}
-                          style={{ fontSize: '12px', padding: '3px 8px', cursor: 'pointer', color: '#c0392b', background: 'none', border: '1px solid #c0392b', borderRadius: '4px' }}
+                          className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded"
                         >
                           탈퇴
                         </button>

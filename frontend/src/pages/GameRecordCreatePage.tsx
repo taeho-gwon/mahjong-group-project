@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getGroup } from '../api/groups'
 import type { MemberInfo } from '../api/groups'
-import { createGameRecord } from '../api/gameRecords'
-import { listContests } from '../api/contests'
-import type { ContestResponse } from '../api/contests'
+import { useGroupDetail } from '../hooks/useGroupDetail'
+import { useContests } from '../hooks/useContests'
+import { useCreateGameRecord } from '../hooks/mutations/useCreateGameRecord'
 
 const POSITIONS = [
   { key: 'east', label: '동' },
@@ -28,32 +27,25 @@ function initPosition(): PositionState {
 export default function GameRecordCreatePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [members, setMembers] = useState<MemberInfo[]>([])
-  const [contests, setContests] = useState<ContestResponse[]>([])
-  const [selectedContestId, setSelectedContestId] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const groupId = id ? Number(id) : undefined
 
+  const { data: group, isLoading } = useGroupDetail(groupId)
+  const { data: contests = [] } = useContests(groupId)
+
+  const members: MemberInfo[] = group?.members ?? []
+  const defaultContest = contests.find((c) => c.name === '전체 랭킹') ?? null
+  const [selectedContestId, setSelectedContestId] = useState<number | null>(null)
+
+  const effectiveContestId = selectedContestId ?? defaultContest?.id ?? null
+  const createGameRecordMutation = useCreateGameRecord(effectiveContestId)
+
+  const [error, setError] = useState('')
   const [positions, setPositions] = useState<Record<Position, PositionState>>({
     east: initPosition(),
     south: initPosition(),
     west: initPosition(),
     north: initPosition(),
   })
-
-  useEffect(() => {
-    if (!id) return
-    Promise.all([getGroup(Number(id)), listContests(Number(id))])
-      .then(([g, contestList]) => {
-        setMembers(g.members)
-        setContests(contestList)
-        const totalContest = contestList.find((c) => c.name === '전체 랭킹')
-        if (totalContest) setSelectedContestId(totalContest.id)
-      })
-      .catch(() => setError('Failed to load group members'))
-      .finally(() => setLoading(false))
-  }, [id])
 
   function updatePosition(pos: Position, patch: Partial<PositionState>) {
     setPositions((prev) => ({ ...prev, [pos]: { ...prev[pos], ...patch } }))
@@ -81,9 +73,8 @@ export default function GameRecordCreatePage() {
     }
 
     setError('')
-    setSubmitting(true)
     try {
-      await createGameRecord({
+      await createGameRecordMutation.mutateAsync({
         east_player_id: east.playerId,
         south_player_id: south.playerId,
         west_player_id: west.playerId,
@@ -92,42 +83,40 @@ export default function GameRecordCreatePage() {
         south_point: Number(south.point),
         west_point: Number(west.point),
         north_point: Number(north.point),
-        group_id: id ? Number(id) : undefined,
-        contest_id: selectedContestId,
+        group_id: groupId,
+        contest_id: effectiveContestId,
       })
       navigate(`/groups/${id}`)
     } catch {
       setError('게임 기록 등록에 실패했습니다.')
-    } finally {
-      setSubmitting(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="flex items-center mb-6">
         <button
           onClick={() => navigate(-1)}
-          style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit' }}
+          className="text-sm bg-transparent border-none cursor-pointer p-0"
         >
           ← Back
         </button>
-        <h2 style={{ margin: '0 0 0 16px' }}>게임 등록</h2>
+        <h2 className="m-0 ml-4">게임 등록</h2>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <p>Loading...</p>
       ) : (
         <>
-          {error && <p style={{ color: 'red', marginBottom: '16px' }}>{error}</p>}
+          {error && <p className="text-red-600 mb-4">{error}</p>}
 
           {contests.length > 0 && (
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '14px' }}>랭킹전 (선택)</label>
+            <div className="mb-5">
+              <label className="block font-bold mb-1.5 text-sm">랭킹전 (선택)</label>
               <select
-                value={selectedContestId ?? ''}
+                value={effectiveContestId ?? ''}
                 onChange={(e) => setSelectedContestId(e.target.value ? Number(e.target.value) : null)}
-                style={{ width: '100%', padding: '8px', boxSizing: 'border-box', fontSize: '14px' }}
+                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
               >
                 <option value="">선택 안 함</option>
                 {contests.map((c) => (
@@ -137,13 +126,13 @@ export default function GameRecordCreatePage() {
             </div>
           )}
 
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px' }}>
+          <table className="w-full border-collapse mb-6">
             <thead>
               <tr>
-                <th style={thStyle}>포지션</th>
-                <th style={thStyle}>이름 검색</th>
-                <th style={thStyle}>플레이어 선택</th>
-                <th style={thStyle}>점수</th>
+                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 text-[13px] text-gray-600">포지션</th>
+                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 text-[13px] text-gray-600">이름 검색</th>
+                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 text-[13px] text-gray-600">플레이어 선택</th>
+                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 text-[13px] text-gray-600">점수</th>
               </tr>
             </thead>
             <tbody>
@@ -152,23 +141,23 @@ export default function GameRecordCreatePage() {
                 const filtered = filteredMembers(key)
                 return (
                   <tr key={key}>
-                    <td style={tdStyle}>
+                    <td className="px-2.5 py-2 align-middle border-b border-gray-100">
                       <strong>{label}</strong>
                     </td>
-                    <td style={tdStyle}>
+                    <td className="px-2.5 py-2 align-middle border-b border-gray-100">
                       <input
                         type="text"
                         value={pos.search}
                         onChange={(e) => updatePosition(key, { search: e.target.value, playerId: null })}
                         placeholder="이름 검색"
-                        style={{ width: '100%', padding: '6px', boxSizing: 'border-box' }}
+                        className="border border-gray-300 rounded px-1.5 py-1.5 w-full"
                       />
                     </td>
-                    <td style={tdStyle}>
+                    <td className="px-2.5 py-2 align-middle border-b border-gray-100">
                       <select
                         value={pos.playerId ?? ''}
                         onChange={(e) => updatePosition(key, { playerId: e.target.value ? Number(e.target.value) : null })}
-                        style={{ width: '100%', padding: '6px', boxSizing: 'border-box' }}
+                        className="border border-gray-300 rounded px-1.5 py-1.5 w-full"
                       >
                         <option value="">-- 선택 --</option>
                         {filtered.map((m) => (
@@ -178,13 +167,13 @@ export default function GameRecordCreatePage() {
                         ))}
                       </select>
                     </td>
-                    <td style={tdStyle}>
+                    <td className="px-2.5 py-2 align-middle border-b border-gray-100">
                       <input
                         type="number"
                         value={pos.point}
                         onChange={(e) => updatePosition(key, { point: e.target.value })}
                         placeholder="점수"
-                        style={{ width: '80px', padding: '6px', boxSizing: 'border-box' }}
+                        className="border border-gray-300 rounded px-1.5 py-1.5 w-20"
                       />
                     </td>
                   </tr>
@@ -193,31 +182,17 @@ export default function GameRecordCreatePage() {
             </tbody>
           </table>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="flex justify-end">
             <button
               onClick={handleSubmit}
-              disabled={submitting}
-              style={{ padding: '8px 20px', fontSize: '14px', cursor: submitting ? 'not-allowed' : 'pointer' }}
+              disabled={createGameRecordMutation.isPending}
+              className="px-5 py-2 text-sm cursor-pointer"
             >
-              {submitting ? '등록 중...' : '등록'}
+              {createGameRecordMutation.isPending ? '등록 중...' : '등록'}
             </button>
           </div>
         </>
       )}
     </div>
   )
-}
-
-const thStyle: React.CSSProperties = {
-  textAlign: 'left',
-  padding: '8px 10px',
-  borderBottom: '2px solid #ccc',
-  fontSize: '13px',
-  color: '#555',
-}
-
-const tdStyle: React.CSSProperties = {
-  padding: '8px 10px',
-  verticalAlign: 'middle',
-  borderBottom: '1px solid #eee',
 }

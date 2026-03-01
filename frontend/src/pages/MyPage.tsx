@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { getMe } from '../api/auth'
-import type { UserResponse } from '../api/auth'
-import { getMyGroups, createGroup } from '../api/groups'
-import type { GroupResponse } from '../api/groups'
+import { useMe } from '../hooks/useMe'
+import { useMyGroups } from '../hooks/useMyGroups'
+import { useCreateGroup } from '../hooks/mutations/useCreateGroup'
+import { useAuthStore } from '../stores/authStore'
 
 export default function MyPage() {
-  const [user, setUser] = useState<UserResponse | null>(null)
-  const [groups, setGroups] = useState<GroupResponse[]>([])
-  const [loadingUser, setLoadingUser] = useState(true)
-  const [loadingGroups, setLoadingGroups] = useState(true)
+  const navigate = useNavigate()
+  const clearTokens = useAuthStore((s) => s.clearTokens)
+
+  const { data: user, isLoading: loadingUser } = useMe()
+  const { data: groups = [], isLoading: loadingGroups } = useMyGroups()
+  const createGroupMutation = useCreateGroup()
 
   const [groupName, setGroupName] = useState('')
   const [groupDesc, setGroupDesc] = useState('')
@@ -19,25 +21,7 @@ export default function MyPage() {
   const [uma2nd, setUma2nd] = useState(10)
   const [uma3rd, setUma3rd] = useState(-10)
   const [uma4th, setUma4th] = useState(-30)
-  const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
-
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    getMe()
-      .then(setUser)
-      .catch(() => {
-        localStorage.removeItem('access_token')
-        navigate('/login')
-      })
-      .finally(() => setLoadingUser(false))
-
-    getMyGroups()
-      .then(setGroups)
-      .catch(() => {})
-      .finally(() => setLoadingGroups(false))
-  }, [navigate])
 
   async function handleCreateGroup(e: FormEvent) {
     e.preventDefault()
@@ -46,15 +30,13 @@ export default function MyPage() {
       return
     }
     setCreateError('')
-    setCreating(true)
     try {
-      const group = await createGroup(groupName, groupDesc, groupJoinPolicy, {
-        uma_1st: uma1st,
-        uma_2nd: uma2nd,
-        uma_3rd: uma3rd,
-        uma_4th: uma4th,
+      await createGroupMutation.mutateAsync({
+        name: groupName,
+        description: groupDesc,
+        join_policy: groupJoinPolicy,
+        uma: { uma_1st: uma1st, uma_2nd: uma2nd, uma_3rd: uma3rd, uma_4th: uma4th },
       })
-      setGroups((prev) => [group, ...prev])
       setGroupName('')
       setGroupDesc('')
       setGroupJoinPolicy('public')
@@ -64,34 +46,30 @@ export default function MyPage() {
       setUma4th(-30)
     } catch {
       setCreateError('Failed to create group')
-    } finally {
-      setCreating(false)
     }
   }
 
   function handleLogout() {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
+    clearTokens()
     navigate('/login')
   }
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px' }}>
-      {/* Nav */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <Link to="/" style={{ fontSize: '14px' }}>← Back</Link>
-        <button onClick={handleLogout} style={{ padding: '4px 10px', fontSize: '14px', cursor: 'pointer' }}>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <header className="flex justify-between items-center mb-6">
+        <Link to="/" className="text-sm">← Back</Link>
+        <button onClick={handleLogout} className="px-2.5 py-1 text-sm cursor-pointer">
           Logout
         </button>
       </header>
 
       {/* Profile */}
-      <section style={{ marginBottom: '32px' }}>
-        <h2 style={{ margin: '0 0 12px' }}>My Profile</h2>
+      <section className="mb-8">
+        <h2 className="mt-0 mb-3">My Profile</h2>
         {loadingUser ? (
           <p>Loading...</p>
         ) : user ? (
-          <div style={{ lineHeight: '1.8', fontSize: '14px' }}>
+          <div className="leading-relaxed text-sm">
             <div><strong>Username:</strong> {user.username}</div>
             <div><strong>Member since:</strong> {new Date(user.created_at).toLocaleDateString()}</div>
           </div>
@@ -99,94 +77,98 @@ export default function MyPage() {
       </section>
 
       {/* Create Group */}
-      <section style={{ marginBottom: '32px' }}>
-        <h2 style={{ margin: '0 0 12px' }}>Create Group</h2>
-        <form onSubmit={handleCreateGroup} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <section className="mb-8">
+        <h2 className="mt-0 mb-3">Create Group</h2>
+        <form onSubmit={handleCreateGroup} className="flex flex-col gap-2">
           <input
             type="text"
             placeholder="Group name *"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             required
-            style={{ padding: '8px', fontSize: '14px' }}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
           />
           <input
             type="text"
             placeholder="Description (optional)"
             value={groupDesc}
             onChange={(e) => setGroupDesc(e.target.value)}
-            style={{ padding: '8px', fontSize: '14px' }}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
           />
-          <div style={{ display: 'flex', gap: '16px', fontSize: '14px', alignItems: 'center' }}>
-            <span style={{ color: '#555' }}>Join Policy:</span>
-            <label style={{ cursor: 'pointer' }}>
+          <div className="flex gap-4 text-sm items-center">
+            <span className="text-gray-600">Join Policy:</span>
+            <label className="cursor-pointer">
               <input
                 type="radio"
                 name="joinPolicy"
                 value="public"
                 checked={groupJoinPolicy === 'public'}
                 onChange={() => setGroupJoinPolicy('public')}
-                style={{ marginRight: '4px' }}
+                className="mr-1"
               />
               Public
             </label>
-            <label style={{ cursor: 'pointer' }}>
+            <label className="cursor-pointer">
               <input
                 type="radio"
                 name="joinPolicy"
                 value="private"
                 checked={groupJoinPolicy === 'private'}
                 onChange={() => setGroupJoinPolicy('private')}
-                style={{ marginRight: '4px' }}
+                className="mr-1"
               />
               Private
             </label>
           </div>
           <div>
-            <div style={{ fontSize: '13px', color: '#555', marginBottom: '4px' }}>
+            <div className="text-[13px] text-gray-600 mb-1">
               Uma (합계: {uma1st + uma2nd + uma3rd + uma4th}, 합계 0이어야 함)
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+            <div className="grid grid-cols-4 gap-1.5">
               {([['1위', uma1st, setUma1st], ['2위', uma2nd, setUma2nd], ['3위', uma3rd, setUma3rd], ['4위', uma4th, setUma4th]] as const).map(
                 ([label, value, setter]) => (
                   <div key={label}>
-                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '2px' }}>{label}</div>
+                    <div className="text-xs text-gray-500 mb-0.5">{label}</div>
                     <input
                       type="number"
                       value={value}
                       onChange={(e) => setter(Number(e.target.value))}
-                      style={{ padding: '6px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                      className="border border-gray-300 rounded px-1.5 py-1.5 text-sm w-full"
                     />
                   </div>
                 )
               )}
             </div>
           </div>
-          {createError && <p style={{ color: 'red', margin: 0 }}>{createError}</p>}
-          <button type="submit" disabled={creating} style={{ padding: '8px', cursor: 'pointer', alignSelf: 'flex-start' }}>
-            {creating ? 'Creating...' : 'Create'}
+          {createError && <p className="text-red-600 m-0">{createError}</p>}
+          <button
+            type="submit"
+            disabled={createGroupMutation.isPending}
+            className="px-4 py-2 cursor-pointer self-start"
+          >
+            {createGroupMutation.isPending ? 'Creating...' : 'Create'}
           </button>
         </form>
       </section>
 
       {/* My Groups */}
       <section>
-        <h2 style={{ margin: '0 0 12px' }}>My Groups</h2>
+        <h2 className="mt-0 mb-3">My Groups</h2>
         {loadingGroups ? (
           <p>Loading...</p>
         ) : groups.length === 0 ? (
-          <p style={{ color: '#888' }}>You have no groups yet.</p>
+          <p className="text-gray-400">You have no groups yet.</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <ul className="list-none p-0 m-0 flex flex-col gap-2">
             {groups.map((g) => (
               <li key={g.id}>
                 <Link
                   to={`/groups/${g.id}`}
-                  style={{ display: 'block', border: '1px solid #ccc', borderRadius: '6px', padding: '12px', textDecoration: 'none', color: 'inherit' }}
+                  className="block border border-gray-300 rounded-md p-3 no-underline text-inherit"
                 >
-                  <div style={{ fontWeight: 'bold' }}>{g.name}</div>
-                  {g.description && <div style={{ color: '#555', marginTop: '4px', fontSize: '14px' }}>{g.description}</div>}
-                  <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                  <div className="font-bold">{g.name}</div>
+                  {g.description && <div className="text-gray-600 mt-1 text-sm">{g.description}</div>}
+                  <div className="text-xs text-gray-400 mt-1">
                     Created {new Date(g.created_at).toLocaleDateString()}
                     {g.owner_id === user?.id && ' · Owner'}
                   </div>

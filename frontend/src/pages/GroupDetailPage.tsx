@@ -1,10 +1,7 @@
-import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getGroup } from '../api/groups'
-import type { GroupDetailResponse } from '../api/groups'
-import { getMe } from '../api/auth'
-import { listContests } from '../api/contests'
-import type { ContestResponse } from '../api/contests'
+import { useGroupDetail } from '../hooks/useGroupDetail'
+import { useContests } from '../hooks/useContests'
+import { useMe } from '../hooks/useMe'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -15,36 +12,26 @@ const ROLE_LABEL: Record<string, string> = {
 export default function GroupDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [group, setGroup] = useState<GroupDetailResponse | null>(null)
-  const [myRole, setMyRole] = useState<string | null>(null)
-  const [contests, setContests] = useState<ContestResponse[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const groupId = id ? Number(id) : undefined
 
-  useEffect(() => {
-    if (!id) return
-    Promise.all([getGroup(Number(id)), getMe(), listContests(Number(id))])
-      .then(([g, user, contestList]) => {
-        setGroup(g)
-        setMyRole(g.members.find((m) => m.id === user.id)?.role ?? null)
-        setContests(contestList)
-      })
-      .catch(() => setError('Failed to load group'))
-      .finally(() => setLoading(false))
-  }, [id])
+  const { data: group, isLoading, isError } = useGroupDetail(groupId)
+  const { data: contests = [] } = useContests(groupId)
+  const { data: user } = useMe()
+
+  const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="flex justify-between items-center">
         <button
           onClick={() => navigate(-1)}
-          style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit' }}
+          className="text-sm bg-transparent border-none cursor-pointer p-0"
         >← Back</button>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="flex gap-2">
           {myRole !== null && (
             <button
               onClick={() => navigate(`/groups/${id}/games/new`)}
-              style={{ fontSize: '14px', padding: '6px 14px', cursor: 'pointer' }}
+              className="text-sm px-3.5 py-1.5 cursor-pointer"
             >
               게임 등록
             </button>
@@ -52,7 +39,7 @@ export default function GroupDetailPage() {
           {(myRole === 'owner' || myRole === 'admin') && (
             <button
               onClick={() => navigate(`/groups/${id}/manage`)}
-              style={{ fontSize: '14px', padding: '6px 14px', cursor: 'pointer' }}
+              className="text-sm px-3.5 py-1.5 cursor-pointer"
             >
               Manage
             </button>
@@ -60,34 +47,31 @@ export default function GroupDetailPage() {
         </div>
       </div>
 
-      {loading ? (
-        <p style={{ marginTop: '24px' }}>Loading...</p>
-      ) : error ? (
-        <p style={{ marginTop: '24px', color: 'red' }}>{error}</p>
+      {isLoading ? (
+        <p className="mt-6">Loading...</p>
+      ) : isError ? (
+        <p className="mt-6 text-red-600">Failed to load group</p>
       ) : group ? (
         <>
           {/* Group Info */}
-          <section style={{ marginTop: '24px', marginBottom: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <h2 style={{ margin: 0 }}>{group.name}</h2>
+          <section className="mt-6 mb-8">
+            <div className="flex items-center gap-2.5 mb-2">
+              <h2 className="m-0">{group.name}</h2>
               {!group.is_active && (
-                <span style={{ fontSize: '12px', color: '#fff', background: '#aaa', borderRadius: '4px', padding: '2px 8px' }}>Inactive</span>
+                <span className="text-xs text-white bg-gray-400 rounded px-2 py-0.5">Inactive</span>
               )}
             </div>
             {group.description && (
-              <p style={{ margin: '0 0 16px', color: '#555', fontSize: '14px' }}>{group.description}</p>
+              <p className="m-0 mb-4 text-gray-600 text-sm">{group.description}</p>
             )}
-            <div style={{ fontSize: '13px', color: '#666', lineHeight: '2', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+            <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
               <div>
                 <strong>Join Policy:</strong>{' '}
-                <span style={{
-                  display: 'inline-block',
-                  fontSize: '12px',
-                  padding: '1px 8px',
-                  borderRadius: '4px',
-                  background: group.join_policy === 'public' ? '#e6f4ea' : '#fce8e8',
-                  color: group.join_policy === 'public' ? '#2d7a3a' : '#c0392b',
-                }}>
+                <span className={`inline-block text-xs px-2 py-0.5 rounded ${
+                  group.join_policy === 'public'
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-red-50 text-red-600'
+                }`}>
                   {group.join_policy === 'public' ? 'Public' : 'Private'}
                 </span>
               </div>
@@ -104,31 +88,22 @@ export default function GroupDetailPage() {
           </section>
 
           {/* Contests */}
-          <section style={{ marginBottom: '32px' }}>
-            <div style={{ marginBottom: '12px' }}>
-              <h3 style={{ margin: 0 }}>랭킹전</h3>
+          <section className="mb-8">
+            <div className="mb-3">
+              <h3 className="m-0">랭킹전</h3>
             </div>
             {contests.length === 0 ? (
-              <p style={{ fontSize: '14px', color: '#888', margin: 0 }}>아직 랭킹전이 없습니다.</p>
+              <p className="text-sm text-gray-400 m-0">아직 랭킹전이 없습니다.</p>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
                 {contests.map((c) => (
                   <li
                     key={c.id}
                     onClick={() => navigate(`/contests/${c.id}`)}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      border: '1px solid #ccc',
-                      borderRadius: '6px',
-                      padding: '10px 14px',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                    }}
+                    className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm cursor-pointer"
                   >
                     <span>{c.name}</span>
-                    <span style={{ fontSize: '12px', color: '#888' }}>
+                    <span className="text-xs text-gray-400">
                       {c.ranking_type === 'match_point' ? '승점' : '점수'}
                     </span>
                   </li>
@@ -139,32 +114,24 @@ export default function GroupDetailPage() {
 
           {/* Members */}
           <section>
-            <h3 style={{ margin: '0 0 12px' }}>Members</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <h3 className="mt-0 mb-3">Members</h3>
+            <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
               {[...group.members].sort((a, b) => {
                 const order = { owner: 0, admin: 1, member: 2 }
                 return (order[a.role as keyof typeof order] ?? 3) - (order[b.role as keyof typeof order] ?? 3)
               }).map((m) => (
                 <li
                   key={m.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    border: '1px solid #ccc',
-                    borderRadius: '6px',
-                    padding: '10px 14px',
-                    fontSize: '14px',
-                  }}
+                  className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm"
                 >
-                  <span style={{ fontWeight: m.role === 'owner' ? 'bold' : 'normal' }}>{m.username}</span>
-                  <span style={{
-                    fontSize: '12px',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    background: m.role === 'owner' ? '#fff3cd' : m.role === 'admin' ? '#e8f0fe' : '#f1f3f4',
-                    color: m.role === 'owner' ? '#856404' : m.role === 'admin' ? '#1a56db' : '#555',
-                  }}>
+                  <span className={m.role === 'owner' ? 'font-bold' : ''}>{m.username}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    m.role === 'owner'
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : m.role === 'admin'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
                     {ROLE_LABEL[m.role] ?? m.role}
                   </span>
                 </li>

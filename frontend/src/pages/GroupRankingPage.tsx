@@ -1,26 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { listContests } from '../api/contests'
+import { useContests } from '../hooks/useContests'
 
 export default function GroupRankingPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [error, setError] = useState('')
+  const { data: contests, isError } = useContests(id ? Number(id) : undefined)
 
   useEffect(() => {
-    if (!id) return
-    listContests(Number(id))
-      .then((contests) => {
-        const totalContest = contests.find((c) => c.name === '전체 랭킹')
-        if (!totalContest) {
-          setError('전체 랭킹을 찾을 수 없습니다.')
-          return
-        }
-        navigate(`/contests/${totalContest.id}`, { replace: true })
-      })
-      .catch(() => setError('Failed to load contests'))
-  }, [id, navigate])
+    if (!contests) return
+    const totalContest = contests.find((c) => c.name === '전체 랭킹')
+    if (!totalContest) return
+    navigate(`/contests/${totalContest.id}`, { replace: true })
+  }, [contests, navigate])
 
-  if (error) return <p style={{ padding: '24px', color: 'red' }}>{error}</p>
-  return <p style={{ padding: '24px' }}>Loading...</p>
+  if (isError) return <p className="p-6 text-red-600">Failed to load contests</p>
+  if (contests && !contests.find((c) => c.name === '전체 랭킹')) {
+    return <p className="p-6 text-red-600">전체 랭킹을 찾을 수 없습니다.</p>
+  }
+  return <p className="p-6">Loading...</p>
 }
