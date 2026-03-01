@@ -191,7 +191,7 @@ onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세
 
 ---
 
-## TODO(@agent-frontend) — 게임 기록 관리 페이지 신규 + ContestDetailPage 정리
+## [2026-03-01] @agent-frontend ✅ DONE — 게임 기록 관리 페이지 신규 + ContestDetailPage 정리
 
 ### 작업 요청 by @agent-manager
 

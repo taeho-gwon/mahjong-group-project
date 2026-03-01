@@ -4,7 +4,6 @@ import { useContest } from '../hooks/useContest'
 import { useContestGameRecords } from '../hooks/useContestGameRecords'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useMe } from '../hooks/useMe'
-import { useDeleteGameRecord } from '../hooks/mutations/useDeleteGameRecord'
 import type { ContestResponse } from '../api/contests'
 import type { GameRecordResponse } from '../api/gameRecords'
 
@@ -69,12 +68,6 @@ export default function ContestDetailPage() {
 
   const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
   const ranking = contest ? computeRanking(contest, records) : []
-  const deleteGameRecordMutation = useDeleteGameRecord(id)
-
-  async function handleDeleteRecord(recordId: number) {
-    if (!window.confirm('이 게임 기록을 삭제하시겠습니까?')) return
-    await deleteGameRecordMutation.mutateAsync(recordId)
-  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -177,25 +170,8 @@ export default function ContestDetailPage() {
               <ul className="list-none p-0 m-0 flex flex-col gap-2">
                 {[...records].sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()).map((rec) => (
                   <li key={rec.id} className="border border-gray-300 rounded-md px-4 py-3 text-sm">
-                    <div className="flex justify-between items-center mb-1.5">
+                    <div className="mb-1.5">
                       <span className="text-xs text-gray-400">{new Date(rec.played_at).toLocaleDateString()}</span>
-                      {rec.created_by_id === user?.id && (
-                        <div className="flex gap-1.5">
-                          <button
-                            onClick={() => navigate(`/game-records/${rec.id}/edit`)}
-                            className="text-xs px-2 py-0.5 cursor-pointer bg-transparent border border-gray-400 rounded"
-                          >
-                            수정
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRecord(rec.id)}
-                            disabled={deleteGameRecordMutation.isPending}
-                            className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      )}
                     </div>
                     <div className="grid grid-cols-4 gap-2 text-center">
                       {[

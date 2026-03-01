@@ -225,6 +225,20 @@ export default function GroupManagePage() {
             )}
           </section>
 
+          {/* Game Record Management */}
+          <section className="mb-10">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="m-0 text-base">기록 관리</h3>
+              <button
+                onClick={() => navigate(`/groups/${id}/records/manage`)}
+                className="text-[13px] px-3 py-1 cursor-pointer"
+              >
+                기록 관리 페이지
+              </button>
+            </div>
+            <p className="text-sm text-gray-400 m-0">게임 기록 수정 및 삭제는 기록 관리 페이지에서 할 수 있습니다.</p>
+          </section>
+
           {/* Invite Link */}
           <section className="mb-10">
             <h3 className="mt-0 mb-4 text-base">Invite Link</h3>
