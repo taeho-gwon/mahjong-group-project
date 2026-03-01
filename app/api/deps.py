@@ -32,10 +32,15 @@ def get_auth_service(
     return AuthService(user_repo)
 
 
+def get_contest_repository(db: AsyncSession = Depends(get_db)) -> ContestRepository:
+    return ContestRepository(db)
+
+
 def get_group_service(
     group_repo: GroupRepository = Depends(get_group_repository),
+    contest_repo: ContestRepository = Depends(get_contest_repository),
 ) -> GroupService:
-    return GroupService(group_repo)
+    return GroupService(group_repo, contest_repo)
 
 
 def get_game_record_repository(
@@ -47,12 +52,9 @@ def get_game_record_repository(
 def get_game_record_service(
     game_record_repo: GameRecordRepository = Depends(get_game_record_repository),
     group_repo: GroupRepository = Depends(get_group_repository),
+    contest_repo: ContestRepository = Depends(get_contest_repository),
 ) -> GameRecordService:
-    return GameRecordService(game_record_repo, group_repo)
-
-
-def get_contest_repository(db: AsyncSession = Depends(get_db)) -> ContestRepository:
-    return ContestRepository(db)
+    return GameRecordService(game_record_repo, group_repo, contest_repo)
 
 
 def get_contest_service(

@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 
-from app.models.contest import Contest
+from app.models.contest import Contest, ContestType
 from app.repositories.contest import ContestRepository
 from app.schemas.contest import ContestCreate, ContestUpdate
 
@@ -10,6 +10,11 @@ class ContestService:
         self.contest_repo = contest_repo
 
     async def create_contest(self, user_id: int, data: ContestCreate) -> Contest:
+        if data.contest_type == ContestType.overall:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot create an overall contest directly",
+            )
         return await self.contest_repo.create(user_id, data)
 
     async def get_contest(self, contest_id: int) -> Contest:
@@ -34,10 +39,16 @@ class ContestService:
                 detail="Only the contest creator can update it",
             )
         update_data = data.model_dump(exclude_unset=True)
+        update_data.pop("contest_type", None)
         return await self.contest_repo.update(contest, update_data)
 
     async def delete_contest(self, contest_id: int, user_id: int) -> None:
         contest = await self.get_contest(contest_id)
+        if contest.contest_type == ContestType.overall:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete an overall contest",
+            )
         if contest.created_by_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

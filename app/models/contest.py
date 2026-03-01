@@ -15,6 +15,12 @@ class RankingType(StrEnum):
     match_point = "match_point"
 
 
+class ContestType(StrEnum):
+    overall = "overall"
+    regular = "regular"
+    independent = "independent"
+
+
 class Contest(Base):
     __tablename__ = "contests"
 
@@ -30,6 +36,12 @@ class Contest(Base):
         SAEnum(RankingType, name="rankingtype"),
         default=RankingType.score,
         server_default="score",
+        nullable=False,
+    )
+    contest_type: Mapped[ContestType] = mapped_column(
+        SAEnum(ContestType, name="contesttype"),
+        default=ContestType.regular,
+        server_default="regular",
         nullable=False,
     )
 

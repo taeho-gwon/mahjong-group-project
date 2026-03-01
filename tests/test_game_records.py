@@ -3,10 +3,6 @@ from httpx import AsyncClient
 _GROUP_PAYLOAD = {
     "name": "Test Group",
     "join_policy": "public",
-    "uma_1st": 30,
-    "uma_2nd": 10,
-    "uma_3rd": -10,
-    "uma_4th": -30,
 }
 
 _CONTEST_PAYLOAD = {

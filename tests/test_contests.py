@@ -3,10 +3,6 @@ from httpx import AsyncClient
 _GROUP_PAYLOAD = {
     "name": "Test Group",
     "join_policy": "public",
-    "uma_1st": 30,
-    "uma_2nd": 10,
-    "uma_3rd": -10,
-    "uma_4th": -30,
 }
 
 _CONTEST_PAYLOAD = {
@@ -131,3 +127,24 @@ async def test_delete_contest_by_other_forbidden(client: AsyncClient) -> None:
 
     r = await client.delete(f"/contests/{contest_id}", headers=other_headers)
     assert r.status_code == 403
+
+
+async def test_create_overall_contest_directly_forbidden(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    payload = {**_CONTEST_PAYLOAD, "group_id": group_id, "contest_type": "overall"}
+
+    r = await client.post("/contests", json=payload, headers=headers)
+    assert r.status_code == 400
+
+
+async def test_delete_overall_contest_forbidden(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+
+    # 그룹 생성 시 overall contest가 자동 생성됨
+    list_r = await client.get(f"/contests?group_id={group_id}")
+    overall = next(c for c in list_r.json() if c["contest_type"] == "overall")
+
+    r = await client.delete(f"/contests/{overall['id']}", headers=headers)
+    assert r.status_code == 400

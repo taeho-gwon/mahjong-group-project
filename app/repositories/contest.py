@@ -1,7 +1,8 @@
 from sqlalchemy import select
 
-from app.models.contest import Contest
+from app.models.contest import Contest, ContestType, RankingType
 from app.repositories.base import BaseRepository
+from app.schemas.common import UmaFields
 from app.schemas.contest import ContestCreate
 
 
@@ -38,3 +39,35 @@ class ContestRepository(BaseRepository):
     async def delete(self, contest: Contest) -> None:
         await self.db.delete(contest)
         await self.db.commit()
+
+    async def create_overall(
+        self, group_id: int, created_by_id: int, uma: UmaFields
+    ) -> Contest:
+        contest = Contest(
+            name="전체 랭킹",
+            contest_type=ContestType.overall,
+            ranking_type=RankingType.score,
+            group_id=group_id,
+            created_by_id=created_by_id,
+            uma_1st=uma.uma_1st,
+            uma_2nd=uma.uma_2nd,
+            uma_3rd=uma.uma_3rd,
+            uma_4th=uma.uma_4th,
+            scoring_1st=4,
+            scoring_2nd=2,
+            scoring_3rd=1,
+            scoring_4th=0,
+        )
+        self.db.add(contest)
+        await self.db.commit()
+        await self.db.refresh(contest)
+        return contest
+
+    async def get_overall_by_group(self, group_id: int) -> Contest | None:
+        result = await self.db.execute(
+            select(Contest).where(
+                Contest.group_id == group_id,
+                Contest.contest_type == ContestType.overall,
+            )
+        )
+        return result.scalar_one_or_none()

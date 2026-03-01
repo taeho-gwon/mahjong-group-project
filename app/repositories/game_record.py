@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
+from app.models.contest import Contest, ContestType
 from app.models.game_record import GameRecord
 from app.repositories.base import BaseRepository
 from app.schemas.game_record import GameRecordCreate, GameRecordUpdate
@@ -55,24 +56,51 @@ class GameRecordRepository(BaseRepository):
         limit: int,
         group_id: int | None = None,
         contest_id: int | None = None,
+        is_overall: bool = False,
     ) -> list[GameRecord]:
-        stmt = _with_players(select(GameRecord))
-        if group_id is not None:
-            stmt = stmt.where(GameRecord.group_id == group_id)
-        if contest_id is not None:
-            stmt = stmt.where(GameRecord.contest_id == contest_id)
+        if is_overall and group_id is not None:
+            stmt = _with_players(
+                select(GameRecord)
+                .outerjoin(Contest, GameRecord.contest_id == Contest.id)
+                .where(GameRecord.group_id == group_id)
+                .where(
+                    (GameRecord.contest_id.is_(None))
+                    | (Contest.contest_type == ContestType.regular)
+                )
+            )
+        else:
+            stmt = _with_players(select(GameRecord))
+            if group_id is not None:
+                stmt = stmt.where(GameRecord.group_id == group_id)
+            if contest_id is not None:
+                stmt = stmt.where(GameRecord.contest_id == contest_id)
         stmt = stmt.order_by(GameRecord.played_at.desc()).offset(offset).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def count(
-        self, group_id: int | None = None, contest_id: int | None = None
+        self,
+        group_id: int | None = None,
+        contest_id: int | None = None,
+        is_overall: bool = False,
     ) -> int:
-        stmt = select(func.count()).select_from(GameRecord)
-        if group_id is not None:
-            stmt = stmt.where(GameRecord.group_id == group_id)
-        if contest_id is not None:
-            stmt = stmt.where(GameRecord.contest_id == contest_id)
+        if is_overall and group_id is not None:
+            stmt = (
+                select(func.count())
+                .select_from(GameRecord)
+                .outerjoin(Contest, GameRecord.contest_id == Contest.id)
+                .where(GameRecord.group_id == group_id)
+                .where(
+                    (GameRecord.contest_id.is_(None))
+                    | (Contest.contest_type == ContestType.regular)
+                )
+            )
+        else:
+            stmt = select(func.count()).select_from(GameRecord)
+            if group_id is not None:
+                stmt = stmt.where(GameRecord.group_id == group_id)
+            if contest_id is not None:
+                stmt = stmt.where(GameRecord.contest_id == contest_id)
         result = await self.db.execute(stmt)
         return result.scalar_one()
 

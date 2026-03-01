@@ -34,6 +34,22 @@
 
 ---
 
+---
+
+<!-- TODO(@agent-devops): Contest 타입 + Group uma 제거 migration — @agent-backend ✅ DONE (2026-03-01) -->
+
+## [2026-03-01] @agent-devops ✅ DONE — Contest 타입 + Group uma 제거 Migration
+
+### Added
+- `infra/db/versions/1b81330c150d_add_contest_type_to_contests_and_remove_.py`
+  - `contests.contest_type` 컬럼 추가 (contesttype enum: overall/regular/independent, default='regular')
+  - `groups.uma_1st/2nd/3rd/4th` 컬럼 제거
+  - `upgrade()` / `downgrade()` 모두 구현 (enum 타입 생성/삭제 포함)
+- `uv run alembic current` → `1b81330c150d (head)` ✅
+- `uv run pytest` → 34개 전체 통과 ✅
+
+---
+
 ## 마이그레이션 완료 목록
 
 - [x] users 테이블 초기 생성
@@ -41,6 +57,7 @@
 - [x] Group.uma_* 컬럼 추가
 - [x] contests 테이블
 - [x] game_records 테이블 (contest_id FK 포함)
+- [x] contests.contest_type 추가 + groups.uma_* 제거
 
 ---
 

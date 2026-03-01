@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, model_validator
 
-from app.models.contest import RankingType
+from app.models.contest import ContestType, RankingType
 from app.schemas.common import UmaFields
 
 
@@ -10,6 +10,7 @@ class ContestCreate(UmaFields):
     name: str
     group_id: int | None = None
     ranking_type: RankingType = RankingType.score
+    contest_type: ContestType = ContestType.regular
     scoring_1st: int = 4
     scoring_2nd: int = 2
     scoring_3rd: int = 1
@@ -48,6 +49,7 @@ class ContestResponse(BaseModel):
     group_id: int | None
     created_by_id: int
     ranking_type: RankingType
+    contest_type: ContestType
     uma_1st: int
     uma_2nd: int
     uma_3rd: int

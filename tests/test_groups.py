@@ -4,10 +4,6 @@ _GROUP_PAYLOAD = {
     "name": "Test Group",
     "description": "A test group",
     "join_policy": "public",
-    "uma_1st": 30,
-    "uma_2nd": 10,
-    "uma_3rd": -10,
-    "uma_4th": -30,
 }
 
 
@@ -96,3 +92,16 @@ async def test_delete_group_by_member_forbidden(client: AsyncClient) -> None:
 
     r = await client.delete(f"/groups/{group_id}", headers=member_headers)
     assert r.status_code == 403
+
+
+async def test_create_group_creates_overall_contest(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    create_r = await client.post("/groups", json=_GROUP_PAYLOAD, headers=headers)
+    group_id = create_r.json()["id"]
+
+    r = await client.get(f"/contests?group_id={group_id}")
+    assert r.status_code == 200
+    contests = r.json()
+    overall = [c for c in contests if c["contest_type"] == "overall"]
+    assert len(overall) == 1
+    assert overall[0]["name"] == "전체 랭킹"

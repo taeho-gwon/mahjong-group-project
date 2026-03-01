@@ -2,7 +2,6 @@ import os
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -21,21 +20,15 @@ TEST_DATABASE_URL = os.getenv(
 test_engine = create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
 TestSessionLocal = async_sessionmaker(test_engine, expire_on_commit=False)
 
-# Truncation order respects FK dependencies
-_TABLES = ["game_records", "contests", "group_members", "groups", "users"]
-
 
 @pytest.fixture(autouse=True)
 async def setup_db() -> None:
     async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
-    async with TestSessionLocal() as session:
-        for table in _TABLES:
-            await session.execute(
-                text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE")
-            )
-        await session.commit()
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture

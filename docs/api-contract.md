@@ -251,10 +251,10 @@ Auth:     Required (해당 그룹의 owner/admin만 가능)
   "id": 1,
   "name": "string",
   "description": "string|null",
+  "owner_id": 1,
   "join_policy": "public|private",
-  "uma_1st": 30, "uma_2nd": 10, "uma_3rd": -10, "uma_4th": -30,
-  "created_at": "datetime",
-  "updated_at": "datetime"
+  "is_active": true,
+  "created_at": "datetime"
 }
 ```
 
@@ -282,14 +282,16 @@ Auth:     Required (해당 그룹의 owner/admin만 가능)
   "group_id": 1,
   "created_by_id": 1,
   "name": "string",
-  "description": "string|null",
   "ranking_type": "score|match_point",
+  "contest_type": "overall|regular|independent",
   "uma_1st": 30, "uma_2nd": 10, "uma_3rd": -10, "uma_4th": -30,
   "scoring_1st": 4, "scoring_2nd": 2, "scoring_3rd": 1, "scoring_4th": 0,
   "created_at": "datetime",
   "updated_at": "datetime"
 }
 ```
+
+> **주의**: `contest_type=overall`인 Contest는 그룹 생성 시 자동 생성됨. 직접 생성(`POST /contests`)하거나 삭제(`DELETE /contests/{id}`) 불가 (400 반환)
 
 ---
 
