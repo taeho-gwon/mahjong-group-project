@@ -48,6 +48,8 @@ export default function GameRecordCreatePage() {
       .then(([g, contestList]) => {
         setMembers(g.members)
         setContests(contestList)
+        const totalContest = contestList.find((c) => c.name === '전체 랭킹')
+        if (totalContest) setSelectedContestId(totalContest.id)
       })
       .catch(() => setError('Failed to load group members'))
       .finally(() => setLoading(false))
