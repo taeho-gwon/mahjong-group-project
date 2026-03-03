@@ -11,6 +11,7 @@ export default function JoinPage() {
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [joining, setJoining] = useState(false)
+  const [alreadyMember, setAlreadyMember] = useState(false)
 
   if (!token) {
     return (
@@ -29,12 +30,26 @@ export default function JoinPage() {
       navigate(`/groups/${group.id}`, { replace: true })
     } catch (err) {
       if (err instanceof ApiError) {
+        if (err.status === 409) {
+          setAlreadyMember(true)
+          return
+        }
         setError(err.message)
       } else {
         setError('모임 가입에 실패했습니다')
       }
       setJoining(false)
     }
+  }
+
+  if (alreadyMember) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-6">
+        <h2 className="mt-0 mb-4">모임 참가</h2>
+        <p className="text-sm text-gray-600 mb-4">이미 가입된 모임입니다.</p>
+        <Link to="/" className="text-sm px-5 py-2 no-underline">메인으로 돌아가기</Link>
+      </div>
+    )
   }
 
   return (
