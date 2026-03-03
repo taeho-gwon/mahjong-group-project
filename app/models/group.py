@@ -14,6 +14,11 @@ from app.models.base import Base
 from app.models.user import User
 
 
+class RankingType(StrEnum):
+    score = "score"
+    match_point = "match_point"
+
+
 class JoinPolicy(StrEnum):
     public = "public"
     private = "private"
@@ -97,6 +102,38 @@ class Group(Base):
     )
     monthly_start_day: Mapped[int] = mapped_column(
         default=1, server_default="1", nullable=False
+    )
+
+    # 기본 랭킹 설정
+    default_ranking_type: Mapped[RankingType] = mapped_column(
+        SAEnum(RankingType, name="rankingtype", create_constraint=False),
+        default=RankingType.score,
+        server_default="score",
+        nullable=False,
+    )
+    default_uma_1st: Mapped[int] = mapped_column(
+        default=30, server_default="30", nullable=False
+    )
+    default_uma_2nd: Mapped[int] = mapped_column(
+        default=10, server_default="10", nullable=False
+    )
+    default_uma_3rd: Mapped[int] = mapped_column(
+        default=-10, server_default="-10", nullable=False
+    )
+    default_uma_4th: Mapped[int] = mapped_column(
+        default=-30, server_default="-30", nullable=False
+    )
+    default_scoring_1st: Mapped[int] = mapped_column(
+        default=4, server_default="4", nullable=False
+    )
+    default_scoring_2nd: Mapped[int] = mapped_column(
+        default=2, server_default="2", nullable=False
+    )
+    default_scoring_3rd: Mapped[int] = mapped_column(
+        default=1, server_default="1", nullable=False
+    )
+    default_scoring_4th: Mapped[int] = mapped_column(
+        default=0, server_default="0", nullable=False
     )
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

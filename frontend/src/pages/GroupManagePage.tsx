@@ -13,6 +13,7 @@ import { useGenerateInviteLink } from '../hooks/mutations/useGenerateInviteLink'
 import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
 import { useDeleteGroup } from '../hooks/mutations/useDeleteGroup'
 import { getDisplayName } from '../api/groups'
+import type { RankingType } from '../api/groups'
 import ConfirmModal from '../components/ConfirmModal'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
@@ -45,6 +46,9 @@ export default function GroupManagePage() {
   const [joinPolicy, setJoinPolicy] = useState<'public' | 'private'>('public')
   const [weeklyStartDay, setWeeklyStartDay] = useState(0)
   const [monthlyStartDay, setMonthlyStartDay] = useState(1)
+  const [rankingType, setRankingType] = useState<RankingType>('score')
+  const [uma, setUma] = useState({ default_uma_1st: 30, default_uma_2nd: 10, default_uma_3rd: -10, default_uma_4th: -30 })
+  const [scoring, setScoring] = useState({ default_scoring_1st: 4, default_scoring_2nd: 2, default_scoring_3rd: 1, default_scoring_4th: 0 })
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
 
@@ -69,12 +73,31 @@ export default function GroupManagePage() {
     setJoinPolicy(group.join_policy)
     setWeeklyStartDay(group.weekly_start_day)
     setMonthlyStartDay(group.monthly_start_day)
+    setRankingType(group.default_ranking_type)
+    setUma({
+      default_uma_1st: group.default_uma_1st,
+      default_uma_2nd: group.default_uma_2nd,
+      default_uma_3rd: group.default_uma_3rd,
+      default_uma_4th: group.default_uma_4th,
+    })
+    setScoring({
+      default_scoring_1st: group.default_scoring_1st,
+      default_scoring_2nd: group.default_scoring_2nd,
+      default_scoring_3rd: group.default_scoring_3rd,
+      default_scoring_4th: group.default_scoring_4th,
+    })
   }, [group, me, id, navigate])
+
+  const umaSum = uma.default_uma_1st + uma.default_uma_2nd + uma.default_uma_3rd + uma.default_uma_4th
 
   async function handleSave(e: FormEvent) {
     e.preventDefault()
     setSaveError('')
     setSaveSuccess(false)
+    if (umaSum !== 0) {
+      setSaveError(`우마 합계가 0이어야 합니다. 현재 합계: ${umaSum}`)
+      return
+    }
     try {
       await updateGroupMutation.mutateAsync({
         name,
@@ -82,6 +105,9 @@ export default function GroupManagePage() {
         join_policy: joinPolicy,
         weekly_start_day: weeklyStartDay,
         monthly_start_day: monthlyStartDay,
+        default_ranking_type: rankingType,
+        ...uma,
+        ...scoring,
       })
       setSaveSuccess(true)
     } catch {
@@ -221,6 +247,56 @@ export default function GroupManagePage() {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="block text-[13px] text-gray-600 mb-1">기본 랭킹 방식</label>
+                <select
+                  value={rankingType}
+                  onChange={(e) => { setRankingType(e.target.value as RankingType); setSaveSuccess(false) }}
+                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                >
+                  <option value="score">점수 합산 (score)</option>
+                  <option value="match_point">승점 (match_point)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[13px] text-gray-600 mb-1">
+                  기본 우마{' '}
+                  <span className={`font-normal ${umaSum === 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    (합계: {umaSum > 0 ? '+' : ''}{umaSum})
+                  </span>
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['default_uma_1st', 'default_uma_2nd', 'default_uma_3rd', 'default_uma_4th'] as const).map((key, idx) => (
+                    <div key={key}>
+                      <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                      <input
+                        type="number"
+                        value={uma[key]}
+                        onChange={(e) => { setUma((prev) => ({ ...prev, [key]: Number(e.target.value) })); setSaveSuccess(false) }}
+                        className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {rankingType === 'match_point' && (
+                <div>
+                  <label className="block text-[13px] text-gray-600 mb-1">기본 승점 배점</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {(['default_scoring_1st', 'default_scoring_2nd', 'default_scoring_3rd', 'default_scoring_4th'] as const).map((key, idx) => (
+                      <div key={key}>
+                        <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                        <input
+                          type="number"
+                          value={scoring[key]}
+                          onChange={(e) => { setScoring((prev) => ({ ...prev, [key]: Number(e.target.value) })); setSaveSuccess(false) }}
+                          className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {saveError && <p className="text-red-600 m-0 text-sm">{saveError}</p>}
               {saveSuccess && <p className="text-green-700 m-0 text-sm">저장되었습니다.</p>}
               <button

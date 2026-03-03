@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCreateGroup } from '../hooks/mutations/useCreateGroup'
+import type { RankingType } from '../api/groups'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
 
@@ -14,11 +15,20 @@ export default function GroupCreatePage() {
   const [groupJoinPolicy, setGroupJoinPolicy] = useState<'public' | 'private'>('public')
   const [weeklyStartDay, setWeeklyStartDay] = useState(0)
   const [monthlyStartDay, setMonthlyStartDay] = useState(1)
+  const [rankingType, setRankingType] = useState<RankingType>('score')
+  const [uma, setUma] = useState({ default_uma_1st: 30, default_uma_2nd: 10, default_uma_3rd: -10, default_uma_4th: -30 })
+  const [scoring, setScoring] = useState({ default_scoring_1st: 4, default_scoring_2nd: 2, default_scoring_3rd: 1, default_scoring_4th: 0 })
   const [createError, setCreateError] = useState('')
+
+  const umaSum = uma.default_uma_1st + uma.default_uma_2nd + uma.default_uma_3rd + uma.default_uma_4th
 
   async function handleCreateGroup(e: FormEvent) {
     e.preventDefault()
     setCreateError('')
+    if (umaSum !== 0) {
+      setCreateError(`우마 합계가 0이어야 합니다. 현재 합계: ${umaSum}`)
+      return
+    }
     try {
       const group = await createGroupMutation.mutateAsync({
         name: groupName,
@@ -26,6 +36,9 @@ export default function GroupCreatePage() {
         join_policy: groupJoinPolicy,
         weekly_start_day: weeklyStartDay,
         monthly_start_day: monthlyStartDay,
+        default_ranking_type: rankingType,
+        ...uma,
+        ...scoring,
       })
       navigate(`/groups/${group.id}`)
     } catch {
@@ -108,6 +121,59 @@ export default function GroupCreatePage() {
             ))}
           </select>
         </div>
+
+        <div>
+          <label className="block text-[13px] text-gray-600 mb-1">기본 랭킹 방식</label>
+          <select
+            value={rankingType}
+            onChange={(e) => setRankingType(e.target.value as RankingType)}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+          >
+            <option value="score">점수 합산 (score)</option>
+            <option value="match_point">승점 (match_point)</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[13px] text-gray-600 mb-1">
+            기본 우마{' '}
+            <span className={`font-normal ${umaSum === 0 ? 'text-green-700' : 'text-red-600'}`}>
+              (합계: {umaSum > 0 ? '+' : ''}{umaSum})
+            </span>
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {(['default_uma_1st', 'default_uma_2nd', 'default_uma_3rd', 'default_uma_4th'] as const).map((key, idx) => (
+              <div key={key}>
+                <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                <input
+                  type="number"
+                  value={uma[key]}
+                  onChange={(e) => setUma((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
+                  className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {rankingType === 'match_point' && (
+          <div>
+            <label className="block text-[13px] text-gray-600 mb-1">기본 승점 배점</label>
+            <div className="grid grid-cols-4 gap-2">
+              {(['default_scoring_1st', 'default_scoring_2nd', 'default_scoring_3rd', 'default_scoring_4th'] as const).map((key, idx) => (
+                <div key={key}>
+                  <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                  <input
+                    type="number"
+                    value={scoring[key]}
+                    onChange={(e) => setScoring((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
+                    className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {createError && <p className="text-red-600 m-0">{createError}</p>}
         <button

@@ -8,7 +8,8 @@
 | ID | Title | Agent | Status | Depends | Notes |
 |----|-------|-------|--------|---------|-------|
 
-<!-- next-id: 23 -->
+
+<!-- next-id: 26 -->
 
 ## Cross-Agent Messages
 

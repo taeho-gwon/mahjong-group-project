@@ -3,7 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel, Field, model_validator
 
 from app.constants import EVENT_NAME_MAX_LENGTH
-from app.models.event import EventType, RankingType
+from app.models.event import EventType
+from app.models.group import RankingType
 from app.schemas.common import UmaFields
 
 

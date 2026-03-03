@@ -17,7 +17,7 @@ const PERIOD_LABELS: { value: PeriodTab; label: string }[] = [
   { value: 'all', label: '전체' },
 ]
 
-const DEFAULT_UMA = [30, 10, -10, -30]
+import type { GroupDetailResponse } from '../api/groups'
 
 interface RankingEntry {
   id: number
@@ -90,17 +90,20 @@ function computeGroupRanking(
   records: GameRecordResponse[],
   eventsById: Map<number, EventResponse>,
   nameMap: Map<number, string>,
+  group: GroupDetailResponse,
 ): RankingEntry[] {
   const playerMap = new Map<number, RankingEntry>()
+  const defaultUma = [group.default_uma_1st, group.default_uma_2nd, group.default_uma_3rd, group.default_uma_4th]
+  const defaultScoring = [group.default_scoring_1st, group.default_scoring_2nd, group.default_scoring_3rd, group.default_scoring_4th]
 
   for (const rec of records) {
     const event = rec.event_id ? eventsById.get(rec.event_id) : null
     const uma = event
       ? [event.uma_1st, event.uma_2nd, event.uma_3rd, event.uma_4th]
-      : DEFAULT_UMA
+      : defaultUma
     const scoring = event
       ? [event.scoring_1st, event.scoring_2nd, event.scoring_3rd, event.scoring_4th]
-      : [4, 2, 1, 0]
+      : defaultScoring
 
     const seats = [
       { player: rec.east_player, point: rec.east_point },
@@ -127,7 +130,11 @@ function computeGroupRanking(
   }
 
   const entries = [...playerMap.values()]
-  entries.sort((a, b) => b.totalScore - a.totalScore)
+  if (group.default_ranking_type === 'match_point') {
+    entries.sort((a, b) => b.matchPoint - a.matchPoint || b.totalScore - a.totalScore)
+  } else {
+    entries.sort((a, b) => b.totalScore - a.totalScore)
+  }
   return entries
 }
 
@@ -183,10 +190,11 @@ export default function GroupRankingPage() {
   }, [group])
 
   const ranking = useMemo(
-    () => computeGroupRanking(filteredRecords, eventsById, nameMap),
-    [filteredRecords, eventsById, nameMap],
+    () => group ? computeGroupRanking(filteredRecords, eventsById, nameMap, group) : [],
+    [filteredRecords, eventsById, nameMap, group],
   )
 
+  const isMatchPoint = group?.default_ranking_type === 'match_point'
   const isLoading = groupLoading || recordsLoading
 
   return (
@@ -263,6 +271,7 @@ export default function GroupRankingPage() {
                 <tr className="border-b-2 border-gray-300 text-gray-600 text-[13px]">
                   <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
                   <th className="px-2.5 py-2 text-left whitespace-nowrap">이름</th>
+                  {isMatchPoint && <th className="px-2.5 py-2 text-center whitespace-nowrap">승점</th>}
                   <th className="px-2.5 py-2 text-center whitespace-nowrap">점수</th>
                   <th className="px-2.5 py-2 text-center whitespace-nowrap">1위</th>
                   <th className="px-2.5 py-2 text-center whitespace-nowrap">2위</th>
@@ -281,7 +290,12 @@ export default function GroupRankingPage() {
                       <td className="px-2.5 py-2.5 text-left whitespace-nowrap">
                         <Link to={`/users/${entry.id}`} className="no-underline text-inherit">{entry.username}</Link>
                       </td>
-                      <td className={`px-2.5 py-2.5 text-center font-bold whitespace-nowrap ${isPositive ? 'text-green-700' : 'text-red-600'}`}>
+                      {isMatchPoint && (
+                        <td className="px-2.5 py-2.5 text-center font-bold whitespace-nowrap text-blue-700">
+                          {entry.matchPoint}
+                        </td>
+                      )}
+                      <td className={`px-2.5 py-2.5 text-center whitespace-nowrap ${isMatchPoint ? 'text-gray-500' : `font-bold ${isPositive ? 'text-green-700' : 'text-red-600'}`}`}>
                         {scoreStr}
                       </td>
                       <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[0]}</td>

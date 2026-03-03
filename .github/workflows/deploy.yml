@@ -1,5 +1,11 @@
 name: Deploy
 
+# Required GitHub Secrets (Settings → Secrets and variables → Actions):
+#   SSH_HOST        — 서버 호스트명 (예: mjgroup.duckdns.org)
+#   SSH_USER        — SSH 접속 유저 (예: ubuntu)
+#   SSH_PRIVATE_KEY — SSH 개인키 전체 내용 (PEM 파일의 텍스트)
+#   DEPLOY_PATH     — 서버의 프로젝트 절대 경로 (예: /home/ubuntu/mahjong-group-project)
+
 on:
   push:
     branches: [main]

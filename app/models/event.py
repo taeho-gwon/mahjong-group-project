@@ -7,13 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.constants import EVENT_NAME_MAX_LENGTH
 from app.models.base import Base
-from app.models.group import Group
+from app.models.group import Group, RankingType
 from app.models.user import User
-
-
-class RankingType(StrEnum):
-    score = "score"
-    match_point = "match_point"
 
 
 class EventType(StrEnum):

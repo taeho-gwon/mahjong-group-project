@@ -57,12 +57,15 @@ Request:  {
   "description": "string|null",
   "join_policy": "public|private",
   "weekly_start_day": 0,
-  "monthly_start_day": 1
+  "monthly_start_day": 1,
+  "default_ranking_type": "score|match_point",
+  "default_uma_1st": 30, "default_uma_2nd": 10, "default_uma_3rd": -10, "default_uma_4th": -30,
+  "default_scoring_1st": 4, "default_scoring_2nd": 2, "default_scoring_3rd": 1, "default_scoring_4th": 0
 }
 Response: GroupResponse
 Status:   201
 Auth:     Required
-Note:     weekly_start_day: 0-6 (0=Mon, 6=Sun), monthly_start_day: 1-28
+Note:     weekly_start_day: 0-6 (0=Mon, 6=Sun), monthly_start_day: 1-28. 우마 합계 = 0 필수
 ```
 
 ### GET /groups
@@ -81,10 +84,15 @@ Status:   200
 
 ### PUT /groups/{id}
 ```json
-Request:  { "name"?, "description"?, "join_policy"?, "weekly_start_day"?, "monthly_start_day"? }
+Request:  {
+  "name"?, "description"?, "join_policy"?, "weekly_start_day"?, "monthly_start_day"?,
+  "default_ranking_type"?, "default_uma_1st"?, "default_uma_2nd"?, "default_uma_3rd"?, "default_uma_4th"?,
+  "default_scoring_1st"?, "default_scoring_2nd"?, "default_scoring_3rd"?, "default_scoring_4th"?
+}
 Response: GroupResponse
 Status:   200
 Auth:     Required (owner/admin)
+Note:     우마 변경 시 4개 순위 모두 함께 제공 필수, 합계 = 0
 ```
 
 ### DELETE /groups/{id}
@@ -360,6 +368,9 @@ Auth:     Required (해당 그룹의 owner/admin만 가능)
   "join_policy": "public|private",
   "weekly_start_day": 0,
   "monthly_start_day": 1,
+  "default_ranking_type": "score|match_point",
+  "default_uma_1st": 30, "default_uma_2nd": 10, "default_uma_3rd": -10, "default_uma_4th": -30,
+  "default_scoring_1st": 4, "default_scoring_2nd": 2, "default_scoring_3rd": 1, "default_scoring_4th": 0,
   "is_active": true,
   "created_at": "datetime"
 }

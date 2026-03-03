@@ -16,6 +16,15 @@ class GroupRepository(BaseRepository):
             join_policy=data.join_policy,
             weekly_start_day=data.weekly_start_day,
             monthly_start_day=data.monthly_start_day,
+            default_ranking_type=data.default_ranking_type,
+            default_uma_1st=data.default_uma_1st,
+            default_uma_2nd=data.default_uma_2nd,
+            default_uma_3rd=data.default_uma_3rd,
+            default_uma_4th=data.default_uma_4th,
+            default_scoring_1st=data.default_scoring_1st,
+            default_scoring_2nd=data.default_scoring_2nd,
+            default_scoring_3rd=data.default_scoring_3rd,
+            default_scoring_4th=data.default_scoring_4th,
             owner_id=owner_id,
         )
         self.db.add(group)

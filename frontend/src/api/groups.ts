@@ -1,5 +1,8 @@
 import { apiFetch } from './client'
 import { throwApiError } from './errors'
+import type { RankingType } from './events'
+
+export type { RankingType }
 
 export interface GroupResponse {
   id: number
@@ -9,6 +12,15 @@ export interface GroupResponse {
   join_policy: 'public' | 'private'
   weekly_start_day: number
   monthly_start_day: number
+  default_ranking_type: RankingType
+  default_uma_1st: number
+  default_uma_2nd: number
+  default_uma_3rd: number
+  default_uma_4th: number
+  default_scoring_1st: number
+  default_scoring_2nd: number
+  default_scoring_3rd: number
+  default_scoring_4th: number
   is_active: boolean
   created_at: string
 }
@@ -62,6 +74,15 @@ export async function updateGroup(
     join_policy?: 'public' | 'private'
     weekly_start_day?: number
     monthly_start_day?: number
+    default_ranking_type?: RankingType
+    default_uma_1st?: number
+    default_uma_2nd?: number
+    default_uma_3rd?: number
+    default_uma_4th?: number
+    default_scoring_1st?: number
+    default_scoring_2nd?: number
+    default_scoring_3rd?: number
+    default_scoring_4th?: number
   },
 ): Promise<GroupResponse> {
   const res = await apiFetch(`/groups/${id}`, {
@@ -142,16 +163,19 @@ export async function createGroup(data: {
   join_policy?: 'public' | 'private'
   weekly_start_day?: number
   monthly_start_day?: number
+  default_ranking_type?: RankingType
+  default_uma_1st?: number
+  default_uma_2nd?: number
+  default_uma_3rd?: number
+  default_uma_4th?: number
+  default_scoring_1st?: number
+  default_scoring_2nd?: number
+  default_scoring_3rd?: number
+  default_scoring_4th?: number
 }): Promise<GroupResponse> {
   const res = await apiFetch('/groups', {
     method: 'POST',
-    body: JSON.stringify({
-      name: data.name,
-      description: data.description || null,
-      join_policy: data.join_policy ?? 'public',
-      weekly_start_day: data.weekly_start_day ?? 0,
-      monthly_start_day: data.monthly_start_day ?? 1,
-    }),
+    body: JSON.stringify(data),
   })
   if (!res.ok) await throwApiError(res)
   return res.json()

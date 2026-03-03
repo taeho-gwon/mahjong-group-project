@@ -6,13 +6,7 @@ import { ApiError } from '../../api/errors'
 export function useCreateGroup() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: {
-      name: string
-      description?: string | null
-      join_policy: 'public' | 'private'
-      weekly_start_day?: number
-      monthly_start_day?: number
-    }) => createGroup(data),
+    mutationFn: (data: Parameters<typeof createGroup>[0]) => createGroup(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myGroups'] })
       toast.success('모임이 생성됐습니다')
