@@ -29,10 +29,6 @@ export default function JoinPage() {
       navigate(`/groups/${group.id}`, { replace: true })
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 401) {
-          navigate('/login', { replace: true })
-          return
-        }
         setError(err.message)
       } else {
         setError('모임 가입에 실패했습니다')

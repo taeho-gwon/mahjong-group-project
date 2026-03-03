@@ -38,8 +38,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<NavLayout />}>
-          <Route path="/join" element={<JoinPage />} />
           <Route element={<AuthGuard />}>
+            <Route path="/join" element={<JoinPage />} />
             <Route path="/" element={<MainPage />} />
             <Route path="/mypage" element={<MyPage />} />
             <Route path="/groups/new" element={<GroupCreatePage />} />

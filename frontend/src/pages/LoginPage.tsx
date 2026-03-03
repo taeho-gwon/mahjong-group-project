@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { login } from '../api/auth'
 import { useAuthStore } from '../stores/authStore'
 import AnnouncementSection from '../components/AnnouncementSection'
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const setTokens = useAuthStore((s) => s.setTokens)
 
   async function handleSubmit(e: FormEvent) {
@@ -20,7 +21,7 @@ export default function LoginPage() {
     try {
       const tokens = await login(username, password)
       setTokens(tokens.access_token, tokens.refresh_token)
-      navigate('/')
+      navigate(searchParams.get('returnUrl') || '/')
     } catch (err) {
       setError(err instanceof Error ? err.message : '아이디 또는 비밀번호가 올바르지 않습니다')
     } finally {
