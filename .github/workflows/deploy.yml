@@ -7,8 +7,6 @@ name: Deploy
 #   DEPLOY_PATH     — 서버의 프로젝트 절대 경로 (예: /home/ubuntu/mahjong-group-project)
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
