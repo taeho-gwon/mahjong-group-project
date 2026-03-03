@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { MemberInfo } from '../api/groups'
+import { getDisplayName } from '../api/groups'
 import Spinner from '../components/Spinner'
 import { useGameRecord } from '../hooks/useGameRecord'
 import { useGroupDetail } from '../hooks/useGroupDetail'
@@ -73,7 +74,7 @@ export default function GameRecordEditPage() {
   function filteredMembers(pos: Position): MemberInfo[] {
     const search = positions[pos].search.toLowerCase()
     if (!search) return members
-    return members.filter((m) => m.username.toLowerCase().includes(search))
+    return members.filter((m) => getDisplayName(m).toLowerCase().includes(search))
   }
 
   function hasDuplicatePlayers(): boolean {
@@ -171,7 +172,7 @@ export default function GameRecordEditPage() {
                         <option value="">-- 선택 --</option>
                         {filtered.map((m) => (
                           <option key={m.id} value={m.id} disabled={taken.has(m.id)}>
-                            {m.username}{taken.has(m.id) ? ' (선택됨)' : ''}
+                            {getDisplayName(m)}{taken.has(m.id) ? ' (선택됨)' : ''}
                           </option>
                         ))}
                       </select>

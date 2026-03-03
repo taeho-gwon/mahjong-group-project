@@ -7,10 +7,15 @@ import { useEvents } from '../hooks/useEvents'
 import { useMe } from '../hooks/useMe'
 import { useUpdateGroup } from '../hooks/mutations/useUpdateGroup'
 import { useUpdateMemberRole } from '../hooks/mutations/useUpdateMemberRole'
+import { useUpdateMemberNickname } from '../hooks/mutations/useUpdateMemberNickname'
 import { useRemoveMember } from '../hooks/mutations/useRemoveMember'
 import { useGenerateInviteLink } from '../hooks/mutations/useGenerateInviteLink'
 import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
 import { useDeleteGroup } from '../hooks/mutations/useDeleteGroup'
+import { getDisplayName } from '../api/groups'
+import ConfirmModal from '../components/ConfirmModal'
+
+const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -30,6 +35,7 @@ export default function GroupManagePage() {
   const updateGroupMutation = useUpdateGroup(groupId!)
   const updateRoleMutation = useUpdateMemberRole(groupId!)
   const removeMemberMutation = useRemoveMember(groupId!)
+  const updateNicknameMutation = useUpdateMemberNickname(groupId!)
   const generateInviteMutation = useGenerateInviteLink(groupId!)
   const leaveGroupMutation = useLeaveGroup(groupId!)
   const deleteGroupMutation = useDeleteGroup()
@@ -37,9 +43,16 @@ export default function GroupManagePage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [joinPolicy, setJoinPolicy] = useState<'public' | 'private'>('public')
+  const [weeklyStartDay, setWeeklyStartDay] = useState(0)
+  const [monthlyStartDay, setMonthlyStartDay] = useState(1)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
 
+  const [editNicknameUserId, setEditNicknameUserId] = useState<number | null>(null)
+  const [nicknameInput, setNicknameInput] = useState('')
+
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -54,6 +67,8 @@ export default function GroupManagePage() {
     setName(group.name)
     setDescription(group.description ?? '')
     setJoinPolicy(group.join_policy)
+    setWeeklyStartDay(group.weekly_start_day)
+    setMonthlyStartDay(group.monthly_start_day)
   }, [group, me, id, navigate])
 
   async function handleSave(e: FormEvent) {
@@ -65,6 +80,8 @@ export default function GroupManagePage() {
         name,
         description: description || null,
         join_policy: joinPolicy,
+        weekly_start_day: weeklyStartDay,
+        monthly_start_day: monthlyStartDay,
       })
       setSaveSuccess(true)
     } catch {
@@ -79,7 +96,7 @@ export default function GroupManagePage() {
       setInviteExpiresAt(expires_at)
       setCopied(false)
     } catch {
-      alert('초대 링크 생성에 실패했습니다.')
+      // error toast handled by mutation hook
     }
   }
 
@@ -94,7 +111,7 @@ export default function GroupManagePage() {
     try {
       await removeMemberMutation.mutateAsync(userId)
     } catch {
-      alert('멤버 강퇴에 실패했습니다.')
+      // error toast handled by mutation hook
     }
   }
 
@@ -102,12 +119,12 @@ export default function GroupManagePage() {
     try {
       await updateRoleMutation.mutateAsync({ userId, role })
     } catch {
-      alert('역할 변경에 실패했습니다.')
+      // error toast handled by mutation hook
     }
   }
 
   function handleLeave() {
-    if (!window.confirm('정말 이 모임에서 탈퇴하시겠습니까?')) return
+    setShowLeaveModal(false)
     leaveGroupMutation.mutate()
   }
 
@@ -179,6 +196,30 @@ export default function GroupManagePage() {
                     비공개
                   </label>
                 </div>
+              </div>
+              <div>
+                <label className="block text-[13px] text-gray-600 mb-1">주간 랭킹 시작 요일</label>
+                <select
+                  value={weeklyStartDay}
+                  onChange={(e) => { setWeeklyStartDay(Number(e.target.value)); setSaveSuccess(false) }}
+                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                >
+                  {WEEKDAYS.map((day, idx) => (
+                    <option key={idx} value={idx}>{day}요일</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[13px] text-gray-600 mb-1">월간 랭킹 시작일</label>
+                <select
+                  value={monthlyStartDay}
+                  onChange={(e) => { setMonthlyStartDay(Number(e.target.value)); setSaveSuccess(false) }}
+                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                >
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}일</option>
+                  ))}
+                </select>
               </div>
               {saveError && <p className="text-red-600 m-0 text-sm">{saveError}</p>}
               {saveSuccess && <p className="text-green-700 m-0 text-sm">저장되었습니다.</p>}
@@ -285,9 +326,48 @@ export default function GroupManagePage() {
                     key={m.id}
                     className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm"
                   >
-                    <span className={isMemberOwner ? 'font-bold' : ''}>
-                      <Link to={`/users/${m.id}`} className="no-underline text-inherit">{m.username}</Link>{isMe && <span className="text-gray-400 text-xs"> (me)</span>}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={isMemberOwner ? 'font-bold' : ''}>
+                        <Link to={`/users/${m.id}`} className="no-underline text-inherit">{getDisplayName(m)}</Link>{isMe && <span className="text-gray-400 text-xs"> (me)</span>}
+                      </span>
+                      {editNicknameUserId === m.id ? (
+                        <span className="flex items-center gap-1 mt-1">
+                          <input
+                            type="text"
+                            value={nicknameInput}
+                            onChange={(e) => setNicknameInput(e.target.value)}
+                            maxLength={50}
+                            placeholder="닉네임"
+                            className="border border-gray-300 rounded px-1.5 py-0.5 text-xs w-28"
+                          />
+                          <button
+                            onClick={async () => {
+                              await updateNicknameMutation.mutateAsync({ userId: m.id, nickname: nicknameInput.trim() || null })
+                              setEditNicknameUserId(null)
+                            }}
+                            disabled={updateNicknameMutation.isPending}
+                            className="text-xs px-1.5 py-0.5 cursor-pointer"
+                          >
+                            저장
+                          </button>
+                          <button
+                            onClick={() => setEditNicknameUserId(null)}
+                            className="text-xs px-1.5 py-0.5 cursor-pointer bg-transparent border border-gray-300 rounded"
+                          >
+                            취소
+                          </button>
+                        </span>
+                      ) : (isMe || myRole === 'owner' || myRole === 'admin') ? (
+                        <button
+                          onClick={() => { setEditNicknameUserId(m.id); setNicknameInput(m.nickname ?? '') }}
+                          className="text-xs text-gray-400 bg-transparent border-none cursor-pointer p-0 mt-0.5 text-left"
+                        >
+                          {m.nickname ? `닉네임: ${m.nickname}` : '닉네임 설정'}
+                        </button>
+                      ) : m.nickname ? (
+                        <span className="text-xs text-gray-400 mt-0.5">닉네임: {m.nickname}</span>
+                      ) : null}
+                    </div>
                     <div className="flex gap-2 items-center">
                       <span className={`text-xs px-2 py-0.5 rounded ${
                         m.role === 'owner'
@@ -316,7 +396,7 @@ export default function GroupManagePage() {
                       )}
                       {isMe && myRole !== 'owner' && (
                         <button
-                          onClick={handleLeave}
+                          onClick={() => setShowLeaveModal(true)}
                           className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded"
                         >
                           탈퇴
@@ -334,17 +414,33 @@ export default function GroupManagePage() {
             <section className="mt-10 border-t border-gray-100 pt-6">
               <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
               <button
-                onClick={() => {
-                  if (!window.confirm('정말로 이 모임을 삭제하시겠습니까? 모든 데이터가 삭제됩니다.')) return
-                  deleteGroupMutation.mutate(groupId!)
-                }}
+                onClick={() => setShowDeleteModal(true)}
                 disabled={deleteGroupMutation.isPending}
                 className="px-5 py-2 text-sm cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
               >
                 {deleteGroupMutation.isPending ? '삭제 중...' : '모임 삭제'}
               </button>
+              <ConfirmModal
+                open={showDeleteModal}
+                title="모임 삭제"
+                description="정말로 이 모임을 삭제하시겠습니까? 모든 데이터가 삭제됩니다."
+                confirmLabel="삭제"
+                onConfirm={() => { setShowDeleteModal(false); deleteGroupMutation.mutate(groupId!) }}
+                onCancel={() => setShowDeleteModal(false)}
+                destructive
+              />
             </section>
           )}
+
+          <ConfirmModal
+            open={showLeaveModal}
+            title="모임 탈퇴"
+            description="정말 이 모임에서 탈퇴하시겠습니까?"
+            confirmLabel="탈퇴"
+            onConfirm={handleLeave}
+            onCancel={() => setShowLeaveModal(false)}
+            destructive
+          />
         </>
       ) : null}
     </div>

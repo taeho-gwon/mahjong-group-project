@@ -1,4 +1,5 @@
 import { apiFetch } from './client'
+import { throwApiError } from './errors'
 
 const BASE_URL = (import.meta.env.VITE_API_URL || '') + '/api'
 
@@ -11,7 +12,7 @@ export interface TokenResponse {
 export interface UserResponse {
   id: number
   username: string
-  email: string
+  nickname: string | null
   is_active: boolean
   created_at: string
 }
@@ -24,7 +25,7 @@ export async function login(username: string, password: string): Promise<TokenRe
   })
 
   if (!res.ok) {
-    throw new Error('Invalid username or password')
+    await throwApiError(res, '아이디 또는 비밀번호가 올바르지 않습니다')
   }
 
   return res.json()
@@ -38,8 +39,7 @@ export async function register(username: string, password: string): Promise<User
   })
 
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
-    throw new Error(data.detail ?? 'Registration failed')
+    await throwApiError(res, '회원가입에 실패했습니다')
   }
 
   return res.json()
@@ -47,6 +47,15 @@ export async function register(username: string, password: string): Promise<User
 
 export async function getMe(): Promise<UserResponse> {
   const res = await apiFetch('/auth/me')
-  if (!res.ok) throw new Error('Failed to fetch user')
+  if (!res.ok) await throwApiError(res)
+  return res.json()
+}
+
+export async function updateMe(data: { nickname: string | null }): Promise<UserResponse> {
+  const res = await apiFetch('/auth/me', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }

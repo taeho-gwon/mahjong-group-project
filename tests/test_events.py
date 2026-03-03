@@ -65,14 +65,15 @@ async def test_get_event_success(client: AsyncClient) -> None:
     group_id = await _create_group(client, headers)
     event_id = await _create_event(client, headers, group_id)
 
-    r = await client.get(f"/api/events/{event_id}")
+    r = await client.get(f"/api/events/{event_id}", headers=headers)
     assert r.status_code == 200
     assert r.json()["id"] == event_id
     assert r.json()["name"] == "Spring League"
 
 
 async def test_get_event_not_found(client: AsyncClient) -> None:
-    r = await client.get("/api/events/99999")
+    headers = await _login(client, "owner")
+    r = await client.get("/api/events/99999", headers=headers)
     assert r.status_code == 404
 
 
@@ -81,9 +82,52 @@ async def test_list_events_by_group(client: AsyncClient) -> None:
     group_id = await _create_group(client, headers)
     await _create_event(client, headers, group_id)
 
-    r = await client.get(f"/api/events?group_id={group_id}")
+    r = await client.get(f"/api/events?group_id={group_id}", headers=headers)
     assert r.status_code == 200
-    assert len(r.json()) >= 1
+    data = r.json()
+    assert data["total"] >= 1
+    assert len(data["items"]) >= 1
+
+
+async def test_list_events_unauthorized(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+
+    r = await client.get(f"/api/events?group_id={group_id}")
+    assert r.status_code == 401
+
+
+async def test_get_event_unauthorized(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    event_id = await _create_event(client, headers, group_id)
+
+    r = await client.get(f"/api/events/{event_id}")
+    assert r.status_code == 401
+
+
+async def test_list_events_non_member_forbidden(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    other_headers = await _login(client, "outsider")
+    group_id = await _create_group(client, owner_headers)
+    await _create_event(client, owner_headers, group_id)
+
+    r = await client.get(
+        f"/api/events?group_id={group_id}", headers=other_headers
+    )
+    assert r.status_code == 403
+
+
+async def test_get_event_non_member_forbidden(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    other_headers = await _login(client, "outsider")
+    group_id = await _create_group(client, owner_headers)
+    event_id = await _create_event(client, owner_headers, group_id)
+
+    r = await client.get(
+        f"/api/events/{event_id}", headers=other_headers
+    )
+    assert r.status_code == 403
 
 
 async def test_update_event_by_creator(client: AsyncClient) -> None:
@@ -145,59 +189,20 @@ async def test_delete_event_by_other_forbidden(client: AsyncClient) -> None:
     assert r.status_code == 403
 
 
-async def test_create_aggregate_event_success(client: AsyncClient) -> None:
+async def test_create_independent_event(client: AsyncClient) -> None:
     headers = await _login(client, "owner")
     group_id = await _create_group(client, headers)
     payload = {
         **_EVENT_PAYLOAD,
         "group_id": group_id,
-        "name": "2026 Season",
-        "event_type": "aggregate",
-        "period_start": "2026-01-01T00:00:00Z",
-        "period_end": "2026-07-01T00:00:00Z",
+        "name": "Practice Match",
+        "event_type": "independent",
     }
 
     r = await client.post("/api/events", json=payload, headers=headers)
     assert r.status_code == 201
     data = r.json()
-    assert data["event_type"] == "aggregate"
-    assert data["is_default"] is False
-    assert data["period_start"] is not None
-    assert data["period_end"] is not None
-
-
-async def test_delete_default_event_forbidden(client: AsyncClient) -> None:
-    headers = await _login(client, "owner")
-    group_id = await _create_group(client, headers)
-
-    # Group creation auto-creates a default aggregate event
-    list_r = await client.get(f"/api/events?group_id={group_id}")
-    default = next(
-        e
-        for e in list_r.json()
-        if e["event_type"] == "aggregate" and e["is_default"] is True
-    )
-
-    r = await client.delete(f"/api/events/{default['id']}", headers=headers)
-    assert r.status_code == 400
-
-
-async def test_delete_non_default_aggregate_success(client: AsyncClient) -> None:
-    headers = await _login(client, "owner")
-    group_id = await _create_group(client, headers)
-    payload = {
-        **_EVENT_PAYLOAD,
-        "group_id": group_id,
-        "name": "Season Aggregate",
-        "event_type": "aggregate",
-    }
-
-    r = await client.post("/api/events", json=payload, headers=headers)
-    assert r.status_code == 201
-    event_id = r.json()["id"]
-
-    r = await client.delete(f"/api/events/{event_id}", headers=headers)
-    assert r.status_code == 204
+    assert data["event_type"] == "independent"
 
 
 # --- Close Event Tests ---
@@ -289,41 +294,3 @@ async def test_create_game_record_closed_event_blocked(client: AsyncClient) -> N
     }
     r = await client.post("/api/game-records", json=record_payload, headers=headers)
     assert r.status_code == 400
-
-
-async def test_create_aggregate_event_with_preset_type(
-    client: AsyncClient,
-) -> None:
-    """Create aggregate event with preset_type -> reflected in response."""
-    headers = await _login(client, "owner")
-    group_id = await _create_group(client, headers)
-    payload = {
-        **_EVENT_PAYLOAD,
-        "group_id": group_id,
-        "name": "Monthly Aggregate",
-        "event_type": "aggregate",
-        "preset_type": "monthly",
-    }
-
-    r = await client.post("/api/events", json=payload, headers=headers)
-    assert r.status_code == 201
-    data = r.json()
-    assert data["preset_type"] == "monthly"
-
-
-async def test_non_aggregate_preset_type_ignored(client: AsyncClient) -> None:
-    """Regular event with preset_type -> preset_type is null in response."""
-    headers = await _login(client, "owner")
-    group_id = await _create_group(client, headers)
-    payload = {
-        **_EVENT_PAYLOAD,
-        "group_id": group_id,
-        "name": "Regular with Preset",
-        "event_type": "regular",
-        "preset_type": "weekly",
-    }
-
-    r = await client.post("/api/events", json=payload, headers=headers)
-    assert r.status_code == 201
-    data = r.json()
-    assert data["preset_type"] is None

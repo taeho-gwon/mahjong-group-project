@@ -14,6 +14,8 @@ class GroupRepository(BaseRepository):
             name=data.name,
             description=data.description,
             join_policy=data.join_policy,
+            weekly_start_day=data.weekly_start_day,
+            monthly_start_day=data.monthly_start_day,
             owner_id=owner_id,
         )
         self.db.add(group)
@@ -82,12 +84,41 @@ class GroupRepository(BaseRepository):
         group_id: int,
         user_id: int,
         role: MemberRole = MemberRole.member,
+        nickname: str | None = None,
     ) -> GroupMember:
-        member = GroupMember(group_id=group_id, user_id=user_id, role=role)
+        member = GroupMember(
+            group_id=group_id, user_id=user_id, role=role, nickname=nickname
+        )
         self.db.add(member)
         await self.db.commit()
         await self.db.refresh(member)
         return member
+
+    async def get_member_by_nickname(
+        self, group_id: int, nickname: str
+    ) -> GroupMember | None:
+        result = await self.db.execute(
+            select(GroupMember).where(
+                GroupMember.group_id == group_id, GroupMember.nickname == nickname
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def update_member_nickname(
+        self, member: GroupMember, nickname: str | None
+    ) -> GroupMember:
+        group_id = member.group_id
+        user_id = member.user_id
+        member.nickname = nickname
+        await self.db.commit()
+        stmt = (
+            select(GroupMember)
+            .where(GroupMember.group_id == group_id, GroupMember.user_id == user_id)
+            .options(selectinload(GroupMember.user))
+            .execution_options(populate_existing=True)
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one()
 
     async def update_member_role(
         self, member: GroupMember, role: MemberRole

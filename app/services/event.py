@@ -1,10 +1,10 @@
 from fastapi import HTTPException, status
 
-from app.models.event import Event, EventType
+from app.models.event import Event
 from app.models.group import MemberRole
 from app.repositories.event import EventRepository
 from app.repositories.group import GroupRepository
-from app.schemas.event import EventCreate, EventUpdate
+from app.schemas.event import EventCreate, EventUpdate, PaginatedEventResponse
 
 
 class EventService:
@@ -15,11 +15,21 @@ class EventService:
         self.group_repo = group_repo
 
     async def create_event(self, user_id: int, data: EventCreate) -> Event:
-        if data.event_type != EventType.aggregate:
-            data = data.model_copy(update={"preset_type": None})
         return await self.event_repo.create(user_id, data)
 
-    async def get_event(self, event_id: int) -> Event:
+    async def _require_group_member(
+        self, group_id: int | None, user_id: int
+    ) -> None:
+        if group_id is None:
+            return
+        member = await self.group_repo.get_member(group_id, user_id)
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not a member of this group",
+            )
+
+    async def _get_event(self, event_id: int) -> Event:
         event = await self.event_repo.get_by_id(event_id)
         if not event:
             raise HTTPException(
@@ -28,11 +38,24 @@ class EventService:
             )
         return event
 
-    async def list_events(self, group_id: int) -> list[Event]:
-        return await self.event_repo.list_by_group(group_id)
+    async def get_event(self, event_id: int, user_id: int) -> Event:
+        event = await self._get_event(event_id)
+        await self._require_group_member(event.group_id, user_id)
+        return event
+
+    async def list_events(
+        self, group_id: int, user_id: int, page: int, size: int
+    ) -> PaginatedEventResponse:
+        await self._require_group_member(group_id, user_id)
+        offset = (page - 1) * size
+        items = await self.event_repo.list_by_group(group_id, offset, size)
+        total = await self.event_repo.count_by_group(group_id)
+        return PaginatedEventResponse(
+            items=items, total=total, page=page, size=size
+        )
 
     async def close_event(self, event_id: int, user_id: int) -> Event:
-        event = await self.get_event(event_id)
+        event = await self._get_event(event_id)
         if event.is_closed:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -54,7 +77,7 @@ class EventService:
     async def update_event(
         self, event_id: int, user_id: int, data: EventUpdate
     ) -> Event:
-        event = await self.get_event(event_id)
+        event = await self._get_event(event_id)
         if event.is_closed:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -67,16 +90,10 @@ class EventService:
             )
         update_data = data.model_dump(exclude_unset=True)
         update_data.pop("event_type", None)
-        update_data.pop("is_default", None)
         return await self.event_repo.update(event, update_data)
 
     async def delete_event(self, event_id: int, user_id: int) -> None:
-        event = await self.get_event(event_id)
-        if event.is_default:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete a default event",
-            )
+        event = await self._get_event(event_id)
         if event.created_by_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

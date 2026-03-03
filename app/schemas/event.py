@@ -1,13 +1,14 @@
 from datetime import datetime
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
-from app.models.event import EventType, PresetType, RankingType
+from app.constants import EVENT_NAME_MAX_LENGTH
+from app.models.event import EventType, RankingType
 from app.schemas.common import UmaFields
 
 
 class EventCreate(UmaFields):
-    name: str
+    name: str = Field(max_length=EVENT_NAME_MAX_LENGTH)
     group_id: int | None = None
     ranking_type: RankingType = RankingType.score
     event_type: EventType = EventType.regular
@@ -15,20 +16,10 @@ class EventCreate(UmaFields):
     scoring_2nd: int = 2
     scoring_3rd: int = 1
     scoring_4th: int = 0
-    period_start: datetime | None = None
-    period_end: datetime | None = None
-    preset_type: PresetType | None = None
-
-    @model_validator(mode="after")
-    def check_period_order(self) -> "EventCreate":
-        if self.period_start is not None and self.period_end is not None:
-            if self.period_start >= self.period_end:
-                raise ValueError("period_start must be before period_end")
-        return self
 
 
 class EventUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(None, max_length=EVENT_NAME_MAX_LENGTH)
     group_id: int | None = None
     ranking_type: RankingType | None = None
     uma_1st: int | None = None
@@ -68,10 +59,13 @@ class EventResponse(BaseModel):
     scoring_2nd: int
     scoring_3rd: int
     scoring_4th: int
-    period_start: datetime | None
-    period_end: datetime | None
-    is_default: bool
     is_closed: bool
-    preset_type: PresetType | None
     created_at: datetime
     updated_at: datetime
+
+
+class PaginatedEventResponse(BaseModel):
+    items: list[EventResponse]
+    total: int
+    page: int
+    size: int

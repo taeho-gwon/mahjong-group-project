@@ -5,7 +5,6 @@ from fastapi import HTTPException, status
 
 from app.config import settings
 from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
-from app.repositories.event import EventRepository
 from app.repositories.group import GroupRepository
 from app.schemas.group import (
     GroupCreate,
@@ -19,11 +18,20 @@ INVITE_TOKEN_TTL_DAYS = 7
 
 
 class GroupService:
-    def __init__(
-        self, group_repo: GroupRepository, event_repo: EventRepository
-    ) -> None:
+    def __init__(self, group_repo: GroupRepository) -> None:
         self.group_repo = group_repo
-        self.event_repo = event_repo
+
+    async def _check_nickname_available(
+        self, group_id: int, nickname: str | None
+    ) -> None:
+        if nickname is None:
+            return
+        existing = await self.group_repo.get_member_by_nickname(group_id, nickname)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Nickname already in use in this group",
+            )
 
     async def _require_member(self, group_id: int, user_id: int) -> GroupMember:
         member = await self.group_repo.get_member(group_id, user_id)
@@ -37,7 +45,6 @@ class GroupService:
     async def create_group(self, owner_id: int, data: GroupCreate) -> Group:
         group = await self.group_repo.create(owner_id, data)
         await self.group_repo.add_member(group.id, owner_id, role=MemberRole.owner)
-        await self.event_repo.create_default_aggregate(group.id, owner_id)
         return group
 
     async def get_group(self, group_id: int) -> Group:
@@ -85,7 +92,9 @@ class GroupService:
             )
         await self.group_repo.delete(group)
 
-    async def join_group(self, group_id: int, user_id: int) -> None:
+    async def join_group(
+        self, group_id: int, user_id: int, nickname: str | None = None
+    ) -> None:
         group = await self.group_repo.get_by_id(group_id)
         if not group:
             raise HTTPException(
@@ -101,7 +110,8 @@ class GroupService:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Already a member"
             )
-        await self.group_repo.add_member(group_id, user_id)
+        await self._check_nickname_available(group_id, nickname)
+        await self.group_repo.add_member(group_id, user_id, nickname=nickname)
 
     async def leave_group(self, group_id: int, user_id: int) -> None:
         group = await self.group_repo.get_by_id(group_id)
@@ -138,7 +148,9 @@ class GroupService:
         invite_url = f"{base_url}/join?token={token}"
         return InviteLinkResponse(invite_url=invite_url, expires_at=expires_at)
 
-    async def join_via_invite(self, token: str, user_id: int) -> Group:
+    async def join_via_invite(
+        self, token: str, user_id: int, nickname: str | None = None
+    ) -> Group:
         group = await self.group_repo.get_by_invite_token(token)
         if not group:
             raise HTTPException(
@@ -154,7 +166,8 @@ class GroupService:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Already a member"
             )
-        await self.group_repo.add_member(group.id, user_id)
+        await self._check_nickname_available(group.id, nickname)
+        await self.group_repo.add_member(group.id, user_id, nickname=nickname)
         return group
 
     async def remove_member(
@@ -215,3 +228,34 @@ class GroupService:
                 detail="Target user is not a member",
             )
         return await self.group_repo.update_member_role(member, data.role)
+
+    async def update_member_nickname(
+        self,
+        group_id: int,
+        current_user_id: int,
+        target_user_id: int,
+        nickname: str | None,
+    ) -> GroupMember:
+        await self.get_group(group_id)
+        requester = await self._require_member(group_id, current_user_id)
+        is_self = current_user_id == target_user_id
+        is_privileged = requester.role in (MemberRole.owner, MemberRole.admin)
+        if not is_self and not is_privileged:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the member themselves or owner/admin can change nickname",
+            )
+        member = await self.group_repo.get_member(group_id, target_user_id)
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Target user is not a member",
+            )
+        if nickname is not None:
+            existing = await self.group_repo.get_member_by_nickname(group_id, nickname)
+            if existing and existing.user_id != target_user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Nickname already in use in this group",
+                )
+        return await self.group_repo.update_member_nickname(member, nickname)

@@ -28,17 +28,21 @@ async def list_game_records(
     size: int = Query(default=20, ge=1, le=100),
     group_id: int | None = Query(default=None),
     event_id: int | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
     game_record_service: GameRecordService = Depends(get_game_record_service),
 ) -> PaginatedGameRecordResponse:
-    return await game_record_service.list_game_records(page, size, group_id, event_id)
+    return await game_record_service.list_game_records(
+        page, size, group_id, event_id, current_user.id
+    )
 
 
 @router.get("/{record_id}", response_model=GameRecordResponse)
 async def get_game_record(
     record_id: int,
+    current_user: User = Depends(get_current_user),
     game_record_service: GameRecordService = Depends(get_game_record_service),
 ) -> GameRecordResponse:
-    return await game_record_service.get_game_record(record_id)
+    return await game_record_service.get_game_record(record_id, current_user.id)
 
 
 @router.put("/{record_id}", response_model=GameRecordResponse)

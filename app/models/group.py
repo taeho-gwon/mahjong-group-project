@@ -1,10 +1,15 @@
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.constants import (
+    GROUP_DESCRIPTION_MAX_LENGTH,
+    GROUP_NAME_MAX_LENGTH,
+    NICKNAME_MAX_LENGTH,
+)
 from app.models.base import Base
 from app.models.user import User
 
@@ -22,6 +27,11 @@ class MemberRole(StrEnum):
 
 class GroupMember(Base):
     __tablename__ = "group_members"
+    __table_args__ = (
+        UniqueConstraint(
+            "group_id", "nickname", name="uq_group_members_group_nickname"
+        ),
+    )
 
     group_id: Mapped[int] = mapped_column(
         ForeignKey("groups.id", ondelete="CASCADE"), primary_key=True
@@ -34,6 +44,9 @@ class GroupMember(Base):
         default=MemberRole.member,
         server_default="member",
         nullable=False,
+    )
+    nickname: Mapped[str | None] = mapped_column(
+        String(NICKNAME_MAX_LENGTH), nullable=True
     )
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -49,13 +62,21 @@ class GroupMember(Base):
     def username(self) -> str:
         return self.user.username
 
+    @property
+    def user_nickname(self) -> str | None:
+        return self.user.nickname if self.user else None
+
 
 class Group(Base):
     __tablename__ = "groups"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
-    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    name: Mapped[str] = mapped_column(
+        String(GROUP_NAME_MAX_LENGTH), index=True, nullable=False
+    )
+    description: Mapped[str | None] = mapped_column(
+        String(GROUP_DESCRIPTION_MAX_LENGTH), nullable=True
+    )
     owner_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
@@ -71,6 +92,13 @@ class Group(Base):
     invite_token_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    weekly_start_day: Mapped[int] = mapped_column(
+        default=0, server_default="0", nullable=False
+    )
+    monthly_start_day: Mapped[int] = mapped_column(
+        default=1, server_default="1", nullable=False
+    )
+
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

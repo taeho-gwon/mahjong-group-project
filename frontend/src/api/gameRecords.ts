@@ -1,4 +1,5 @@
 import { apiFetch } from './client'
+import { throwApiError } from './errors'
 
 export interface GameRecordCreate {
   east_player_id: number
@@ -52,13 +53,13 @@ export async function createGameRecord(data: GameRecordCreate): Promise<GameReco
     method: 'POST',
     body: JSON.stringify(data),
   })
-  if (!res.ok) throw new Error('Failed to create game record')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }
 
 export async function getGameRecord(recordId: number): Promise<GameRecordResponse> {
   const res = await apiFetch(`/game-records/${recordId}`)
-  if (!res.ok) throw new Error('Failed to fetch game record')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }
 
@@ -80,13 +81,13 @@ export async function updateGameRecord(recordId: number, data: GameRecordUpdate)
     method: 'PUT',
     body: JSON.stringify(data),
   })
-  if (!res.ok) throw new Error('Failed to update game record')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }
 
 export async function deleteGameRecord(recordId: number): Promise<void> {
   const res = await apiFetch(`/game-records/${recordId}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('Failed to delete game record')
+  if (!res.ok) await throwApiError(res)
 }
 
 export async function listGameRecords(
@@ -99,6 +100,6 @@ export async function listGameRecords(
   if (groupId !== undefined) params.set('group_id', String(groupId))
   if (eventId !== undefined) params.set('event_id', String(eventId))
   const res = await apiFetch(`/game-records?${params}`)
-  if (!res.ok) throw new Error('Failed to fetch game records')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }

@@ -39,6 +39,9 @@ export default function UserProfilePage() {
         <>
           <section className="mt-6 mb-8">
             <h2 className="mt-0 mb-2">{profile.username}</h2>
+            {profile.nickname && (
+              <div className="text-sm text-gray-500 mb-1">닉네임: {profile.nickname}</div>
+            )}
             <div className="text-sm text-gray-500">
               가입일: {new Date(profile.created_at).toLocaleDateString()}
             </div>

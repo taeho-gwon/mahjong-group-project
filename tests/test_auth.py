@@ -24,7 +24,7 @@ async def test_register_duplicate_username(
     client: AsyncClient, registered_user: dict
 ) -> None:
     r = await client.post(
-        "/api/auth/register", json={"username": "alice", "password": "other"}
+        "/api/auth/register", json={"username": "alice", "password": "otherpassword"}
     )
     assert r.status_code == 409
 
@@ -73,3 +73,36 @@ async def test_me_success(client: AsyncClient, auth_headers: dict[str, str]) -> 
 async def test_me_no_token(client: AsyncClient) -> None:
     r = await client.get("/api/auth/me")
     assert r.status_code == 401
+
+
+async def test_update_me_nickname(
+    client: AsyncClient, auth_headers: dict[str, str]
+) -> None:
+    r = await client.put(
+        "/api/auth/me",
+        json={"nickname": "TestNick"},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["nickname"] == "TestNick"
+
+    # Verify via GET /auth/me
+    me_r = await client.get("/api/auth/me", headers=auth_headers)
+    assert me_r.json()["nickname"] == "TestNick"
+
+
+async def test_update_me_clear_nickname(
+    client: AsyncClient, auth_headers: dict[str, str]
+) -> None:
+    await client.put(
+        "/api/auth/me",
+        json={"nickname": "TestNick"},
+        headers=auth_headers,
+    )
+    r = await client.put(
+        "/api/auth/me",
+        json={"nickname": None},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["nickname"] is None

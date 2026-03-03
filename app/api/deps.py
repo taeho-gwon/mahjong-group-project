@@ -53,9 +53,8 @@ def get_event_repository(db: AsyncSession = Depends(get_db)) -> EventRepository:
 
 def get_group_service(
     group_repo: GroupRepository = Depends(get_group_repository),
-    event_repo: EventRepository = Depends(get_event_repository),
 ) -> GroupService:
-    return GroupService(group_repo, event_repo)
+    return GroupService(group_repo)
 
 
 def get_game_record_repository(

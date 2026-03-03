@@ -9,8 +9,10 @@ from app.schemas.group import (
     GroupUpdate,
     InviteLinkResponse,
     JoinByInviteRequest,
+    JoinGroupRequest,
     MemberInfo,
     MemberRoleUpdate,
+    NicknameUpdate,
     PaginatedGroupResponse,
 )
 from app.services.group import GroupService
@@ -50,7 +52,9 @@ async def join_by_invite(
     current_user: User = Depends(get_current_user),
     group_service: GroupService = Depends(get_group_service),
 ) -> GroupResponse:
-    return await group_service.join_via_invite(data.invite_token, current_user.id)
+    return await group_service.join_via_invite(
+        data.invite_token, current_user.id, data.nickname
+    )
 
 
 @router.get("/{group_id}", response_model=GroupDetailResponse)
@@ -92,10 +96,12 @@ async def generate_invite_link(
 @router.post("/{group_id}/join", response_model=GroupResponse)
 async def join_group(
     group_id: int,
+    data: JoinGroupRequest | None = None,
     current_user: User = Depends(get_current_user),
     group_service: GroupService = Depends(get_group_service),
 ) -> GroupResponse:
-    await group_service.join_group(group_id, current_user.id)
+    nickname = data.nickname if data else None
+    await group_service.join_group(group_id, current_user.id, nickname)
     return await group_service.get_group(group_id)
 
 
@@ -116,6 +122,19 @@ async def remove_member(
     group_service: GroupService = Depends(get_group_service),
 ) -> None:
     await group_service.remove_member(group_id, current_user.id, user_id)
+
+
+@router.put("/{group_id}/members/{user_id}/nickname", response_model=MemberInfo)
+async def update_member_nickname(
+    group_id: int,
+    user_id: int,
+    data: NicknameUpdate,
+    current_user: User = Depends(get_current_user),
+    group_service: GroupService = Depends(get_group_service),
+) -> MemberInfo:
+    return await group_service.update_member_nickname(
+        group_id, current_user.id, user_id, data.nickname
+    )
 
 
 @router.put("/{group_id}/members/{user_id}/role", response_model=MemberInfo)

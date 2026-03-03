@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { updateMemberRole } from '../../api/groups'
+import { ApiError } from '../../api/errors'
 
 export function useUpdateMemberRole(groupId: number) {
   const queryClient = useQueryClient()
@@ -11,6 +12,6 @@ export function useUpdateMemberRole(groupId: number) {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] })
       toast.success('멤버 역할이 변경됐습니다')
     },
-    onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세요'),
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : '오류가 발생했습니다'),
   })
 }

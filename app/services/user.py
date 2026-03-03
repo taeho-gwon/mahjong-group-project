@@ -24,6 +24,7 @@ class UserService:
         return UserProfileResponse(
             id=user.id,
             username=user.username,
+            nickname=user.nickname,
             created_at=user.created_at,
             shared_groups=[SharedGroupInfo.model_validate(g) for g in shared],
         )

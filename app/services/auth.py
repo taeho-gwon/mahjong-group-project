@@ -4,7 +4,7 @@ from jose import JWTError
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.auth import TokenResponse
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserUpdate
 from app.utils.security import (
     create_access_token,
     create_refresh_token,
@@ -41,6 +41,15 @@ class AuthService:
             access_token=create_access_token(user.id),
             refresh_token=create_refresh_token(user.id),
         )
+
+    async def update_me(self, user_id: int, data: UserUpdate) -> User:
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        return await self.user_repo.update(user, data)
 
     async def refresh_tokens(self, refresh_token: str) -> TokenResponse:
         credentials_error = HTTPException(

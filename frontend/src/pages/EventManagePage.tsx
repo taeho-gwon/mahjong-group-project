@@ -9,6 +9,7 @@ import { useMe } from '../hooks/useMe'
 import { useUpdateEvent } from '../hooks/mutations/useUpdateEvent'
 import { useDeleteEvent } from '../hooks/mutations/useDeleteEvent'
 import { useCloseEvent } from '../hooks/mutations/useCloseEvent'
+import ConfirmModal from '../components/ConfirmModal'
 
 export default function EventManagePage() {
   const { eventId } = useParams<{ eventId: string }>()
@@ -28,10 +29,10 @@ export default function EventManagePage() {
   const [rankingType, setRankingType] = useState<RankingType>('score')
   const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
   const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
-  const [periodStart, setPeriodStart] = useState<string | null>(null)
-  const [periodEnd, setPeriodEnd] = useState<string | null>(null)
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showCloseModal, setShowCloseModal] = useState(false)
 
   const myRole = group && me ? group.members.find((m) => m.id === me.id)?.role ?? null : null
 
@@ -49,8 +50,6 @@ export default function EventManagePage() {
     setRankingType(event.ranking_type)
     setUma({ uma_1st: event.uma_1st, uma_2nd: event.uma_2nd, uma_3rd: event.uma_3rd, uma_4th: event.uma_4th })
     setScoring({ scoring_1st: event.scoring_1st, scoring_2nd: event.scoring_2nd, scoring_3rd: event.scoring_3rd, scoring_4th: event.scoring_4th })
-    setPeriodStart(event.period_start ? event.period_start.slice(0, 10) : null)
-    setPeriodEnd(event.period_end ? event.period_end.slice(0, 10) : null)
   }, [event, group, me, eventId, navigate])
 
   async function handleSave(e: FormEvent) {
@@ -68,10 +67,6 @@ export default function EventManagePage() {
         ranking_type: rankingType,
         ...uma,
         ...scoring,
-        ...(event?.event_type === 'aggregate' ? {
-          period_start: periodStart || null,
-          period_end: periodEnd || null,
-        } : {}),
       })
       setSaveSuccess(true)
     } catch {
@@ -80,27 +75,27 @@ export default function EventManagePage() {
   }
 
   async function handleDelete() {
-    if (!window.confirm('이 이벤트를 삭제하시겠습니까?')) return
+    setShowDeleteModal(false)
     try {
       await deleteEventMutation.mutateAsync(id!)
       navigate(event?.group_id != null ? `/groups/${event.group_id}` : '/', { replace: true })
     } catch {
-      alert('삭제에 실패했습니다.')
+      // error toast handled by mutation hook
     }
   }
 
   async function handleClose() {
-    if (!window.confirm('이 이벤트를 마감하시겠습니까? 마감 후에는 수정할 수 없습니다.')) return
+    setShowCloseModal(false)
     try {
       await closeEventMutation.mutateAsync(id!)
       navigate(`/events/${eventId}`, { replace: true })
     } catch {
-      alert('마감에 실패했습니다.')
+      // error toast handled by mutation hook
     }
   }
 
   const isClosed = event?.is_closed ?? false
-  const canDelete = event && !event.is_default
+  const canDelete = !!event
 
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
@@ -138,48 +133,22 @@ export default function EventManagePage() {
               />
             </div>
 
-            {event?.event_type !== 'aggregate' && (
-              <div>
-                <label className="block font-bold mb-1.5 text-sm">이벤트 타입</label>
-                <select
-                  value={eventType}
-                  onChange={(e) => { setEventType(e.target.value as EventType); setSaveSuccess(false) }}
-                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
-                >
-                  <option value="regular">일반 이벤트 (regular)</option>
-                  <option value="independent">독립 이벤트 (independent)</option>
-                </select>
-                <p className="mt-1.5 mb-0 text-xs text-gray-500">
-                  {eventType === 'regular'
-                    ? '기록이 전체 랭킹에 합산됩니다.'
-                    : '기록이 전체 랭킹에 합산되지 않습니다. (연습전, 이벤트전 등)'}
-                </p>
-              </div>
-            )}
-
-            {event?.event_type === 'aggregate' && (
-              <div>
-                <label className="block font-bold mb-1.5 text-sm">집계 기간</label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="date"
-                    value={periodStart ?? ''}
-                    onChange={(e) => { setPeriodStart(e.target.value || null); setSaveSuccess(false) }}
-                    className="border border-gray-300 rounded px-3 py-1.5 text-sm"
-                  />
-                  <span className="text-gray-400">~</span>
-                  <input
-                    type="date"
-                    value={periodEnd ?? ''}
-                    onChange={(e) => { setPeriodEnd(e.target.value || null); setSaveSuccess(false) }}
-                    className="border border-gray-300 rounded px-3 py-1.5 text-sm"
-                  />
-                </div>
-                <p className="mt-1.5 mb-0 text-xs text-gray-500">
-                  {!periodStart && !periodEnd ? '전체 기간 (제한 없음)' : '비어있는 날짜는 제한 없음으로 처리됩니다.'}
-                </p>
-              </div>
-            )}
+            <div>
+              <label className="block font-bold mb-1.5 text-sm">이벤트 타입</label>
+              <select
+                value={eventType}
+                onChange={(e) => { setEventType(e.target.value as EventType); setSaveSuccess(false) }}
+                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+              >
+                <option value="regular">일반 이벤트 (regular)</option>
+                <option value="independent">독립 이벤트 (independent)</option>
+              </select>
+              <p className="mt-1.5 mb-0 text-xs text-gray-500">
+                {eventType === 'regular'
+                  ? '기록이 그룹 랭킹에 합산됩니다.'
+                  : '기록이 그룹 랭킹에 합산되지 않습니다. (연습전, 이벤트전 등)'}
+              </p>
+            </div>
 
             <div>
               <label className="block font-bold mb-1.5 text-sm">랭킹 방식</label>
@@ -256,7 +225,7 @@ export default function EventManagePage() {
                 <div className="flex gap-3">
                   {!isClosed && (
                     <button
-                      onClick={handleClose}
+                      onClick={() => setShowCloseModal(true)}
                       disabled={closeEventMutation.isPending}
                       className="px-5 py-2 text-sm cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
                     >
@@ -265,7 +234,7 @@ export default function EventManagePage() {
                   )}
                   {canDelete && (
                     <button
-                      onClick={handleDelete}
+                      onClick={() => setShowDeleteModal(true)}
                       disabled={deleteEventMutation.isPending}
                       className="px-5 py-2 text-sm cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
                     >
@@ -273,6 +242,24 @@ export default function EventManagePage() {
                     </button>
                   )}
                 </div>
+                <ConfirmModal
+                  open={showCloseModal}
+                  title="이벤트 마감"
+                  description="이 이벤트를 마감하시겠습니까? 마감 후에는 수정할 수 없습니다."
+                  confirmLabel="마감"
+                  onConfirm={handleClose}
+                  onCancel={() => setShowCloseModal(false)}
+                  destructive
+                />
+                <ConfirmModal
+                  open={showDeleteModal}
+                  title="이벤트 삭제"
+                  description="이 이벤트를 삭제하시겠습니까?"
+                  confirmLabel="삭제"
+                  onConfirm={handleDelete}
+                  onCancel={() => setShowDeleteModal(false)}
+                  destructive
+                />
               </div>
             </>
           )}

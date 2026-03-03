@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
 
-from app.models.event import EventType
 from app.models.game_record import GameRecord
 from app.models.group import MemberRole
 from app.repositories.event import EventRepository
@@ -57,7 +56,19 @@ class GameRecordService:
                 )
         return await self.game_record_repo.create(created_by_id, data)
 
-    async def get_game_record(self, record_id: int) -> GameRecord:
+    async def _require_group_member(
+        self, group_id: int | None, user_id: int
+    ) -> None:
+        if group_id is None:
+            return
+        member = await self.group_repo.get_member(group_id, user_id)
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not a member of this group",
+            )
+
+    async def _get_game_record(self, record_id: int) -> GameRecord:
         record = await self.game_record_repo.get_by_id(record_id)
         if not record:
             raise HTTPException(
@@ -66,43 +77,30 @@ class GameRecordService:
             )
         return record
 
+    async def get_game_record(
+        self, record_id: int, user_id: int
+    ) -> GameRecord:
+        record = await self._get_game_record(record_id)
+        await self._require_group_member(record.group_id, user_id)
+        return record
+
     async def list_game_records(
         self,
         page: int,
         size: int,
         group_id: int | None,
-        event_id: int | None = None,
+        event_id: int | None,
+        user_id: int,
     ) -> PaginatedGameRecordResponse:
-        offset = (page - 1) * size
-        is_aggregate = False
-        aggregate_group_id = group_id
-        period_start = None
-        period_end = None
-        if event_id is not None:
+        if group_id is not None:
+            await self._require_group_member(group_id, user_id)
+        elif event_id is not None:
             event = await self.event_repo.get_by_id(event_id)
-            if event and event.event_type == EventType.aggregate:
-                is_aggregate = True
-                aggregate_group_id = event.group_id
-                period_start = event.period_start
-                period_end = event.period_end
-        if is_aggregate:
-            items = await self.game_record_repo.list(
-                offset,
-                size,
-                group_id=aggregate_group_id,
-                is_aggregate=True,
-                period_start=period_start,
-                period_end=period_end,
-            )
-            total = await self.game_record_repo.count(
-                group_id=aggregate_group_id,
-                is_aggregate=True,
-                period_start=period_start,
-                period_end=period_end,
-            )
-        else:
-            items = await self.game_record_repo.list(offset, size, group_id, event_id)
-            total = await self.game_record_repo.count(group_id, event_id)
+            if event:
+                await self._require_group_member(event.group_id, user_id)
+        offset = (page - 1) * size
+        items = await self.game_record_repo.list(offset, size, group_id, event_id)
+        total = await self.game_record_repo.count(group_id, event_id)
         return PaginatedGameRecordResponse(
             items=items, total=total, page=page, size=size
         )
@@ -110,7 +108,7 @@ class GameRecordService:
     async def update_game_record(
         self, record_id: int, current_user_id: int, data: GameRecordUpdate
     ) -> GameRecord:
-        record = await self.get_game_record(record_id)
+        record = await self._get_game_record(record_id)
         await self._require_group_editor(record.group_id, current_user_id)
         directions = ("east", "south", "west", "north")
         player_ids = [
@@ -125,6 +123,6 @@ class GameRecordService:
         return await self.game_record_repo.update(record, data)
 
     async def delete_game_record(self, record_id: int, current_user_id: int) -> None:
-        record = await self.get_game_record(record_id)
+        record = await self._get_game_record(record_id)
         await self._require_group_editor(record.group_id, current_user_id)
         await self.game_record_repo.delete(record)

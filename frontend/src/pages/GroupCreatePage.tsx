@@ -3,6 +3,8 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCreateGroup } from '../hooks/mutations/useCreateGroup'
 
+const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
+
 export default function GroupCreatePage() {
   const navigate = useNavigate()
   const createGroupMutation = useCreateGroup()
@@ -10,6 +12,8 @@ export default function GroupCreatePage() {
   const [groupName, setGroupName] = useState('')
   const [groupDesc, setGroupDesc] = useState('')
   const [groupJoinPolicy, setGroupJoinPolicy] = useState<'public' | 'private'>('public')
+  const [weeklyStartDay, setWeeklyStartDay] = useState(0)
+  const [monthlyStartDay, setMonthlyStartDay] = useState(1)
   const [createError, setCreateError] = useState('')
 
   async function handleCreateGroup(e: FormEvent) {
@@ -18,8 +22,10 @@ export default function GroupCreatePage() {
     try {
       const group = await createGroupMutation.mutateAsync({
         name: groupName,
-        description: groupDesc,
+        description: groupDesc || null,
         join_policy: groupJoinPolicy,
+        weekly_start_day: weeklyStartDay,
+        monthly_start_day: monthlyStartDay,
       })
       navigate(`/groups/${group.id}`)
     } catch {
@@ -35,7 +41,7 @@ export default function GroupCreatePage() {
 
       <h1 className="mt-0 mb-4">모임 만들기</h1>
 
-      <form onSubmit={handleCreateGroup} className="flex flex-col gap-2">
+      <form onSubmit={handleCreateGroup} className="flex flex-col gap-3">
         <input
           type="text"
           placeholder="모임 이름 *"
@@ -76,6 +82,33 @@ export default function GroupCreatePage() {
             비공개
           </label>
         </div>
+
+        <div>
+          <label className="block text-[13px] text-gray-600 mb-1">주간 랭킹 시작 요일</label>
+          <select
+            value={weeklyStartDay}
+            onChange={(e) => setWeeklyStartDay(Number(e.target.value))}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+          >
+            {WEEKDAYS.map((day, idx) => (
+              <option key={idx} value={idx}>{day}요일</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[13px] text-gray-600 mb-1">월간 랭킹 시작일</label>
+          <select
+            value={monthlyStartDay}
+            onChange={(e) => setMonthlyStartDay(Number(e.target.value))}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+          >
+            {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+              <option key={d} value={d}>{d}일</option>
+            ))}
+          </select>
+        </div>
+
         {createError && <p className="text-red-600 m-0">{createError}</p>}
         <button
           type="submit"

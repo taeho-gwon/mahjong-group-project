@@ -6,6 +6,7 @@ import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useMe } from '../hooks/useMe'
 import type { EventResponse } from '../api/events'
 import type { GameRecordResponse } from '../api/gameRecords'
+import { getDisplayName } from '../api/groups'
 
 interface RankingEntry {
   id: number
@@ -16,7 +17,7 @@ interface RankingEntry {
   gameCount: number
 }
 
-function computeRanking(event: EventResponse, records: GameRecordResponse[]): RankingEntry[] {
+function computeRanking(event: EventResponse, records: GameRecordResponse[], nameMap: Map<number, string>): RankingEntry[] {
   const umaByRank = [event.uma_1st, event.uma_2nd, event.uma_3rd, event.uma_4th]
   const scoringByRank = [event.scoring_1st, event.scoring_2nd, event.scoring_3rd, event.scoring_4th]
 
@@ -33,7 +34,7 @@ function computeRanking(event: EventResponse, records: GameRecordResponse[]): Ra
     seats.forEach(({ player, point }, rank) => {
       const entry = playerMap.get(player.id) ?? {
         id: player.id,
-        username: player.username,
+        username: nameMap.get(player.id) ?? player.username,
         totalScore: 0,
         matchPoint: 0,
         rankCounts: [0, 0, 0, 0],
@@ -67,7 +68,11 @@ export default function EventDetailPage() {
   const { data: user } = useMe()
 
   const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
-  const ranking = event ? computeRanking(event, records) : []
+  const nameMap = new Map<number, string>()
+  if (group) {
+    for (const m of group.members) nameMap.set(m.id, getDisplayName(m))
+  }
+  const ranking = event ? computeRanking(event, records, nameMap) : []
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -98,30 +103,20 @@ export default function EventDetailPage() {
             <div className="flex items-center gap-2 mb-2">
               <h2 className="mt-0 mb-0">{event.name}</h2>
               <span className={`text-xs px-2 py-0.5 rounded ${
-                event.event_type === 'aggregate'
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : event.event_type === 'independent'
+                event.event_type === 'independent'
                   ? 'bg-purple-50 text-purple-700'
                   : 'bg-blue-50 text-blue-700'
               }`}>
-                {event.event_type === 'aggregate' ? '집계' : event.event_type === 'independent' ? '독립' : '일반'}
+                {event.event_type === 'independent' ? '독립' : '일반'}
               </span>
               {event.event_type === 'independent' && (
-                <span className="text-xs text-gray-400">전체 랭킹 미합산</span>
+                <span className="text-xs text-gray-400">그룹 랭킹 미합산</span>
               )}
               {event.is_closed && (
                 <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">마감</span>
               )}
             </div>
             <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
-              {event.event_type === 'aggregate' && (
-                <div>
-                  <strong>기간:</strong>{' '}
-                  {event.period_start || event.period_end
-                    ? `${event.period_start ? new Date(event.period_start).toLocaleDateString() : '시작 없음'} ~ ${event.period_end ? new Date(event.period_end).toLocaleDateString() : '종료 없음'}`
-                    : '전체 기간'}
-                </div>
-              )}
               <div>
                 <strong>랭킹 방식:</strong>{' '}
                 {event.ranking_type === 'match_point' ? '승점 (match_point)' : '점수 합산 (score)'}
@@ -208,7 +203,7 @@ export default function EventDetailPage() {
                       ].map(({ label, player, point }) => (
                         <div key={label}>
                           <div className="text-xs text-gray-400 mb-0.5">{label}</div>
-                          <Link to={`/users/${player.id}`} className="font-medium no-underline text-inherit">{player.username}</Link>
+                          <Link to={`/users/${player.id}`} className="font-medium no-underline text-inherit">{nameMap.get(player.id) ?? player.username}</Link>
                           <div className="text-xs text-gray-600">{point.toLocaleString()}</div>
                         </div>
                       ))}

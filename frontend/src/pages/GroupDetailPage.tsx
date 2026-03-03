@@ -5,7 +5,8 @@ import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useEvents } from '../hooks/useEvents'
 import { useMe } from '../hooks/useMe'
 import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
-import { useAutoRollAggregates } from '../hooks/useAutoRollAggregates'
+import { getDisplayName } from '../api/groups'
+import ConfirmModal from '../components/ConfirmModal'
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -23,18 +24,12 @@ export default function GroupDetailPage() {
   const { data: user } = useMe()
   const leaveGroupMutation = useLeaveGroup(groupId!)
 
-  useAutoRollAggregates(events, groupId)
-
   const activeEvents = events.filter((c) => !c.is_closed)
   const closedEvents = events.filter((c) => c.is_closed)
   const [showClosed, setShowClosed] = useState(false)
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
 
   const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
-
-  function handleLeave() {
-    if (!window.confirm('정말 이 모임에서 탈퇴하시겠습니까?')) return
-    leaveGroupMutation.mutate()
-  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -44,6 +39,12 @@ export default function GroupDetailPage() {
           className="text-sm bg-transparent border-none cursor-pointer p-0"
         >← Back</button>
         <div className="flex gap-2">
+          <button
+            onClick={() => navigate(`/groups/${id}/ranking`)}
+            className="text-sm px-3.5 py-1.5 cursor-pointer"
+          >
+            랭킹
+          </button>
           {myRole !== null && (
             <button
               onClick={() => navigate(`/groups/${id}/games/new`)}
@@ -91,7 +92,7 @@ export default function GroupDetailPage() {
                   {group.join_policy === 'public' ? '공개' : '비공개'}
                 </span>
               </div>
-              <div><strong>소유자:</strong> {group.members.find((m) => m.role === 'owner')?.username ?? '-'}</div>
+              <div><strong>소유자:</strong> {(() => { const owner = group.members.find((m) => m.role === 'owner'); return owner ? getDisplayName(owner) : '-' })()}</div>
               <div><strong>멤버:</strong> {group.members.length}명</div>
               <div><strong>생성일:</strong> {new Date(group.created_at).toLocaleDateString()}</div>
             </div>
@@ -164,7 +165,7 @@ export default function GroupDetailPage() {
                   key={m.id}
                   className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm"
                 >
-                  <Link to={`/users/${m.id}`} className={`no-underline text-inherit ${m.role === 'owner' ? 'font-bold' : ''}`}>{m.username}</Link>
+                  <Link to={`/users/${m.id}`} className={`no-underline text-inherit ${m.role === 'owner' ? 'font-bold' : ''}`}>{getDisplayName(m)}</Link>
                   <span className={`text-xs px-2 py-0.5 rounded ${
                     m.role === 'owner'
                       ? 'bg-yellow-100 text-yellow-700'
@@ -183,12 +184,21 @@ export default function GroupDetailPage() {
           {myRole && myRole !== 'owner' && (
             <section className="mt-10 border-t border-gray-100 pt-6">
               <button
-                onClick={handleLeave}
+                onClick={() => setShowLeaveModal(true)}
                 disabled={leaveGroupMutation.isPending}
                 className="text-sm px-4 py-2 cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
               >
                 {leaveGroupMutation.isPending ? '탈퇴 중...' : '모임 탈퇴'}
               </button>
+              <ConfirmModal
+                open={showLeaveModal}
+                title="모임 탈퇴"
+                description="정말 이 모임에서 탈퇴하시겠습니까?"
+                confirmLabel="탈퇴"
+                onConfirm={() => { setShowLeaveModal(false); leaveGroupMutation.mutate() }}
+                onCancel={() => setShowLeaveModal(false)}
+                destructive
+              />
             </section>
           )}
         </>

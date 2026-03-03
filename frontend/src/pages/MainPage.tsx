@@ -71,7 +71,7 @@ export default function MainPage() {
                       <span className="text-xs text-gray-400 px-2 py-1">가입됨</span>
                     ) : (
                       <button
-                        onClick={(e) => { e.preventDefault(); joinGroupMutation.mutate(g.id) }}
+                        onClick={(e) => { e.preventDefault(); joinGroupMutation.mutate({ groupId: g.id }) }}
                         disabled={joinGroupMutation.isPending}
                         className="text-xs px-3 py-1.5 cursor-pointer rounded border border-blue-500 text-blue-600 bg-transparent"
                       >

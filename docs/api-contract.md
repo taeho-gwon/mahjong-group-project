@@ -12,7 +12,7 @@ Base URL: `http://localhost:8000/api` (dev)
 ### POST /auth/register
 ```json
 Request:  { "username": "string", "password": "string" }
-Response: { "id": 1, "username": "string" }
+Response: UserResponse
 Status:   201
 ```
 
@@ -33,8 +33,17 @@ Status:   200
 ### GET /auth/me
 ```
 Headers:  Authorization: Bearer {access_token}
-Response: { "id": 1, "username": "string" }
+Response: UserResponse
 Status:   200
+```
+
+### PUT /auth/me
+```json
+Request:  { "nickname": "string|null" }
+Response: UserResponse
+Status:   200
+Auth:     Required
+Note:     기본 닉네임 설정/변경
 ```
 
 ---
@@ -46,11 +55,14 @@ Status:   200
 Request:  {
   "name": "string",
   "description": "string|null",
-  "join_policy": "public|private"
+  "join_policy": "public|private",
+  "weekly_start_day": 0,
+  "monthly_start_day": 1
 }
 Response: GroupResponse
 Status:   201
 Auth:     Required
+Note:     weekly_start_day: 0-6 (0=Mon, 6=Sun), monthly_start_day: 1-28
 ```
 
 ### GET /groups
@@ -69,7 +81,7 @@ Status:   200
 
 ### PUT /groups/{id}
 ```json
-Request:  { "name"?, "description"?, "join_policy"? }
+Request:  { "name"?, "description"?, "join_policy"?, "weekly_start_day"?, "monthly_start_day"? }
 Response: GroupResponse
 Status:   200
 Auth:     Required (owner/admin)
@@ -83,10 +95,11 @@ Auth:     Required (owner)
 
 ### POST /groups/join-by-invite
 ```json
-Request:  { "invite_token": "string" }
+Request:  { "invite_token": "string", "nickname": "string|null" }
 Response: GroupResponse
 Status:   200
 Auth:     Required
+Note:     nickname은 그룹 내 유니크 (중복 시 409)
 ```
 
 ### POST /groups/{id}/invite-link
@@ -97,10 +110,12 @@ Auth:     Required (owner/admin)
 ```
 
 ### POST /groups/{id}/join
-```
+```json
+Request:  { "nickname": "string|null" }  (body optional)
+Response: GroupResponse
 Status:   200
 Auth:     Required
-Note:     public 그룹만 가능
+Note:     public 그룹만 가능. nickname은 그룹 내 유니크 (중복 시 409)
 ```
 
 ### DELETE /groups/{id}/leave
@@ -113,6 +128,15 @@ Auth:     Required
 ```
 Status:   204
 Auth:     Required (owner/admin)
+```
+
+### PUT /groups/{id}/members/{user_id}/nickname
+```json
+Request:  { "nickname": "string|null" }
+Response: MemberInfo
+Status:   200
+Auth:     Required (본인 또는 owner/admin)
+Note:     그룹 내 유니크 (중복 시 409). null로 설정하면 닉네임 삭제
 ```
 
 ### PUT /groups/{id}/members/{user_id}/role
@@ -167,11 +191,23 @@ Status:   200
 Auth:     Required
 ```
 
+### UserResponse
+```json
+{
+  "id": 1,
+  "username": "string",
+  "nickname": "string|null",
+  "is_active": true,
+  "created_at": "datetime"
+}
+```
+
 ### UserProfileResponse
 ```json
 {
   "id": 1,
   "username": "string",
+  "nickname": "string|null",
   "created_at": "datetime",
   "shared_groups": [{ "id": 1, "name": "string" }]
 }
@@ -189,12 +225,9 @@ Request:  {
   "group_id": 1,
   "name": "string",
   "ranking_type": "score|match_point",
-  "event_type": "aggregate|regular|independent",
+  "event_type": "regular|independent",
   "uma_1st": 30, "uma_2nd": 10, "uma_3rd": -10, "uma_4th": -30,
-  "scoring_1st": 4, "scoring_2nd": 2, "scoring_3rd": 1, "scoring_4th": 0,
-  "period_start": "datetime|null",
-  "period_end": "datetime|null",
-  "preset_type": "daily|weekly|monthly|yearly|all|custom|null"
+  "scoring_1st": 4, "scoring_2nd": 2, "scoring_3rd": 1, "scoring_4th": 0
 }
 Response: EventResponse
 Status:   201
@@ -203,14 +236,18 @@ Auth:     Required
 
 ### GET /events?group_id={id}
 ```
-Response: [EventResponse]
+Query:    group_id={id}&page=1&size=100
+Response: { "items": [EventResponse], "total": 100, "page": 1, "size": 100 }
 Status:   200
+Auth:     Required (그룹 멤버)
+Note:     기본 size=100 (max 200). FE에서 전체 로드하는 패턴에 맞춰 크게 설정
 ```
 
 ### GET /events/{id}
 ```
 Response: EventResponse
 Status:   200
+Auth:     Required (그룹 멤버)
 ```
 
 ### PUT /events/{id}
@@ -234,7 +271,6 @@ Note:     이미 마감된 event → 400, 그룹 없는 event → 403
 ```
 Status:   204
 Auth:     Required (생성자)
-Note:     마감된 event도 삭제 가능
 ```
 
 ---
@@ -261,6 +297,7 @@ Auth:     Required
 Query:    page=1&size=20&group_id={id}&event_id={id}
 Response: { "items": [GameRecordResponse], "total": 100, "page": 1, "size": 20 }
 Status:   200
+Auth:     Required (그룹 멤버)
 Note:     group_id, event_id 중 하나 이상 지정 권장
 ```
 
@@ -268,6 +305,7 @@ Note:     group_id, event_id 중 하나 이상 지정 권장
 ```
 Response: GameRecordResponse
 Status:   200
+Auth:     Required (그룹 멤버)
 ```
 
 ### PUT /game-records/{id}
@@ -320,6 +358,8 @@ Auth:     Required (해당 그룹의 owner/admin만 가능)
   "description": "string|null",
   "owner_id": 1,
   "join_policy": "public|private",
+  "weekly_start_day": 0,
+  "monthly_start_day": 1,
   "is_active": true,
   "created_at": "datetime"
 }
@@ -338,9 +378,13 @@ Auth:     Required (해당 그룹의 owner/admin만 가능)
 {
   "id": 1,
   "username": "string",
-  "role": "owner|admin|member"
+  "role": "owner|admin|member",
+  "nickname": "string|null",
+  "user_nickname": "string|null"
 }
 ```
+
+> 표시 우선순위: `nickname` → `user_nickname` → `username`
 
 ### EventResponse
 ```json
@@ -350,23 +394,18 @@ Auth:     Required (해당 그룹의 owner/admin만 가능)
   "created_by_id": 1,
   "name": "string",
   "ranking_type": "score|match_point",
-  "event_type": "aggregate|regular|independent",
+  "event_type": "regular|independent",
   "uma_1st": 30, "uma_2nd": 10, "uma_3rd": -10, "uma_4th": -30,
   "scoring_1st": 4, "scoring_2nd": 2, "scoring_3rd": 1, "scoring_4th": 0,
-  "period_start": "datetime|null",
-  "period_end": "datetime|null",
-  "is_default": false,
   "is_closed": false,
-  "preset_type": "daily|weekly|monthly|yearly|all|custom|null",
   "created_at": "datetime",
   "updated_at": "datetime"
 }
 ```
 
 > **주의**:
-> - `is_default=true`인 Event는 그룹 생성 시 자동 생성됨. 삭제(`DELETE /events/{id}`) 불가 (400 반환). `aggregate` 타입 Event는 직접 생성 가능 (`is_default`는 항상 `false`)
 > - `is_closed=true`인 Event는 수정(`PUT /events/{id}`) 불가 (400 반환). 마감된 Event에 게임 기록 추가도 불가 (400 반환)
-> - `preset_type`은 `aggregate` 타입 Event에만 적용됨. `regular`/`independent` 타입은 서버에서 `null`로 강제됨
+> - 기간별 랭킹 집계는 FE에서 Group의 `weekly_start_day`/`monthly_start_day` 설정과 게임 기록의 `played_at`을 기반으로 계산
 
 ---
 

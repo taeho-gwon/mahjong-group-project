@@ -2,7 +2,7 @@ from sqlalchemy import select
 
 from app.models.user import User
 from app.repositories.base import BaseRepository
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserUpdate
 from app.utils.security import hash_password
 
 
@@ -21,6 +21,13 @@ class UserRepository(BaseRepository):
             hashed_password=hash_password(data.password),
         )
         self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def update(self, user: User, data: UserUpdate) -> User:
+        for field, value in data.model_dump(exclude_unset=True).items():
+            setattr(user, field, value)
         await self.db.commit()
         await self.db.refresh(user)
         return user

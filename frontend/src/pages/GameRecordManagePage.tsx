@@ -1,12 +1,16 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import Spinner from '../components/Spinner'
+import ConfirmModal from '../components/ConfirmModal'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useGroupGameRecords } from '../hooks/useGroupGameRecords'
 import { useEvents } from '../hooks/useEvents'
 import { useMe } from '../hooks/useMe'
 import { deleteGameRecord } from '../api/gameRecords'
+import { getDisplayName } from '../api/groups'
+import { ApiError } from '../api/errors'
 
 export default function GameRecordManagePage() {
   const { groupId } = useParams<{ groupId: string }>()
@@ -25,20 +29,24 @@ export default function GameRecordManagePage() {
       queryClient.invalidateQueries({ queryKey: ['gameRecords', 'group', id] })
       toast.success('게임 기록이 삭제됐습니다')
     },
-    onError: () => toast.error('오류가 발생했습니다. 다시 시도해주세요'),
+    onError: (err: Error) => toast.error(err instanceof ApiError ? err.message : '오류가 발생했습니다'),
   })
 
   const myRole = group && me ? (group.members.find((m) => m.id === me.id)?.role ?? null) : null
   const isAuthorized = myRole === 'owner' || myRole === 'admin'
   const isLoading = loadingGroup || (!!id && loadingRecords)
   const eventMap = new Map(events.map((c) => [c.id, c.name]))
+  const nameMap = new Map(group ? group.members.map((m) => [m.id, getDisplayName(m)]) : [])
   const sortedRecords = [...records].sort(
     (a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()
   )
 
-  async function handleDelete(recordId: number) {
-    if (!window.confirm('이 게임 기록을 삭제하시겠습니까?')) return
-    await deleteMutation.mutateAsync(recordId)
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
+
+  async function handleDelete() {
+    if (deleteTargetId == null) return
+    setDeleteTargetId(null)
+    await deleteMutation.mutateAsync(deleteTargetId)
   }
 
   return (
@@ -94,7 +102,7 @@ export default function GameRecordManagePage() {
                     { player: rec.north_player, point: rec.north_point },
                   ].map(({ player, point }, i) => (
                     <td key={i} className="px-2.5 py-2.5 align-middle text-center">
-                      <div className="font-medium">{player.username}</div>
+                      <div className="font-medium">{nameMap.get(player.id) ?? player.username}</div>
                       <div className="text-xs text-gray-500">{point.toLocaleString()}</div>
                     </td>
                   ))}
@@ -108,7 +116,7 @@ export default function GameRecordManagePage() {
                   </td>
                   <td className="px-2.5 py-2.5 align-middle text-center">
                     <button
-                      onClick={() => handleDelete(rec.id)}
+                      onClick={() => setDeleteTargetId(rec.id)}
                       disabled={deleteMutation.isPending}
                       className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded disabled:opacity-50"
                     >
@@ -121,6 +129,16 @@ export default function GameRecordManagePage() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTargetId != null}
+        title="게임 기록 삭제"
+        description="이 게임 기록을 삭제하시겠습니까?"
+        confirmLabel="삭제"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTargetId(null)}
+        destructive
+      />
     </div>
   )
 }

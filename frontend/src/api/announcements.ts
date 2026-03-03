@@ -1,4 +1,5 @@
 import { apiFetch } from './client'
+import { throwApiError } from './errors'
 
 export interface Announcement {
   id: number
@@ -11,6 +12,6 @@ export interface Announcement {
 
 export async function getAnnouncements(page = 1, size = 5): Promise<Announcement[]> {
   const res = await apiFetch(`/announcements?page=${page}&size=${size}`)
-  if (!res.ok) throw new Error('Failed to fetch announcements')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }

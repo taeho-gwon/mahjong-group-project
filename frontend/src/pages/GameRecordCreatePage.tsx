@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { MemberInfo } from '../api/groups'
+import { getDisplayName } from '../api/groups'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useEvents } from '../hooks/useEvents'
@@ -34,7 +35,7 @@ export default function GameRecordCreatePage() {
   const { data: events = [] } = useEvents(groupId)
 
   const members: MemberInfo[] = group?.members ?? []
-  const selectableEvents = events.filter((c) => c.event_type !== 'aggregate' && !c.is_closed)
+  const selectableEvents = events.filter((c) => !c.is_closed)
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
 
   const createGameRecordMutation = useCreateGameRecord(selectedEventId)
@@ -64,7 +65,7 @@ export default function GameRecordCreatePage() {
   function filteredMembers(pos: Position): MemberInfo[] {
     const search = positions[pos].search.toLowerCase()
     if (!search) return members
-    return members.filter((m) => m.username.toLowerCase().includes(search))
+    return members.filter((m) => getDisplayName(m).toLowerCase().includes(search))
   }
 
   function hasDuplicatePlayers(): boolean {
@@ -178,7 +179,7 @@ export default function GameRecordCreatePage() {
                         <option value="">-- 선택 --</option>
                         {filtered.map((m) => (
                           <option key={m.id} value={m.id} disabled={taken.has(m.id)}>
-                            {m.username}{taken.has(m.id) ? ' (선택됨)' : ''}
+                            {getDisplayName(m)}{taken.has(m.id) ? ' (선택됨)' : ''}
                           </option>
                         ))}
                       </select>

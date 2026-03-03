@@ -18,6 +18,7 @@ import EventManagePage from './pages/EventManagePage'
 import GroupRankingPage from './pages/GroupRankingPage'
 import UserProfilePage from './pages/UserProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
+import ForbiddenPage from './pages/ForbiddenPage'
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
           <Route path="/groups/:groupId/records/manage" element={<GameRecordManagePage />} />
           <Route path="/users/:userId" element={<UserProfilePage />} />
         </Route>
+        <Route path="/forbidden" element={<ForbiddenPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>

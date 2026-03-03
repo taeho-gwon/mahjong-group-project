@@ -1,0 +1,10 @@
+[Unit]
+Description=Mahjong DB daily backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/mahjong-group-project
+ExecStart=/bin/bash scripts/backup_db.sh

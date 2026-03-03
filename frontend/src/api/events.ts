@@ -1,8 +1,8 @@
 import { apiFetch } from './client'
+import { throwApiError } from './errors'
 
 export type RankingType = 'score' | 'match_point'
-export type EventType = 'aggregate' | 'regular' | 'independent'
-export type PresetType = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all' | 'custom'
+export type EventType = 'regular' | 'independent'
 
 export interface EventResponse {
   id: number
@@ -19,11 +19,7 @@ export interface EventResponse {
   scoring_2nd: number
   scoring_3rd: number
   scoring_4th: number
-  period_start: string | null
-  period_end: string | null
-  is_default: boolean
   is_closed: boolean
-  preset_type: PresetType | null
   created_at: string
   updated_at: string
 }
@@ -41,9 +37,6 @@ export interface EventCreate {
   scoring_2nd?: number
   scoring_3rd?: number
   scoring_4th?: number
-  period_start?: string | null
-  period_end?: string | null
-  preset_type?: PresetType | null
 }
 
 export async function createEvent(data: EventCreate): Promise<EventResponse> {
@@ -51,19 +44,20 @@ export async function createEvent(data: EventCreate): Promise<EventResponse> {
     method: 'POST',
     body: JSON.stringify(data),
   })
-  if (!res.ok) throw new Error('Failed to create event')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }
 
 export async function listEvents(groupId: number): Promise<EventResponse[]> {
-  const res = await apiFetch(`/events?group_id=${groupId}`)
-  if (!res.ok) throw new Error('Failed to fetch events')
-  return res.json()
+  const res = await apiFetch(`/events?group_id=${groupId}&size=200`)
+  if (!res.ok) await throwApiError(res)
+  const data: { items: EventResponse[] } = await res.json()
+  return data.items
 }
 
 export async function getEvent(id: number): Promise<EventResponse> {
   const res = await apiFetch(`/events/${id}`)
-  if (!res.ok) throw new Error('Failed to fetch event')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }
 
@@ -79,8 +73,6 @@ export interface EventUpdate {
   scoring_2nd?: number
   scoring_3rd?: number
   scoring_4th?: number
-  period_start?: string | null
-  period_end?: string | null
 }
 
 export async function updateEvent(id: number, data: EventUpdate): Promise<EventResponse> {
@@ -88,17 +80,17 @@ export async function updateEvent(id: number, data: EventUpdate): Promise<EventR
     method: 'PUT',
     body: JSON.stringify(data),
   })
-  if (!res.ok) throw new Error('Failed to update event')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }
 
 export async function deleteEvent(id: number): Promise<void> {
   const res = await apiFetch(`/events/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('Failed to delete event')
+  if (!res.ok) await throwApiError(res)
 }
 
 export async function closeEvent(id: number): Promise<EventResponse> {
   const res = await apiFetch(`/events/${id}/close`, { method: 'POST' })
-  if (!res.ok) throw new Error('Failed to close event')
+  if (!res.ok) await throwApiError(res)
   return res.json()
 }

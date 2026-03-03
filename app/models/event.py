@@ -5,6 +5,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.constants import EVENT_NAME_MAX_LENGTH
 from app.models.base import Base
 from app.models.group import Group
 from app.models.user import User
@@ -16,25 +17,15 @@ class RankingType(StrEnum):
 
 
 class EventType(StrEnum):
-    aggregate = "aggregate"
     regular = "regular"
     independent = "independent"
-
-
-class PresetType(StrEnum):
-    daily = "daily"
-    weekly = "weekly"
-    monthly = "monthly"
-    yearly = "yearly"
-    all = "all"
-    custom = "custom"
 
 
 class Event(Base):
     __tablename__ = "events"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(EVENT_NAME_MAX_LENGTH), nullable=False)
     group_id: Mapped[int | None] = mapped_column(
         ForeignKey("groups.id", ondelete="SET NULL"), index=True, nullable=True
     )
@@ -54,22 +45,8 @@ class Event(Base):
         nullable=False,
     )
 
-    period_start: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, default=None
-    )
-    period_end: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, default=None
-    )
-    is_default: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false", nullable=False
-    )
     is_closed: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", nullable=False
-    )
-    preset_type: Mapped[PresetType | None] = mapped_column(
-        SAEnum(PresetType, name="presettype"),
-        nullable=True,
-        default=None,
     )
 
     # 우마

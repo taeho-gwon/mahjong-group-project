@@ -21,8 +21,8 @@ export default function LoginPage() {
       const tokens = await login(username, password)
       setTokens(tokens.access_token, tokens.refresh_token)
       navigate('/')
-    } catch {
-      setError('Invalid username or password')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '아이디 또는 비밀번호가 올바르지 않습니다')
     } finally {
       setLoading(false)
     }
