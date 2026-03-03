@@ -111,7 +111,7 @@ export default function GroupDetailPage() {
               <h3 className="m-0">이벤트</h3>
             </div>
             {activeEvents.length === 0 ? (
-              <p className="text-sm text-gray-400 m-0">활성 이벤트이 없습니다.</p>
+              <p className="text-sm text-gray-400 m-0">활성 이벤트가 없습니다.</p>
             ) : (
               <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
                 {activeEvents.map((c) => (

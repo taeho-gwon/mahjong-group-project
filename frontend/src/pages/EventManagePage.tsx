@@ -45,8 +45,12 @@ export default function EventManagePage() {
 
   useEffect(() => {
     if (!event || !group || !me) return
-    const role = group.members.find((m) => m.id === me.id)?.role ?? null
-    if (role !== 'owner' && role !== 'admin') {
+    const member = group.members.find((m) => m.id === me.id)
+    if (!member) {
+      navigate('/forbidden', { replace: true })
+      return
+    }
+    if (member.role !== 'owner' && member.role !== 'admin') {
       navigate(`/events/${eventId}`, { replace: true })
       return
     }

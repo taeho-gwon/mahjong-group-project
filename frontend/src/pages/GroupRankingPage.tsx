@@ -213,7 +213,9 @@ export default function GroupRankingPage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        error instanceof ApiError && error.isNotFound ? (
+        error instanceof ApiError && error.isForbidden ? (
+          <Navigate to="/forbidden" replace />
+        ) : error instanceof ApiError && error.isNotFound ? (
           <Navigate to="/not-found" replace />
         ) : (
           <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
