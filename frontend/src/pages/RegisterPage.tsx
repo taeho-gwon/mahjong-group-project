@@ -12,8 +12,15 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
+  const USERNAME_PATTERN = /^[a-zA-Z0-9가-힣_-]+$/
+  const usernameValid = username === '' || USERNAME_PATTERN.test(username)
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!USERNAME_PATTERN.test(username)) {
+      setError('아이디는 영문, 숫자, 한글, _, - 만 사용할 수 있습니다.')
+      return
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
@@ -34,15 +41,23 @@ export default function RegisterPage() {
     <div className="flex flex-col justify-center items-center min-h-screen">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-[300px]">
         <h2 className="mb-2 text-xl font-bold">Register</h2>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          maxLength={50}
-          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
-        />
+        <div>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            maxLength={50}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+          />
+          {!usernameValid && (
+            <p className="mt-1 mb-0 text-xs text-red-600">영문, 숫자, 한글, _, - 만 사용 가능</p>
+          )}
+          {usernameValid && (
+            <p className="mt-1 mb-0 text-xs text-gray-400">영문/숫자/한글/_, - 사용 가능</p>
+          )}
+        </div>
         <div>
           <input
             type="password"
