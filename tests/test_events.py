@@ -320,6 +320,53 @@ async def test_create_event_by_admin_allowed(client: AsyncClient) -> None:
     assert r.status_code == 201
 
 
+async def test_create_event_invalid_uma_sum(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    payload = {
+        **_EVENT_PAYLOAD,
+        "group_id": group_id,
+        "uma_1st": 30,
+        "uma_2nd": 10,
+        "uma_3rd": -10,
+        "uma_4th": -20,  # sum = 10, not 0
+    }
+
+    r = await client.post("/api/events", json=payload, headers=headers)
+    assert r.status_code == 422
+
+
+async def test_update_event_invalid_uma_sum(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    event_id = await _create_event(client, headers, group_id)
+
+    r = await client.put(
+        f"/api/events/{event_id}",
+        json={
+            "uma_1st": 50,
+            "uma_2nd": 20,
+            "uma_3rd": -20,
+            "uma_4th": -40,  # sum = 10, not 0
+        },
+        headers=headers,
+    )
+    assert r.status_code == 422
+
+
+async def test_update_event_partial_uma_rejected(client: AsyncClient) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    event_id = await _create_event(client, headers, group_id)
+
+    r = await client.put(
+        f"/api/events/{event_id}",
+        json={"uma_1st": 50, "uma_2nd": 20},
+        headers=headers,
+    )
+    assert r.status_code == 422
+
+
 async def test_create_independent_event(client: AsyncClient) -> None:
     headers = await _login(client, "owner")
     group_id = await _create_group(client, headers)

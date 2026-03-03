@@ -75,6 +75,40 @@ async def test_me_no_token(client: AsyncClient) -> None:
     assert r.status_code == 401
 
 
+async def test_register_invalid_username_chars(client: AsyncClient) -> None:
+    r = await client.post(
+        "/api/auth/register",
+        json={"username": "bad user!", "password": "password123"},
+    )
+    assert r.status_code == 422
+
+
+async def test_register_username_with_korean(client: AsyncClient) -> None:
+    r = await client.post(
+        "/api/auth/register",
+        json={"username": "유저이름", "password": "password123"},
+    )
+    assert r.status_code == 201
+    assert r.json()["username"] == "유저이름"
+
+
+async def test_register_username_with_cyrillic(client: AsyncClient) -> None:
+    r = await client.post(
+        "/api/auth/register",
+        json={"username": "Аlice", "password": "password123"},
+    )
+    assert r.status_code == 422
+
+
+async def test_register_valid_username_special(client: AsyncClient) -> None:
+    r = await client.post(
+        "/api/auth/register",
+        json={"username": "user_name-01", "password": "password123"},
+    )
+    assert r.status_code == 201
+    assert r.json()["username"] == "user_name-01"
+
+
 async def test_update_me_nickname(
     client: AsyncClient, auth_headers: dict[str, str]
 ) -> None:

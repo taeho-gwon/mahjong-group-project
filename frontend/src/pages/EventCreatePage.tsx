@@ -24,16 +24,25 @@ export default function EventCreatePage() {
   const [name, setName] = useState('')
   const [eventType, setEventType] = useState<EventType>('regular')
   const [rankingType, setRankingType] = useState<RankingType>('score')
-  const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
-  const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
+  const [uma, setUma] = useState({ uma_1st: '30', uma_2nd: '10', uma_3rd: '-10', uma_4th: '-30' })
+  const [scoring, setScoring] = useState({ scoring_1st: '4', scoring_2nd: '2', scoring_3rd: '1', scoring_4th: '0' })
   const [error, setError] = useState('')
 
-  const umaSum = uma.uma_1st + uma.uma_2nd + uma.uma_3rd + uma.uma_4th
+  const toNum = (s: string) => Number(s) || 0
+  const umaSum = toNum(uma.uma_1st) + toNum(uma.uma_2nd) + toNum(uma.uma_3rd) + toNum(uma.uma_4th)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) {
       setError('이름을 입력하세요.')
+      return
+    }
+    if (Object.values(uma).some(v => !Number.isInteger(Number(v)))) {
+      setError('우마 값은 정수로 입력하세요.')
+      return
+    }
+    if (rankingType === 'match_point' && Object.values(scoring).some(v => !Number.isInteger(Number(v)) || Number(v) < 0)) {
+      setError('승점 값은 0 이상의 정수로 입력하세요.')
       return
     }
     if (umaSum !== 0) {
@@ -47,8 +56,14 @@ export default function EventCreatePage() {
         event_type: eventType,
         group_id: groupId ?? null,
         ranking_type: rankingType,
-        ...uma,
-        ...scoring,
+        uma_1st: toNum(uma.uma_1st),
+        uma_2nd: toNum(uma.uma_2nd),
+        uma_3rd: toNum(uma.uma_3rd),
+        uma_4th: toNum(uma.uma_4th),
+        scoring_1st: toNum(scoring.scoring_1st),
+        scoring_2nd: toNum(scoring.scoring_2nd),
+        scoring_3rd: toNum(scoring.scoring_3rd),
+        scoring_4th: toNum(scoring.scoring_4th),
       })
       navigate(`/groups/${id}`)
     } catch {
@@ -127,9 +142,10 @@ export default function EventCreatePage() {
               <div key={key}>
                 <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={uma[key]}
-                  onChange={(e) => setUma((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
+                  onChange={(e) => setUma((prev) => ({ ...prev, [key]: e.target.value }))}
                   className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                 />
               </div>
@@ -145,9 +161,10 @@ export default function EventCreatePage() {
                 <div key={key}>
                   <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={scoring[key]}
-                    onChange={(e) => setScoring((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
+                    onChange={(e) => setScoring((prev) => ({ ...prev, [key]: e.target.value }))}
                     className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                   />
                 </div>

@@ -43,15 +43,19 @@ export default function RegisterPage() {
           maxLength={50}
           className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          maxLength={100}
-          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
-        />
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            maxLength={100}
+            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+          />
+          <p className="mt-1 mb-0 text-xs text-gray-400">8자 이상</p>
+        </div>
         <input
           type="password"
           placeholder="Confirm Password"

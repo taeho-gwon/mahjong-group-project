@@ -16,15 +16,24 @@ export default function GroupCreatePage() {
   const [weeklyStartDay, setWeeklyStartDay] = useState(0)
   const [monthlyStartDay, setMonthlyStartDay] = useState(1)
   const [rankingType, setRankingType] = useState<RankingType>('score')
-  const [uma, setUma] = useState({ default_uma_1st: 30, default_uma_2nd: 10, default_uma_3rd: -10, default_uma_4th: -30 })
-  const [scoring, setScoring] = useState({ default_scoring_1st: 4, default_scoring_2nd: 2, default_scoring_3rd: 1, default_scoring_4th: 0 })
+  const [uma, setUma] = useState({ default_uma_1st: '30', default_uma_2nd: '10', default_uma_3rd: '-10', default_uma_4th: '-30' })
+  const [scoring, setScoring] = useState({ default_scoring_1st: '4', default_scoring_2nd: '2', default_scoring_3rd: '1', default_scoring_4th: '0' })
   const [createError, setCreateError] = useState('')
 
-  const umaSum = uma.default_uma_1st + uma.default_uma_2nd + uma.default_uma_3rd + uma.default_uma_4th
+  const toNum = (s: string) => Number(s) || 0
+  const umaSum = toNum(uma.default_uma_1st) + toNum(uma.default_uma_2nd) + toNum(uma.default_uma_3rd) + toNum(uma.default_uma_4th)
 
   async function handleCreateGroup(e: FormEvent) {
     e.preventDefault()
     setCreateError('')
+    if (Object.values(uma).some(v => !Number.isInteger(Number(v)))) {
+      setCreateError('우마 값은 정수로 입력하세요.')
+      return
+    }
+    if (rankingType === 'match_point' && Object.values(scoring).some(v => !Number.isInteger(Number(v)) || Number(v) < 0)) {
+      setCreateError('승점 값은 0 이상의 정수로 입력하세요.')
+      return
+    }
     if (umaSum !== 0) {
       setCreateError(`우마 합계가 0이어야 합니다. 현재 합계: ${umaSum}`)
       return
@@ -37,8 +46,14 @@ export default function GroupCreatePage() {
         weekly_start_day: weeklyStartDay,
         monthly_start_day: monthlyStartDay,
         default_ranking_type: rankingType,
-        ...uma,
-        ...scoring,
+        default_uma_1st: toNum(uma.default_uma_1st),
+        default_uma_2nd: toNum(uma.default_uma_2nd),
+        default_uma_3rd: toNum(uma.default_uma_3rd),
+        default_uma_4th: toNum(uma.default_uma_4th),
+        default_scoring_1st: toNum(scoring.default_scoring_1st),
+        default_scoring_2nd: toNum(scoring.default_scoring_2nd),
+        default_scoring_3rd: toNum(scoring.default_scoring_3rd),
+        default_scoring_4th: toNum(scoring.default_scoring_4th),
       })
       navigate(`/groups/${group.id}`)
     } catch {
@@ -148,9 +163,10 @@ export default function GroupCreatePage() {
               <div key={key}>
                 <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={uma[key]}
-                  onChange={(e) => setUma((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
+                  onChange={(e) => setUma((prev) => ({ ...prev, [key]: e.target.value }))}
                   className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                 />
               </div>
@@ -166,9 +182,10 @@ export default function GroupCreatePage() {
                 <div key={key}>
                   <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={scoring[key]}
-                    onChange={(e) => setScoring((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
+                    onChange={(e) => setScoring((prev) => ({ ...prev, [key]: e.target.value }))}
                     className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                   />
                 </div>

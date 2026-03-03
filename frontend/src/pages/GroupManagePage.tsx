@@ -48,8 +48,8 @@ export default function GroupManagePage() {
   const [weeklyStartDay, setWeeklyStartDay] = useState(0)
   const [monthlyStartDay, setMonthlyStartDay] = useState(1)
   const [rankingType, setRankingType] = useState<RankingType>('score')
-  const [uma, setUma] = useState({ default_uma_1st: 30, default_uma_2nd: 10, default_uma_3rd: -10, default_uma_4th: -30 })
-  const [scoring, setScoring] = useState({ default_scoring_1st: 4, default_scoring_2nd: 2, default_scoring_3rd: 1, default_scoring_4th: 0 })
+  const [uma, setUma] = useState({ default_uma_1st: '30', default_uma_2nd: '10', default_uma_3rd: '-10', default_uma_4th: '-30' })
+  const [scoring, setScoring] = useState({ default_scoring_1st: '4', default_scoring_2nd: '2', default_scoring_3rd: '1', default_scoring_4th: '0' })
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
 
@@ -58,6 +58,7 @@ export default function GroupManagePage() {
 
   const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [kickTargetUserId, setKickTargetUserId] = useState<number | null>(null)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -76,25 +77,34 @@ export default function GroupManagePage() {
     setMonthlyStartDay(group.monthly_start_day)
     setRankingType(group.default_ranking_type)
     setUma({
-      default_uma_1st: group.default_uma_1st,
-      default_uma_2nd: group.default_uma_2nd,
-      default_uma_3rd: group.default_uma_3rd,
-      default_uma_4th: group.default_uma_4th,
+      default_uma_1st: String(group.default_uma_1st),
+      default_uma_2nd: String(group.default_uma_2nd),
+      default_uma_3rd: String(group.default_uma_3rd),
+      default_uma_4th: String(group.default_uma_4th),
     })
     setScoring({
-      default_scoring_1st: group.default_scoring_1st,
-      default_scoring_2nd: group.default_scoring_2nd,
-      default_scoring_3rd: group.default_scoring_3rd,
-      default_scoring_4th: group.default_scoring_4th,
+      default_scoring_1st: String(group.default_scoring_1st),
+      default_scoring_2nd: String(group.default_scoring_2nd),
+      default_scoring_3rd: String(group.default_scoring_3rd),
+      default_scoring_4th: String(group.default_scoring_4th),
     })
   }, [group, me, id, navigate])
 
-  const umaSum = uma.default_uma_1st + uma.default_uma_2nd + uma.default_uma_3rd + uma.default_uma_4th
+  const toNum = (s: string) => Number(s) || 0
+  const umaSum = toNum(uma.default_uma_1st) + toNum(uma.default_uma_2nd) + toNum(uma.default_uma_3rd) + toNum(uma.default_uma_4th)
 
   async function handleSave(e: FormEvent) {
     e.preventDefault()
     setSaveError('')
     setSaveSuccess(false)
+    if (Object.values(uma).some(v => !Number.isInteger(Number(v)))) {
+      setSaveError('우마 값은 정수로 입력하세요.')
+      return
+    }
+    if (rankingType === 'match_point' && Object.values(scoring).some(v => !Number.isInteger(Number(v)) || Number(v) < 0)) {
+      setSaveError('승점 값은 0 이상의 정수로 입력하세요.')
+      return
+    }
     if (umaSum !== 0) {
       setSaveError(`우마 합계가 0이어야 합니다. 현재 합계: ${umaSum}`)
       return
@@ -107,8 +117,14 @@ export default function GroupManagePage() {
         weekly_start_day: weeklyStartDay,
         monthly_start_day: monthlyStartDay,
         default_ranking_type: rankingType,
-        ...uma,
-        ...scoring,
+        default_uma_1st: toNum(uma.default_uma_1st),
+        default_uma_2nd: toNum(uma.default_uma_2nd),
+        default_uma_3rd: toNum(uma.default_uma_3rd),
+        default_uma_4th: toNum(uma.default_uma_4th),
+        default_scoring_1st: toNum(scoring.default_scoring_1st),
+        default_scoring_2nd: toNum(scoring.default_scoring_2nd),
+        default_scoring_3rd: toNum(scoring.default_scoring_3rd),
+        default_scoring_4th: toNum(scoring.default_scoring_4th),
       })
       setSaveSuccess(true)
     } catch {
@@ -134,9 +150,11 @@ export default function GroupManagePage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  async function handleRemoveMember(userId: number) {
+  async function handleRemoveMember() {
+    if (kickTargetUserId == null) return
+    setKickTargetUserId(null)
     try {
-      await removeMemberMutation.mutateAsync(userId)
+      await removeMemberMutation.mutateAsync(kickTargetUserId)
     } catch {
       // error toast handled by mutation hook
     }
@@ -277,9 +295,10 @@ export default function GroupManagePage() {
                     <div key={key}>
                       <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={uma[key]}
-                        onChange={(e) => { setUma((prev) => ({ ...prev, [key]: Number(e.target.value) })); setSaveSuccess(false) }}
+                        onChange={(e) => { setUma((prev) => ({ ...prev, [key]: e.target.value })); setSaveSuccess(false) }}
                         className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                       />
                     </div>
@@ -294,9 +313,10 @@ export default function GroupManagePage() {
                       <div key={key}>
                         <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           value={scoring[key]}
-                          onChange={(e) => { setScoring((prev) => ({ ...prev, [key]: Number(e.target.value) })); setSaveSuccess(false) }}
+                          onChange={(e) => { setScoring((prev) => ({ ...prev, [key]: e.target.value })); setSaveSuccess(false) }}
                           className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                         />
                       </div>
@@ -471,7 +491,7 @@ export default function GroupManagePage() {
                       )}
                       {canKick && (
                         <button
-                          onClick={() => handleRemoveMember(m.id)}
+                          onClick={() => setKickTargetUserId(m.id)}
                           className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded"
                         >
                           강퇴
@@ -514,6 +534,16 @@ export default function GroupManagePage() {
               />
             </section>
           )}
+
+          <ConfirmModal
+            open={kickTargetUserId != null}
+            title="멤버 강퇴"
+            description="이 멤버를 강퇴하시겠습니까?"
+            confirmLabel="강퇴"
+            onConfirm={handleRemoveMember}
+            onCancel={() => setKickTargetUserId(null)}
+            destructive
+          />
 
           <ConfirmModal
             open={showLeaveModal}

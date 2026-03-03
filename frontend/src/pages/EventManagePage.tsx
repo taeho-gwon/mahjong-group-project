@@ -30,8 +30,8 @@ export default function EventManagePage() {
   const [name, setName] = useState('')
   const [eventType, setEventType] = useState<EventType>('regular')
   const [rankingType, setRankingType] = useState<RankingType>('score')
-  const [uma, setUma] = useState({ uma_1st: 30, uma_2nd: 10, uma_3rd: -10, uma_4th: -30 })
-  const [scoring, setScoring] = useState({ scoring_1st: 4, scoring_2nd: 2, scoring_3rd: 1, scoring_4th: 0 })
+  const [uma, setUma] = useState({ uma_1st: '30', uma_2nd: '10', uma_3rd: '-10', uma_4th: '-30' })
+  const [scoring, setScoring] = useState({ scoring_1st: '4', scoring_2nd: '2', scoring_3rd: '1', scoring_4th: '0' })
   const [saveError, setSaveError] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -40,7 +40,8 @@ export default function EventManagePage() {
 
   const myRole = group && me ? group.members.find((m) => m.id === me.id)?.role ?? null : null
 
-  const umaSum = uma.uma_1st + uma.uma_2nd + uma.uma_3rd + uma.uma_4th
+  const toNum = (s: string) => Number(s) || 0
+  const umaSum = toNum(uma.uma_1st) + toNum(uma.uma_2nd) + toNum(uma.uma_3rd) + toNum(uma.uma_4th)
 
   useEffect(() => {
     if (!event || !group || !me) return
@@ -52,12 +53,20 @@ export default function EventManagePage() {
     setName(event.name)
     setEventType(event.event_type)
     setRankingType(event.ranking_type)
-    setUma({ uma_1st: event.uma_1st, uma_2nd: event.uma_2nd, uma_3rd: event.uma_3rd, uma_4th: event.uma_4th })
-    setScoring({ scoring_1st: event.scoring_1st, scoring_2nd: event.scoring_2nd, scoring_3rd: event.scoring_3rd, scoring_4th: event.scoring_4th })
+    setUma({ uma_1st: String(event.uma_1st), uma_2nd: String(event.uma_2nd), uma_3rd: String(event.uma_3rd), uma_4th: String(event.uma_4th) })
+    setScoring({ scoring_1st: String(event.scoring_1st), scoring_2nd: String(event.scoring_2nd), scoring_3rd: String(event.scoring_3rd), scoring_4th: String(event.scoring_4th) })
   }, [event, group, me, eventId, navigate])
 
   async function handleSave(e: FormEvent) {
     e.preventDefault()
+    if (Object.values(uma).some(v => !Number.isInteger(Number(v)))) {
+      setSaveError('우마 값은 정수로 입력하세요.')
+      return
+    }
+    if (rankingType === 'match_point' && Object.values(scoring).some(v => !Number.isInteger(Number(v)) || Number(v) < 0)) {
+      setSaveError('승점 값은 0 이상의 정수로 입력하세요.')
+      return
+    }
     if (umaSum !== 0) {
       setSaveError(`우마 합계가 0이어야 합니다. 현재: ${umaSum}`)
       return
@@ -69,8 +78,14 @@ export default function EventManagePage() {
         name,
         event_type: eventType,
         ranking_type: rankingType,
-        ...uma,
-        ...scoring,
+        uma_1st: toNum(uma.uma_1st),
+        uma_2nd: toNum(uma.uma_2nd),
+        uma_3rd: toNum(uma.uma_3rd),
+        uma_4th: toNum(uma.uma_4th),
+        scoring_1st: toNum(scoring.scoring_1st),
+        scoring_2nd: toNum(scoring.scoring_2nd),
+        scoring_3rd: toNum(scoring.scoring_3rd),
+        scoring_4th: toNum(scoring.scoring_4th),
       })
       setSaveSuccess(true)
     } catch {
@@ -208,9 +223,10 @@ export default function EventManagePage() {
                   <div key={key}>
                     <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={uma[key]}
-                      onChange={(e) => { setUma((prev) => ({ ...prev, [key]: Number(e.target.value) })); setSaveSuccess(false) }}
+                      onChange={(e) => { setUma((prev) => ({ ...prev, [key]: e.target.value })); setSaveSuccess(false) }}
                       className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                     />
                   </div>
@@ -226,9 +242,10 @@ export default function EventManagePage() {
                     <div key={key}>
                       <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={scoring[key]}
-                        onChange={(e) => { setScoring((prev) => ({ ...prev, [key]: Number(e.target.value) })); setSaveSuccess(false) }}
+                        onChange={(e) => { setScoring((prev) => ({ ...prev, [key]: e.target.value })); setSaveSuccess(false) }}
                         className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
                       />
                     </div>

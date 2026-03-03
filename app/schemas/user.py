@@ -7,11 +7,15 @@ from app.constants import (
     PASSWORD_MAX_LENGTH,
     PASSWORD_MIN_LENGTH,
     USERNAME_MAX_LENGTH,
+    USERNAME_PATTERN,
 )
 
 
 class UserCreate(BaseModel):
-    username: str = Field(max_length=USERNAME_MAX_LENGTH)
+    username: str = Field(
+        max_length=USERNAME_MAX_LENGTH,
+        pattern=USERNAME_PATTERN,
+    )
     password: str = Field(
         min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH
     )

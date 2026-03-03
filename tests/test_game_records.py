@@ -196,6 +196,27 @@ async def test_create_game_record_invalid_point_sum(client: AsyncClient) -> None
     assert r.status_code == 422
 
 
+async def test_update_game_record_invalid_point_sum(client: AsyncClient) -> None:
+    ctx = await _setup_game(client)
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
+    create_r = await client.post(
+        "/api/game-records", json=payload, headers=ctx["creator_headers"]
+    )
+    record_id = create_r.json()["id"]
+
+    r = await client.put(
+        f"/api/game-records/{record_id}",
+        json={
+            "east_point": 50000,
+            "south_point": 30000,
+            "west_point": 20000,
+            "north_point": 10000,  # sum = 110000
+        },
+        headers=ctx["creator_headers"],
+    )
+    assert r.status_code == 422
+
+
 async def test_create_game_record_non_member_forbidden(client: AsyncClient) -> None:
     ctx = await _setup_game(client)
     payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
