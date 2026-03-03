@@ -55,12 +55,19 @@ class GroupService:
             )
         return group
 
-    async def get_group_detail(self, group_id: int) -> Group:
+    async def get_group_detail(self, group_id: int, user_id: int) -> Group:
         group = await self.group_repo.get_by_id_with_members(group_id)
         if not group:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Group not found"
             )
+        if group.join_policy == JoinPolicy.private:
+            member = await self.group_repo.get_member(group_id, user_id)
+            if not member:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only members can view private groups",
+                )
         return group
 
     async def list_my_groups(self, user_id: int) -> list[Group]:

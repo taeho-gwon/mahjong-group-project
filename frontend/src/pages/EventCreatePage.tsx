@@ -1,14 +1,25 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import type { RankingType, EventType } from '../api/events'
 import { useCreateEvent } from '../hooks/mutations/useCreateEvent'
+import { useGroupDetail } from '../hooks/useGroupDetail'
+import { useMe } from '../hooks/useMe'
+import Spinner from '../components/Spinner'
 
 export default function EventCreatePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const groupId = id ? Number(id) : undefined
 
+  const { data: group, isLoading: groupLoading } = useGroupDetail(groupId)
+  const { data: me } = useMe()
   const createEventMutation = useCreateEvent(groupId)
+
+  const myRole = group && me ? group.members.find((m) => m.id === me.id)?.role ?? null : null
+  const isAuthorized = myRole === 'owner' || myRole === 'admin'
+
+  if (groupLoading) return <div className="max-w-xl mx-auto px-4 py-6"><Spinner /></div>
+  if (group && me && !isAuthorized) return <Navigate to="/forbidden" replace />
 
   const [name, setName] = useState('')
   const [eventType, setEventType] = useState<EventType>('regular')
@@ -72,6 +83,7 @@ export default function EventCreatePage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="이벤트 이름"
+            maxLength={100}
             className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
           />
         </div>

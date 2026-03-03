@@ -189,6 +189,137 @@ async def test_delete_event_by_other_forbidden(client: AsyncClient) -> None:
     assert r.status_code == 403
 
 
+async def test_update_event_by_admin_allowed(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    admin_headers = await _login(client, "admin_user")
+    group_id = await _create_group(client, owner_headers)
+    event_id = await _create_event(client, owner_headers, group_id)
+
+    # Join and promote to admin
+    await client.post(f"/api/groups/{group_id}/join", headers=admin_headers)
+    detail_r = await client.get(
+        f"/api/groups/{group_id}", headers=owner_headers
+    )
+    admin_id = next(
+        m["id"] for m in detail_r.json()["members"]
+        if m["username"] == "admin_user"
+    )
+    await client.put(
+        f"/api/groups/{group_id}/members/{admin_id}/role",
+        json={"role": "admin"},
+        headers=owner_headers,
+    )
+
+    r = await client.put(
+        f"/api/events/{event_id}",
+        json={"name": "Admin Updated"},
+        headers=admin_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["name"] == "Admin Updated"
+
+
+async def test_delete_event_by_owner_of_other_creator(
+    client: AsyncClient,
+) -> None:
+    owner_headers = await _login(client, "owner")
+    admin_headers = await _login(client, "admin_user")
+    group_id = await _create_group(client, owner_headers)
+
+    # Join and promote to admin, then admin creates event
+    await client.post(f"/api/groups/{group_id}/join", headers=admin_headers)
+    detail_r = await client.get(
+        f"/api/groups/{group_id}", headers=owner_headers
+    )
+    admin_id = next(
+        m["id"] for m in detail_r.json()["members"]
+        if m["username"] == "admin_user"
+    )
+    await client.put(
+        f"/api/groups/{group_id}/members/{admin_id}/role",
+        json={"role": "admin"},
+        headers=owner_headers,
+    )
+
+    event_id = await _create_event(client, admin_headers, group_id)
+
+    # Owner deletes admin's event
+    r = await client.delete(f"/api/events/{event_id}", headers=owner_headers)
+    assert r.status_code == 204
+
+
+async def test_update_event_by_member_forbidden(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    member_headers = await _login(client, "member")
+    group_id = await _create_group(client, owner_headers)
+    event_id = await _create_event(client, owner_headers, group_id)
+    await client.post(f"/api/groups/{group_id}/join", headers=member_headers)
+
+    r = await client.put(
+        f"/api/events/{event_id}",
+        json={"name": "Hacked"},
+        headers=member_headers,
+    )
+    assert r.status_code == 403
+
+
+async def test_delete_event_by_member_forbidden(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    member_headers = await _login(client, "member")
+    group_id = await _create_group(client, owner_headers)
+    event_id = await _create_event(client, owner_headers, group_id)
+    await client.post(f"/api/groups/{group_id}/join", headers=member_headers)
+
+    r = await client.delete(f"/api/events/{event_id}", headers=member_headers)
+    assert r.status_code == 403
+
+
+async def test_create_event_by_member_forbidden(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    member_headers = await _login(client, "member")
+    group_id = await _create_group(client, owner_headers)
+    await client.post(f"/api/groups/{group_id}/join", headers=member_headers)
+
+    payload = {**_EVENT_PAYLOAD, "group_id": group_id}
+    r = await client.post("/api/events", json=payload, headers=member_headers)
+    assert r.status_code == 403
+
+
+async def test_create_event_by_non_member_forbidden(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    other_headers = await _login(client, "outsider")
+    group_id = await _create_group(client, owner_headers)
+
+    payload = {**_EVENT_PAYLOAD, "group_id": group_id}
+    r = await client.post("/api/events", json=payload, headers=other_headers)
+    assert r.status_code == 403
+
+
+async def test_create_event_by_admin_allowed(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    admin_headers = await _login(client, "admin_user")
+    group_id = await _create_group(client, owner_headers)
+    await client.post(f"/api/groups/{group_id}/join", headers=admin_headers)
+
+    # Promote to admin: get member id
+    detail_r = await client.get(
+        f"/api/groups/{group_id}", headers=owner_headers
+    )
+    admin_id = next(
+        m["id"] for m in detail_r.json()["members"]
+        if m["username"] == "admin_user"
+    )
+    await client.put(
+        f"/api/groups/{group_id}/members/{admin_id}/role",
+        json={"role": "admin"},
+        headers=owner_headers,
+    )
+
+    payload = {**_EVENT_PAYLOAD, "group_id": group_id}
+    r = await client.post("/api/events", json=payload, headers=admin_headers)
+    assert r.status_code == 201
+
+
 async def test_create_independent_event(client: AsyncClient) -> None:
     headers = await _login(client, "owner")
     group_id = await _create_group(client, headers)
@@ -203,6 +334,48 @@ async def test_create_independent_event(client: AsyncClient) -> None:
     assert r.status_code == 201
     data = r.json()
     assert data["event_type"] == "independent"
+
+
+# --- Event Type Change Tests ---
+
+
+async def test_change_event_type_regular_to_independent(
+    client: AsyncClient,
+) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    event_id = await _create_event(client, headers, group_id)
+
+    r = await client.put(
+        f"/api/events/{event_id}",
+        json={"event_type": "independent"},
+        headers=headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["event_type"] == "independent"
+
+
+async def test_change_event_type_independent_to_regular(
+    client: AsyncClient,
+) -> None:
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    payload = {
+        **_EVENT_PAYLOAD,
+        "group_id": group_id,
+        "event_type": "independent",
+    }
+    r = await client.post("/api/events", json=payload, headers=headers)
+    event_id = r.json()["id"]
+    assert r.json()["event_type"] == "independent"
+
+    r = await client.put(
+        f"/api/events/{event_id}",
+        json={"event_type": "regular"},
+        headers=headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["event_type"] == "regular"
 
 
 # --- Close Event Tests ---

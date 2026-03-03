@@ -80,6 +80,7 @@ Note:     공개 그룹 목록
 ```
 Response: GroupDetailResponse (members 포함)
 Status:   200
+Auth:     Required (public 그룹: 인증 유저, private 그룹: 멤버만)
 ```
 
 ### PUT /groups/{id}
@@ -239,7 +240,7 @@ Request:  {
 }
 Response: EventResponse
 Status:   201
-Auth:     Required
+Auth:     Required (그룹 owner/admin)
 ```
 
 ### GET /events?group_id={id}
@@ -260,10 +261,10 @@ Auth:     Required (그룹 멤버)
 
 ### PUT /events/{id}
 ```json
-Request:  { "name"?, "ranking_type"?, "uma_1st", "uma_2nd", "uma_3rd", "uma_4th"? }
+Request:  { "name"?, "ranking_type"?, "event_type"?, "uma_1st", "uma_2nd", "uma_3rd", "uma_4th"? }
 Response: EventResponse
 Status:   200
-Auth:     Required (생성자)
+Auth:     Required (그룹 owner/admin)
 Note:     uma 4개는 일괄 업데이트
 ```
 
@@ -278,7 +279,7 @@ Note:     이미 마감된 event → 400, 그룹 없는 event → 403
 ### DELETE /events/{id}
 ```
 Status:   204
-Auth:     Required (생성자)
+Auth:     Required (그룹 owner/admin)
 ```
 
 ---

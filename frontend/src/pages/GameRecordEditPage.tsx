@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import type { MemberInfo } from '../api/groups'
 import { getDisplayName } from '../api/groups'
 import Spinner from '../components/Spinner'
 import { useGameRecord } from '../hooks/useGameRecord'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useUpdateGameRecord } from '../hooks/mutations/useUpdateGameRecord'
+import { ApiError } from '../api/errors'
 
 const POSITIONS = [
   { key: 'east', label: '동' },
@@ -31,13 +32,13 @@ export default function GameRecordEditPage() {
   const navigate = useNavigate()
   const id = recordId ? Number(recordId) : undefined
 
-  const { data: record, isLoading: loadingRecord } = useGameRecord(id)
+  const { data: record, isLoading: loadingRecord, isError, error } = useGameRecord(id)
   const { data: group, isLoading: loadingGroup } = useGroupDetail(record?.group_id ?? undefined)
 
-  const updateMutation = useUpdateGameRecord(id!, record?.event_id)
+  const updateMutation = useUpdateGameRecord(id!, record?.group_id ?? undefined, record?.event_id)
 
   const members: MemberInfo[] = group?.members ?? []
-  const [error, setError] = useState('')
+  const [formError, setFormError] = useState('')
   const [initialized, setInitialized] = useState(false)
   const [positions, setPositions] = useState<Record<Position, PositionState>>({
     east: initPosition(),
@@ -89,15 +90,15 @@ export default function GameRecordEditPage() {
     const north = positions.north
 
     if (!east.playerId || !south.playerId || !west.playerId || !north.playerId) {
-      setError('모든 포지션에 플레이어를 선택하세요.')
+      setFormError('모든 포지션에 플레이어를 선택하세요.')
       return
     }
     if (!east.point || !south.point || !west.point || !north.point) {
-      setError('모든 포지션의 점수를 입력하세요.')
+      setFormError('모든 포지션의 점수를 입력하세요.')
       return
     }
 
-    setError('')
+    setFormError('')
     try {
       await updateMutation.mutateAsync({
         east_player_id: east.playerId,
@@ -111,7 +112,7 @@ export default function GameRecordEditPage() {
       })
       navigate(-1)
     } catch {
-      setError('게임 기록 수정에 실패했습니다.')
+      // handled by mutation hook
     }
   }
 
@@ -131,9 +132,15 @@ export default function GameRecordEditPage() {
 
       {isLoading ? (
         <Spinner />
+      ) : isError ? (
+        error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="mt-6 text-red-600">게임 기록을 불러올 수 없습니다.</p>
+        )
       ) : (
         <>
-          {error && <p className="text-red-600 mb-4">{error}</p>}
+          {formError && <p className="text-red-600 mb-4">{formError}</p>}
 
           <table className="w-full border-collapse mb-6">
             <thead>

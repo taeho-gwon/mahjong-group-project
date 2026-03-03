@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import type { RankingType, EventType } from '../api/events'
 import { useEvent } from '../hooks/useEvent'
@@ -9,6 +9,8 @@ import { useMe } from '../hooks/useMe'
 import { useUpdateEvent } from '../hooks/mutations/useUpdateEvent'
 import { useDeleteEvent } from '../hooks/mutations/useDeleteEvent'
 import { useCloseEvent } from '../hooks/mutations/useCloseEvent'
+import { useEventGameRecordCount } from '../hooks/useEventGameRecordCount'
+import { ApiError } from '../api/errors'
 import ConfirmModal from '../components/ConfirmModal'
 
 export default function EventManagePage() {
@@ -16,13 +18,14 @@ export default function EventManagePage() {
   const navigate = useNavigate()
   const id = eventId ? Number(eventId) : undefined
 
-  const { data: event, isLoading, isError } = useEvent(id)
+  const { data: event, isLoading, isError, error } = useEvent(id)
   const { data: group } = useGroupDetail(event?.group_id ?? undefined)
   const { data: me } = useMe()
 
   const updateEventMutation = useUpdateEvent(id!)
   const deleteEventMutation = useDeleteEvent(event?.group_id)
   const closeEventMutation = useCloseEvent(event?.group_id)
+  const { data: recordCount = 0 } = useEventGameRecordCount(id)
 
   const [name, setName] = useState('')
   const [eventType, setEventType] = useState<EventType>('regular')
@@ -33,6 +36,7 @@ export default function EventManagePage() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCloseModal, setShowCloseModal] = useState(false)
+  const [pendingEventType, setPendingEventType] = useState<EventType | null>(null)
 
   const myRole = group && me ? group.members.find((m) => m.id === me.id)?.role ?? null : null
 
@@ -112,7 +116,11 @@ export default function EventManagePage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="text-red-600">Failed to load event</p>
+        error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="text-red-600">이벤트 정보를 불러올 수 없습니다.</p>
+        )
       ) : myRole ? (
         <>
           {isClosed && (
@@ -129,6 +137,7 @@ export default function EventManagePage() {
                 value={name}
                 onChange={(e) => { setName(e.target.value); setSaveSuccess(false) }}
                 required
+                maxLength={100}
                 className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
               />
             </div>
@@ -137,7 +146,16 @@ export default function EventManagePage() {
               <label className="block font-bold mb-1.5 text-sm">이벤트 타입</label>
               <select
                 value={eventType}
-                onChange={(e) => { setEventType(e.target.value as EventType); setSaveSuccess(false) }}
+                onChange={(e) => {
+                  const newType = e.target.value as EventType
+                  if (newType === eventType) return
+                  if (recordCount > 0) {
+                    setPendingEventType(newType)
+                  } else {
+                    setEventType(newType)
+                    setSaveSuccess(false)
+                  }
+                }}
                 className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
               >
                 <option value="regular">일반 이벤트 (regular)</option>
@@ -148,6 +166,22 @@ export default function EventManagePage() {
                   ? '기록이 그룹 랭킹에 합산됩니다.'
                   : '기록이 그룹 랭킹에 합산되지 않습니다. (연습전, 이벤트전 등)'}
               </p>
+              <ConfirmModal
+                open={pendingEventType != null}
+                title="이벤트 타입 변경"
+                description={
+                  pendingEventType === 'independent'
+                    ? `기존 ${recordCount}건의 기록이 그룹 랭킹에서 제외됩니다. 변경하시겠습니까?`
+                    : `기존 ${recordCount}건의 기록이 그룹 랭킹에 합산됩니다. 변경하시겠습니까?`
+                }
+                confirmLabel="변경"
+                onConfirm={() => {
+                  setEventType(pendingEventType!)
+                  setPendingEventType(null)
+                  setSaveSuccess(false)
+                }}
+                onCancel={() => setPendingEventType(null)}
+              />
             </div>
 
             <div>

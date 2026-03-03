@@ -43,14 +43,47 @@ async def test_get_group_success(client: AsyncClient) -> None:
     create_r = await client.post("/api/groups", json=_GROUP_PAYLOAD, headers=headers)
     group_id = create_r.json()["id"]
 
-    r = await client.get(f"/api/groups/{group_id}")
+    r = await client.get(f"/api/groups/{group_id}", headers=headers)
     assert r.status_code == 200
     assert r.json()["id"] == group_id
 
 
 async def test_get_group_not_found(client: AsyncClient) -> None:
-    r = await client.get("/api/groups/99999")
+    headers = await _login(client, "owner")
+    r = await client.get("/api/groups/99999", headers=headers)
     assert r.status_code == 404
+
+
+async def test_get_group_unauthorized(client: AsyncClient) -> None:
+    r = await client.get("/api/groups/1")
+    assert r.status_code == 401
+
+
+async def test_get_private_group_non_member_forbidden(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    other_headers = await _login(client, "other")
+    private_payload = {**_GROUP_PAYLOAD, "join_policy": "private"}
+    create_r = await client.post(
+        "/api/groups", json=private_payload, headers=owner_headers
+    )
+    group_id = create_r.json()["id"]
+
+    r = await client.get(f"/api/groups/{group_id}", headers=other_headers)
+    assert r.status_code == 403
+
+
+async def test_get_private_group_member_allowed(client: AsyncClient) -> None:
+    owner_headers = await _login(client, "owner")
+    create_r = await client.post(
+        "/api/groups",
+        json={**_GROUP_PAYLOAD, "join_policy": "private"},
+        headers=owner_headers,
+    )
+    group_id = create_r.json()["id"]
+
+    r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
+    assert r.status_code == 200
+    assert r.json()["id"] == group_id
 
 
 async def test_join_public_group(client: AsyncClient) -> None:
@@ -247,7 +280,7 @@ async def test_remove_member(client: AsyncClient) -> None:
     await client.post(f"/api/groups/{group_id}/join", headers=member_auth)
 
     # Get member user id from group detail
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     member_id = next(m["id"] for m in members if m["username"] == "member")
 
@@ -267,7 +300,7 @@ async def test_update_member_role(client: AsyncClient) -> None:
     group_id = create_r.json()["id"]
     await client.post(f"/api/groups/{group_id}/join", headers=member_auth)
 
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     member_id = next(m["id"] for m in members if m["username"] == "member")
 
@@ -299,7 +332,7 @@ async def test_join_group_with_nickname(client: AsyncClient) -> None:
     assert r.status_code == 200
 
     # Check nickname in group detail
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     member_info = next(m for m in members if m["username"] == "member")
     assert member_info["nickname"] == "MJ프로"
@@ -350,7 +383,7 @@ async def test_join_by_invite_with_nickname(client: AsyncClient) -> None:
     )
     assert r.status_code == 200
 
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     member_info = next(m for m in members if m["username"] == "member")
     assert member_info["nickname"] == "InvitedNick"
@@ -365,7 +398,7 @@ async def test_update_member_nickname(client: AsyncClient) -> None:
     group_id = create_r.json()["id"]
     await client.post(f"/api/groups/{group_id}/join", headers=member_headers)
 
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     member_id = next(m["id"] for m in members if m["username"] == "member")
 
@@ -397,7 +430,7 @@ async def test_update_nickname_duplicate_conflict(
     )
     await client.post(f"/api/groups/{group_id}/join", headers=m2_headers)
 
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     m2_id = next(m["id"] for m in members if m["username"] == "member2")
 
@@ -418,7 +451,7 @@ async def test_update_nickname_by_owner(client: AsyncClient) -> None:
     group_id = create_r.json()["id"]
     await client.post(f"/api/groups/{group_id}/join", headers=member_headers)
 
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     member_id = next(m["id"] for m in members if m["username"] == "member")
 
@@ -444,7 +477,7 @@ async def test_update_nickname_by_non_member_forbidden(
     group_id = create_r.json()["id"]
     await client.post(f"/api/groups/{group_id}/join", headers=member_headers)
 
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     member_id = next(m["id"] for m in members if m["username"] == "member")
 
@@ -476,7 +509,7 @@ async def test_member_info_includes_user_nickname(
     group_id = create_r.json()["id"]
     await client.post(f"/api/groups/{group_id}/join", headers=member_headers)
 
-    detail_r = await client.get(f"/api/groups/{group_id}")
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     members = detail_r.json()["members"]
     member_info = next(m for m in members if m["username"] == "member")
     assert member_info["user_nickname"] == "GlobalNick"

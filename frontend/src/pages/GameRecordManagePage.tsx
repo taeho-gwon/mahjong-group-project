@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import ConfirmModal from '../components/ConfirmModal'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useGroupGameRecords } from '../hooks/useGroupGameRecords'
 import { useEvents } from '../hooks/useEvents'
 import { useMe } from '../hooks/useMe'
-import { deleteGameRecord } from '../api/gameRecords'
+import { useDeleteGameRecord } from '../hooks/mutations/useDeleteGameRecord'
 import { getDisplayName } from '../api/groups'
 import { ApiError } from '../api/errors'
 
@@ -17,20 +15,12 @@ export default function GameRecordManagePage() {
   const navigate = useNavigate()
   const id = groupId ? Number(groupId) : undefined
 
-  const { data: group, isLoading: loadingGroup } = useGroupDetail(id)
+  const { data: group, isLoading: loadingGroup, isError, error } = useGroupDetail(id)
   const { data: me } = useMe()
   const { data: records = [], isLoading: loadingRecords } = useGroupGameRecords(id)
   const { data: events = [] } = useEvents(id)
 
-  const queryClient = useQueryClient()
-  const deleteMutation = useMutation({
-    mutationFn: (recordId: number) => deleteGameRecord(recordId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gameRecords', 'group', id] })
-      toast.success('게임 기록이 삭제됐습니다')
-    },
-    onError: (err: Error) => toast.error(err instanceof ApiError ? err.message : '오류가 발생했습니다'),
-  })
+  const deleteMutation = useDeleteGameRecord(id, undefined)
 
   const myRole = group && me ? (group.members.find((m) => m.id === me.id)?.role ?? null) : null
   const isAuthorized = myRole === 'owner' || myRole === 'admin'
@@ -63,6 +53,12 @@ export default function GameRecordManagePage() {
 
       {isLoading ? (
         <Spinner />
+      ) : isError ? (
+        error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+        )
       ) : !isAuthorized ? (
         <p className="text-red-600">접근 권한이 없습니다. Owner 또는 Admin만 접근할 수 있습니다.</p>
       ) : sortedRecords.length === 0 ? (
@@ -120,7 +116,7 @@ export default function GameRecordManagePage() {
                       disabled={deleteMutation.isPending}
                       className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded disabled:opacity-50"
                     >
-                      삭제
+                      {deleteMutation.isPending ? '삭제 중...' : '삭제'}
                     </button>
                   </td>
                 </tr>

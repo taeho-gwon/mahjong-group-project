@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useEvents } from '../hooks/useEvents'
 import { useMe } from '../hooks/useMe'
 import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
 import { getDisplayName } from '../api/groups'
+import { ApiError } from '../api/errors'
 import ConfirmModal from '../components/ConfirmModal'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -19,7 +20,7 @@ export default function GroupDetailPage() {
   const navigate = useNavigate()
   const groupId = id ? Number(id) : undefined
 
-  const { data: group, isLoading, isError } = useGroupDetail(groupId)
+  const { data: group, isLoading, isError, error } = useGroupDetail(groupId)
   const { data: events = [] } = useEvents(groupId)
   const { data: user } = useMe()
   const leaveGroupMutation = useLeaveGroup(groupId!)
@@ -67,7 +68,13 @@ export default function GroupDetailPage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+        error instanceof ApiError && error.isForbidden ? (
+          <Navigate to="/forbidden" replace />
+        ) : error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+        )
       ) : group ? (
         <>
           {/* Group Info */}

@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useEvents } from '../hooks/useEvents'
 import { useGroupGameRecords } from '../hooks/useGroupGameRecords'
 import { getDisplayName } from '../api/groups'
+import { ApiError } from '../api/errors'
 import type { EventResponse } from '../api/events'
 import type { GameRecordResponse } from '../api/gameRecords'
 
@@ -143,7 +144,7 @@ export default function GroupRankingPage() {
   const navigate = useNavigate()
   const groupId = id ? Number(id) : undefined
 
-  const { data: group, isLoading: groupLoading } = useGroupDetail(groupId)
+  const { data: group, isLoading: groupLoading, isError, error } = useGroupDetail(groupId)
   const { data: events = [] } = useEvents(groupId)
   const { data: allRecords = [], isLoading: recordsLoading } = useGroupGameRecords(groupId)
 
@@ -211,6 +212,12 @@ export default function GroupRankingPage() {
 
       {isLoading ? (
         <Spinner />
+      ) : isError ? (
+        error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+        )
       ) : (
         <>
           <div className="flex gap-1.5 mb-4">

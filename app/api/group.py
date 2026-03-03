@@ -60,9 +60,10 @@ async def join_by_invite(
 @router.get("/{group_id}", response_model=GroupDetailResponse)
 async def get_group(
     group_id: int,
+    current_user: User = Depends(get_current_user),
     group_service: GroupService = Depends(get_group_service),
 ) -> GroupDetailResponse:
-    return await group_service.get_group_detail(group_id)
+    return await group_service.get_group_detail(group_id, current_user.id)
 
 
 @router.put("/{group_id}", response_model=GroupResponse)

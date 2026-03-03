@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import type { MemberInfo } from '../api/groups'
 import { getDisplayName } from '../api/groups'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useEvents } from '../hooks/useEvents'
 import { useCreateGameRecord } from '../hooks/mutations/useCreateGameRecord'
+import { ApiError } from '../api/errors'
 
 const POSITIONS = [
   { key: 'east', label: '동' },
@@ -31,16 +32,16 @@ export default function GameRecordCreatePage() {
   const navigate = useNavigate()
   const groupId = id ? Number(id) : undefined
 
-  const { data: group, isLoading } = useGroupDetail(groupId)
+  const { data: group, isLoading, isError, error } = useGroupDetail(groupId)
   const { data: events = [] } = useEvents(groupId)
 
   const members: MemberInfo[] = group?.members ?? []
   const selectableEvents = events.filter((c) => !c.is_closed)
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
 
-  const createGameRecordMutation = useCreateGameRecord(selectedEventId)
+  const createGameRecordMutation = useCreateGameRecord(groupId, selectedEventId)
 
-  const [error, setError] = useState('')
+  const [formError, setFormError] = useState('')
   const [positions, setPositions] = useState<Record<Position, PositionState>>({
     east: initPosition(),
     south: initPosition(),
@@ -80,15 +81,15 @@ export default function GameRecordCreatePage() {
     const north = positions.north
 
     if (!east.playerId || !south.playerId || !west.playerId || !north.playerId) {
-      setError('모든 포지션에 플레이어를 선택하세요.')
+      setFormError('모든 포지션에 플레이어를 선택하세요.')
       return
     }
     if (!east.point || !south.point || !west.point || !north.point) {
-      setError('모든 포지션의 점수를 입력하세요.')
+      setFormError('모든 포지션의 점수를 입력하세요.')
       return
     }
 
-    setError('')
+    setFormError('')
     try {
       await createGameRecordMutation.mutateAsync({
         east_player_id: east.playerId,
@@ -104,7 +105,7 @@ export default function GameRecordCreatePage() {
       })
       navigate(`/groups/${id}`)
     } catch {
-      setError('게임 기록 등록에 실패했습니다.')
+      // handled by mutation hook
     }
   }
 
@@ -122,9 +123,15 @@ export default function GameRecordCreatePage() {
 
       {isLoading ? (
         <Spinner />
+      ) : isError ? (
+        error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+        )
       ) : (
         <>
-          {error && <p className="text-red-600 mb-4">{error}</p>}
+          {formError && <p className="text-red-600 mb-4">{formError}</p>}
 
           {selectableEvents.length > 0 && (
             <div className="mb-5">

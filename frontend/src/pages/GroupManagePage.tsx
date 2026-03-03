@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useEvents } from '../hooks/useEvents'
@@ -14,6 +14,7 @@ import { useLeaveGroup } from '../hooks/mutations/useLeaveGroup'
 import { useDeleteGroup } from '../hooks/mutations/useDeleteGroup'
 import { getDisplayName } from '../api/groups'
 import type { RankingType } from '../api/groups'
+import { ApiError } from '../api/errors'
 import ConfirmModal from '../components/ConfirmModal'
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
@@ -29,7 +30,7 @@ export default function GroupManagePage() {
   const navigate = useNavigate()
   const groupId = id ? Number(id) : undefined
 
-  const { data: group, isLoading, isError } = useGroupDetail(groupId)
+  const { data: group, isLoading, isError, error } = useGroupDetail(groupId)
   const { data: events = [] } = useEvents(groupId)
   const { data: me } = useMe()
 
@@ -168,7 +169,11 @@ export default function GroupManagePage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+        error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+        )
       ) : group ? (
         <>
           <h2 className="mt-6 mb-7">모임 관리: {group.name}</h2>
@@ -184,6 +189,7 @@ export default function GroupManagePage() {
                   value={name}
                   onChange={(e) => { setName(e.target.value); setSaveSuccess(false) }}
                   required
+                  maxLength={100}
                   className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
                 />
               </div>
@@ -193,6 +199,7 @@ export default function GroupManagePage() {
                   type="text"
                   value={description}
                   onChange={(e) => { setDescription(e.target.value); setSaveSuccess(false) }}
+                  maxLength={500}
                   className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
                 />
               </div>

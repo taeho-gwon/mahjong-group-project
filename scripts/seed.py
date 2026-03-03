@@ -6,12 +6,11 @@ Group A: testuser1  (owner) + testuser1~20
 Group B: testuser11 (owner) + testuser11~30
 
 Events per group:
-  - overall     (event_type=aggregate,    ranking_type=score)
   - 정규 시즌   (event_type=regular,      ranking_type=score)
   - 독립 리그   (event_type=independent,  ranking_type=match_point)
 
 Game records per group:
-  - 10 games  event_id=NULL     (overall에 집계됨)
+  - 10 games  event_id=NULL     (이벤트 미지정)
   - 20 games  event_id=regular
   - 10 games  event_id=independent
 """
@@ -22,9 +21,9 @@ import random
 from sqlalchemy import text
 
 from app.db.session import AsyncSessionLocal
-from app.models.event import Event, EventType, RankingType
+from app.models.event import Event, EventType
 from app.models.game_record import GameRecord
-from app.models.group import Group, GroupMember, JoinPolicy, MemberRole
+from app.models.group import Group, GroupMember, JoinPolicy, MemberRole, RankingType
 from app.models.user import User
 from app.utils.security import hash_password
 
@@ -104,13 +103,6 @@ async def setup_group(
     print(f"  Created '{name}' (id={group.id}), {len(members)} members")
 
     # Events
-    overall = Event(
-        name="전체 랭킹",
-        group_id=group.id,
-        created_by_id=owner.id,
-        event_type=EventType.aggregate,
-        ranking_type=RankingType.score,
-    )
     regular = Event(
         name="정규 시즌",
         group_id=group.id,
@@ -125,15 +117,15 @@ async def setup_group(
         event_type=EventType.independent,
         ranking_type=RankingType.match_point,
     )
-    db.add_all([overall, regular, indep])
+    db.add_all([regular, indep])
     await db.commit()
-    for c in [overall, regular, indep]:
+    for c in [regular, indep]:
         await db.refresh(c)
-    print(f"    Events: overall(id={overall.id}), regular(id={regular.id}), indep(id={indep.id})")
+    print(f"    Events: regular(id={regular.id}), indep(id={indep.id})")
 
     # Game records
     records = (
-        make_records(group, members, owner, None,        10) +  # null (overall 집계)
+        make_records(group, members, owner, None,        10) +  # 이벤트 미지정
         make_records(group, members, owner, regular.id,  20) +  # regular
         make_records(group, members, owner, indep.id,    10)    # independent
     )
@@ -147,6 +139,7 @@ async def main() -> None:
         # 1. Clear all
         await db.execute(text("DELETE FROM game_records"))
         await db.execute(text("DELETE FROM events"))
+        await db.execute(text("DELETE FROM announcements"))
         await db.execute(text("DELETE FROM group_members"))
         await db.execute(text("DELETE FROM groups"))
         await db.execute(text("DELETE FROM users"))

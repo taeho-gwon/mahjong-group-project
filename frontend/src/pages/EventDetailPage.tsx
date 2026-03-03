@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useEvent } from '../hooks/useEvent'
 import { useEventGameRecords } from '../hooks/useEventGameRecords'
@@ -7,6 +7,7 @@ import { useMe } from '../hooks/useMe'
 import type { EventResponse } from '../api/events'
 import type { GameRecordResponse } from '../api/gameRecords'
 import { getDisplayName } from '../api/groups'
+import { ApiError } from '../api/errors'
 
 interface RankingEntry {
   id: number
@@ -62,7 +63,7 @@ export default function EventDetailPage() {
   const navigate = useNavigate()
   const id = eventId ? Number(eventId) : undefined
 
-  const { data: event, isLoading, isError } = useEvent(id)
+  const { data: event, isLoading, isError, error } = useEvent(id)
   const { data: records = [] } = useEventGameRecords(id)
   const { data: group } = useGroupDetail(event?.group_id ?? undefined)
   const { data: user } = useMe()
@@ -96,7 +97,11 @@ export default function EventDetailPage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="text-red-600">Failed to load event</p>
+        error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="text-red-600">이벤트 정보를 불러올 수 없습니다.</p>
+        )
       ) : event ? (
         <>
           <section className="mb-6">

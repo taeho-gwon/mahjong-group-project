@@ -61,6 +61,7 @@ export default function GroupCreatePage() {
           value={groupName}
           onChange={(e) => setGroupName(e.target.value)}
           required
+          maxLength={100}
           className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
         <input
@@ -68,6 +69,7 @@ export default function GroupCreatePage() {
           placeholder="설명 (선택)"
           value={groupDesc}
           onChange={(e) => setGroupDesc(e.target.value)}
+          maxLength={500}
           className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
         <div className="flex gap-4 text-sm items-center">

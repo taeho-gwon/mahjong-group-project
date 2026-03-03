@@ -55,3 +55,4 @@
 | `2026-03-01-rename-overall-to-aggregate.md` | ContestType overall→aggregate + 기간 필드 | 2026-03-01 |
 | `2026-03-03-separate-ranking-from-events.md` | 랭킹 집계를 Event에서 분리, Group 설정으로 이동 | 2026-03-03 |
 | `2026-03-03-nickname-feature.md` | 닉네임 기능 (글로벌 + 그룹별, 그룹 내 유니크) | 2026-03-03 |
+| `2026-03-03-rbac-refinement.md` | 역할별 권한 정비 (그룹 조회, 이벤트 생성/수정/삭제) | 2026-03-03 |

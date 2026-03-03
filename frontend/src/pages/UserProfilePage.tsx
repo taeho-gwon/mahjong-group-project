@@ -1,7 +1,8 @@
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useUserProfile } from '../hooks/useUserProfile'
 import { useMe } from '../hooks/useMe'
+import { ApiError } from '../api/errors'
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>()
@@ -9,7 +10,7 @@ export default function UserProfilePage() {
   const id = userId ? Number(userId) : undefined
 
   const { data: me } = useMe()
-  const { data: profile, isLoading, isError } = useUserProfile(id)
+  const { data: profile, isLoading, isError, error } = useUserProfile(id)
 
   if (me && id === me.id) {
     return (
@@ -34,7 +35,11 @@ export default function UserProfilePage() {
       {isLoading ? (
         <Spinner />
       ) : isError ? (
-        <p className="mt-6 text-red-600">유저 정보를 불러올 수 없습니다.</p>
+        error instanceof ApiError && error.isNotFound ? (
+          <Navigate to="/not-found" replace />
+        ) : (
+          <p className="mt-6 text-red-600">유저 정보를 불러올 수 없습니다.</p>
+        )
       ) : profile ? (
         <>
           <section className="mt-6 mb-8">

@@ -23,6 +23,7 @@ class EventUpdate(BaseModel):
     name: str | None = Field(None, max_length=EVENT_NAME_MAX_LENGTH)
     group_id: int | None = None
     ranking_type: RankingType | None = None
+    event_type: EventType | None = None
     uma_1st: int | None = None
     uma_2nd: int | None = None
     uma_3rd: int | None = None

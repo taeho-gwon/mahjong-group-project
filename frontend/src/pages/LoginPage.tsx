@@ -38,6 +38,7 @@ export default function LoginPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
+          maxLength={50}
           className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
         <input
@@ -46,6 +47,7 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          maxLength={100}
           className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
         />
         {error && <p className="text-red-600 m-0 text-sm">{error}</p>}

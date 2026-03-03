@@ -14,7 +14,23 @@ class EventService:
         self.event_repo = event_repo
         self.group_repo = group_repo
 
+    async def _require_owner_or_admin(
+        self, group_id: int | None, user_id: int
+    ) -> None:
+        if group_id is None:
+            return
+        member = await self.group_repo.get_member(group_id, user_id)
+        if member is None or member.role not in (
+            MemberRole.owner,
+            MemberRole.admin,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only group owner or admin can perform this action",
+            )
+
     async def create_event(self, user_id: int, data: EventCreate) -> Event:
+        await self._require_owner_or_admin(data.group_id, user_id)
         return await self.event_repo.create(user_id, data)
 
     async def _require_group_member(
@@ -83,20 +99,11 @@ class EventService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot update a closed event",
             )
-        if event.created_by_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the event creator can update it",
-            )
+        await self._require_owner_or_admin(event.group_id, user_id)
         update_data = data.model_dump(exclude_unset=True)
-        update_data.pop("event_type", None)
         return await self.event_repo.update(event, update_data)
 
     async def delete_event(self, event_id: int, user_id: int) -> None:
         event = await self._get_event(event_id)
-        if event.created_by_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the event creator can delete it",
-            )
+        await self._require_owner_or_admin(event.group_id, user_id)
         await self.event_repo.delete(event)

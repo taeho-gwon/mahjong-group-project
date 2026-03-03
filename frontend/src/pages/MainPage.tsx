@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { usePublicGroups } from '../hooks/usePublicGroups'
 import { useMyGroups } from '../hooks/useMyGroups'
@@ -11,9 +11,7 @@ const PAGE_SIZE = 10
 
 export default function MainPage() {
   const [page, setPage] = useState(1)
-  const navigate = useNavigate()
   const accessToken = useAuthStore((s) => s.accessToken)
-  const clearTokens = useAuthStore((s) => s.clearTokens)
   const { data, isLoading, isError } = usePublicGroups(page)
   const { data: myGroups } = useMyGroups()
   const joinGroupMutation = useJoinGroup()
@@ -24,22 +22,9 @@ export default function MainPage() {
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  function handleLogout() {
-    clearTokens()
-    navigate('/login')
-  }
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="m-0 text-xl font-bold">마작 모임</h1>
-        <nav className="flex gap-3 items-center">
-          <Link to="/mypage" className="text-sm">마이페이지</Link>
-          <button onClick={handleLogout} className="px-2.5 py-1 text-sm cursor-pointer">
-            Logout
-          </button>
-        </nav>
-      </header>
+      <h1 className="mt-0 mb-6 text-xl font-bold">공개 모임</h1>
 
       {isLoading ? (
         <Spinner />
