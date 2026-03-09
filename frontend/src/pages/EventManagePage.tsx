@@ -138,12 +138,12 @@ export default function EventManagePage() {
         error instanceof ApiError && error.isNotFound ? (
           <Navigate to="/not-found" replace />
         ) : (
-          <p className="text-red-600">이벤트 정보를 불러올 수 없습니다.</p>
+          <p className="text-red-600 dark:text-red-400">이벤트 정보를 불러올 수 없습니다.</p>
         )
       ) : myRole ? (
         <>
           {isClosed && (
-            <div className="bg-gray-100 text-gray-600 text-sm px-4 py-3 rounded-md mb-6">
+            <div className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm px-4 py-3 rounded-md mb-6">
               이 이벤트는 마감되었습니다. 수정할 수 없습니다.
             </div>
           )}
@@ -157,7 +157,7 @@ export default function EventManagePage() {
                 onChange={(e) => { setName(e.target.value); setSaveSuccess(false) }}
                 required
                 maxLength={100}
-                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
               />
             </div>
 
@@ -175,12 +175,12 @@ export default function EventManagePage() {
                     setSaveSuccess(false)
                   }
                 }}
-                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
               >
                 <option value="regular">일반 이벤트 (regular)</option>
                 <option value="independent">독립 이벤트 (independent)</option>
               </select>
-              <p className="mt-1.5 mb-0 text-xs text-gray-500">
+              <p className="mt-1.5 mb-0 text-xs text-gray-500 dark:text-gray-400">
                 {eventType === 'regular'
                   ? '기록이 그룹 랭킹에 합산됩니다.'
                   : '기록이 그룹 랭킹에 합산되지 않습니다. (연습전, 이벤트전 등)'}
@@ -208,7 +208,7 @@ export default function EventManagePage() {
               <select
                 value={rankingType}
                 onChange={(e) => { setRankingType(e.target.value as RankingType); setSaveSuccess(false) }}
-                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
               >
                 <option value="score">점수 합산 (score)</option>
                 <option value="match_point">승점 (match_point)</option>
@@ -218,20 +218,20 @@ export default function EventManagePage() {
             <div>
               <label className="block font-bold mb-1.5 text-sm">
                 우마{' '}
-                <span className={`font-normal text-[13px] ${umaSum === 0 ? 'text-green-700' : 'text-red-600'}`}>
+                <span className={`font-normal text-[13px] ${umaSum === 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   (합계: {umaSum > 0 ? '+' : ''}{umaSum})
                 </span>
               </label>
               <div className="grid grid-cols-4 gap-2">
                 {(['uma_1st', 'uma_2nd', 'uma_3rd', 'uma_4th'] as const).map((key, idx) => (
                   <div key={key}>
-                    <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">{idx + 1}위</div>
                     <input
                       type="text"
                       inputMode="numeric"
                       value={uma[key]}
                       onChange={(e) => { setUma((prev) => ({ ...prev, [key]: e.target.value })); setSaveSuccess(false) }}
-                      className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                      className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full text-center"
                     />
                   </div>
                 ))}
@@ -244,13 +244,13 @@ export default function EventManagePage() {
                 <div className="grid grid-cols-4 gap-2">
                   {(['scoring_1st', 'scoring_2nd', 'scoring_3rd', 'scoring_4th'] as const).map((key, idx) => (
                     <div key={key}>
-                      <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">{idx + 1}위</div>
                       <input
                         type="text"
                         inputMode="numeric"
                         value={scoring[key]}
                         onChange={(e) => { setScoring((prev) => ({ ...prev, [key]: e.target.value })); setSaveSuccess(false) }}
-                        className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                        className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full text-center"
                       />
                     </div>
                   ))}
@@ -258,8 +258,8 @@ export default function EventManagePage() {
               </div>
             )}
 
-            {saveError && <p className="text-red-600 m-0 text-sm">{saveError}</p>}
-            {saveSuccess && <p className="text-green-700 m-0 text-sm">저장되었습니다.</p>}
+            {saveError && <p className="text-red-600 dark:text-red-400 m-0 text-sm">{saveError}</p>}
+            {saveSuccess && <p className="text-green-700 dark:text-green-400 m-0 text-sm">저장되었습니다.</p>}
 
             <button
               type="submit"
@@ -273,16 +273,16 @@ export default function EventManagePage() {
 
           {(canDelete || !isClosed) && (
             <>
-              <hr className="my-10 border-gray-100" />
+              <hr className="my-10 border-gray-100 dark:border-gray-800" />
 
               <div>
-                <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
+                <h3 className="mt-0 mb-3 text-base text-red-600 dark:text-red-400">위험 구역</h3>
                 <div className="flex gap-3">
                   {!isClosed && (
                     <button
                       onClick={() => setShowCloseModal(true)}
                       disabled={closeEventMutation.isPending}
-                      className="px-5 py-2 text-sm cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
+                      className="px-5 py-2 text-sm cursor-pointer text-red-600 dark:text-red-400 border border-red-600 dark:border-red-500 rounded bg-transparent"
                     >
                       {closeEventMutation.isPending ? '마감 중...' : '이벤트 마감'}
                     </button>
@@ -291,7 +291,7 @@ export default function EventManagePage() {
                     <button
                       onClick={() => setShowDeleteModal(true)}
                       disabled={deleteEventMutation.isPending}
-                      className="px-5 py-2 text-sm cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
+                      className="px-5 py-2 text-sm cursor-pointer text-red-600 dark:text-red-400 border border-red-600 dark:border-red-500 rounded bg-transparent"
                     >
                       {deleteEventMutation.isPending ? '삭제 중...' : '이벤트 삭제'}
                     </button>

@@ -80,6 +80,16 @@ class GroupRepository(BaseRepository):
         await self.db.delete(group)
         await self.db.commit()
 
+    async def get_member_user_ids(self, group_id: int, user_ids: list[int]) -> set[int]:
+        """Return the subset of user_ids that are members of the group."""
+        result = await self.db.execute(
+            select(GroupMember.user_id).where(
+                GroupMember.group_id == group_id,
+                GroupMember.user_id.in_(user_ids),
+            )
+        )
+        return set(result.scalars().all())
+
     async def get_member(self, group_id: int, user_id: int) -> GroupMember | None:
         result = await self.db.execute(
             select(GroupMember).where(

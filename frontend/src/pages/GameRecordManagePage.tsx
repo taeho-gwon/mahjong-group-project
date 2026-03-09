@@ -57,17 +57,17 @@ export default function GameRecordManagePage() {
         error instanceof ApiError && error.isNotFound ? (
           <Navigate to="/not-found" replace />
         ) : (
-          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+          <p className="mt-6 text-red-600 dark:text-red-400">모임 정보를 불러올 수 없습니다.</p>
         )
       ) : !isAuthorized ? (
-        <p className="text-red-600">접근 권한이 없습니다. Owner 또는 Admin만 접근할 수 있습니다.</p>
+        <p className="text-red-600 dark:text-red-400">접근 권한이 없습니다. Owner 또는 Admin만 접근할 수 있습니다.</p>
       ) : sortedRecords.length === 0 ? (
-        <p className="text-sm text-gray-400">아직 게임 기록이 없습니다.</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500">아직 게임 기록이 없습니다.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b-2 border-gray-300 text-gray-600 text-[13px]">
+              <tr className="border-b-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-[13px]">
                 <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
                 <th className="px-2.5 py-2 text-left whitespace-nowrap">날짜</th>
                 <th className="px-2.5 py-2 text-left whitespace-nowrap">이벤트</th>
@@ -81,14 +81,14 @@ export default function GameRecordManagePage() {
             </thead>
             <tbody>
               {sortedRecords.map((rec) => (
-                <tr key={rec.id} className="border-b border-gray-100">
-                  <td className="px-2.5 py-2.5 align-middle text-center whitespace-nowrap text-xs text-gray-400 font-mono">
+                <tr key={rec.id} className="border-b border-gray-100 dark:border-gray-800">
+                  <td className="px-2.5 py-2.5 align-middle text-center whitespace-nowrap text-xs text-gray-400 dark:text-gray-500 font-mono">
                     {rec.id}
                   </td>
-                  <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600">
+                  <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
                     {new Date(rec.played_at).toLocaleDateString()}
                   </td>
-                  <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600">
+                  <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
                     {rec.event_id ? (eventMap.get(rec.event_id) ?? `#${rec.event_id}`) : '전체 (미지정)'}
                   </td>
                   {[
@@ -99,13 +99,13 @@ export default function GameRecordManagePage() {
                   ].map(({ player, point }, i) => (
                     <td key={i} className="px-2.5 py-2.5 align-middle text-center">
                       <div className="font-medium">{nameMap.get(player.id) ?? player.username}</div>
-                      <div className="text-xs text-gray-500">{point.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{point.toLocaleString()}</div>
                     </td>
                   ))}
                   <td className="px-2.5 py-2.5 align-middle text-center">
                     <button
                       onClick={() => navigate(`/game-records/${rec.id}/edit`)}
-                      className="text-xs px-2 py-0.5 cursor-pointer bg-transparent border border-gray-400 rounded"
+                      className="text-xs px-2 py-0.5 cursor-pointer bg-transparent border border-gray-400 dark:border-gray-500 rounded dark:text-gray-300"
                     >
                       수정
                     </button>
@@ -114,7 +114,7 @@ export default function GameRecordManagePage() {
                     <button
                       onClick={() => setDeleteTargetId(rec.id)}
                       disabled={deleteMutation.isPending}
-                      className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded disabled:opacity-50"
+                      className="text-xs px-2 py-0.5 cursor-pointer text-red-600 dark:text-red-400 bg-transparent border border-red-600 dark:border-red-500 rounded disabled:opacity-50"
                     >
                       {deleteMutation.isPending ? '삭제 중...' : '삭제'}
                     </button>

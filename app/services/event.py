@@ -14,9 +14,7 @@ class EventService:
         self.event_repo = event_repo
         self.group_repo = group_repo
 
-    async def _require_owner_or_admin(
-        self, group_id: int | None, user_id: int
-    ) -> None:
+    async def _require_owner_or_admin(self, group_id: int | None, user_id: int) -> None:
         if group_id is None:
             return
         member = await self.group_repo.get_member(group_id, user_id)
@@ -33,9 +31,7 @@ class EventService:
         await self._require_owner_or_admin(data.group_id, user_id)
         return await self.event_repo.create(user_id, data)
 
-    async def _require_group_member(
-        self, group_id: int | None, user_id: int
-    ) -> None:
+    async def _require_group_member(self, group_id: int | None, user_id: int) -> None:
         if group_id is None:
             return
         member = await self.group_repo.get_member(group_id, user_id)
@@ -66,9 +62,7 @@ class EventService:
         offset = (page - 1) * size
         items = await self.event_repo.list_by_group(group_id, offset, size)
         total = await self.event_repo.count_by_group(group_id)
-        return PaginatedEventResponse(
-            items=items, total=total, page=page, size=size
-        )
+        return PaginatedEventResponse(items=items, total=total, page=page, size=size)
 
     async def close_event(self, event_id: int, user_id: int) -> Event:
         event = await self._get_event(event_id)

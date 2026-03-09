@@ -140,3 +140,29 @@ async def test_update_me_clear_nickname(
     )
     assert r.status_code == 200
     assert r.json()["nickname"] is None
+
+
+async def test_register_rate_limit(client: AsyncClient) -> None:
+    for i in range(5):
+        await client.post(
+            "/api/auth/register",
+            json={"username": f"user{i}", "password": "password123"},
+        )
+    # 6th request should be rate limited
+    r = await client.post(
+        "/api/auth/register",
+        json={"username": "user5", "password": "password123"},
+    )
+    assert r.status_code == 429
+
+
+async def test_login_rate_limit(client: AsyncClient, registered_user: dict) -> None:
+    for _ in range(10):
+        await client.post(
+            "/api/auth/login", json={"username": "alice", "password": "wrong"}
+        )
+    # 11th request should be rate limited
+    r = await client.post(
+        "/api/auth/login", json={"username": "alice", "password": "password123"}
+    )
+    assert r.status_code == 429

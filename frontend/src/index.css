@@ -1,1 +1,34 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.dark body,
+body:where(.dark *) {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Dark mode form elements */
+.dark input:not([type="radio"]):not([type="checkbox"]),
+.dark select,
+.dark textarea {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+.dark select option {
+  background-color: #1e293b;
+}

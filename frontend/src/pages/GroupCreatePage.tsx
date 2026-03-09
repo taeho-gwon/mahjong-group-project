@@ -77,7 +77,7 @@ export default function GroupCreatePage() {
           onChange={(e) => setGroupName(e.target.value)}
           required
           maxLength={100}
-          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
+          className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm"
         />
         <input
           type="text"
@@ -85,10 +85,10 @@ export default function GroupCreatePage() {
           value={groupDesc}
           onChange={(e) => setGroupDesc(e.target.value)}
           maxLength={500}
-          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
+          className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm"
         />
         <div className="flex gap-4 text-sm items-center">
-          <span className="text-gray-600">가입 정책:</span>
+          <span className="text-gray-600 dark:text-gray-400">가입 정책:</span>
           <label className="cursor-pointer">
             <input
               type="radio"
@@ -114,11 +114,11 @@ export default function GroupCreatePage() {
         </div>
 
         <div>
-          <label className="block text-[13px] text-gray-600 mb-1">주간 랭킹 시작 요일</label>
+          <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">주간 랭킹 시작 요일</label>
           <select
             value={weeklyStartDay}
             onChange={(e) => setWeeklyStartDay(Number(e.target.value))}
-            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+            className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
           >
             {WEEKDAYS.map((day, idx) => (
               <option key={idx} value={idx}>{day}요일</option>
@@ -127,11 +127,11 @@ export default function GroupCreatePage() {
         </div>
 
         <div>
-          <label className="block text-[13px] text-gray-600 mb-1">월간 랭킹 시작일</label>
+          <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">월간 랭킹 시작일</label>
           <select
             value={monthlyStartDay}
             onChange={(e) => setMonthlyStartDay(Number(e.target.value))}
-            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+            className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
           >
             {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
               <option key={d} value={d}>{d}일</option>
@@ -140,11 +140,11 @@ export default function GroupCreatePage() {
         </div>
 
         <div>
-          <label className="block text-[13px] text-gray-600 mb-1">기본 랭킹 방식</label>
+          <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">기본 랭킹 방식</label>
           <select
             value={rankingType}
             onChange={(e) => setRankingType(e.target.value as RankingType)}
-            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+            className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
           >
             <option value="score">점수 합산 (score)</option>
             <option value="match_point">승점 (match_point)</option>
@@ -152,22 +152,22 @@ export default function GroupCreatePage() {
         </div>
 
         <div>
-          <label className="block text-[13px] text-gray-600 mb-1">
+          <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">
             기본 우마{' '}
-            <span className={`font-normal ${umaSum === 0 ? 'text-green-700' : 'text-red-600'}`}>
+            <span className={`font-normal ${umaSum === 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
               (합계: {umaSum > 0 ? '+' : ''}{umaSum})
             </span>
           </label>
           <div className="grid grid-cols-4 gap-2">
             {(['default_uma_1st', 'default_uma_2nd', 'default_uma_3rd', 'default_uma_4th'] as const).map((key, idx) => (
               <div key={key}>
-                <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">{idx + 1}위</div>
                 <input
                   type="text"
                   inputMode="numeric"
                   value={uma[key]}
                   onChange={(e) => setUma((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                  className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full text-center"
                 />
               </div>
             ))}
@@ -176,17 +176,17 @@ export default function GroupCreatePage() {
 
         {rankingType === 'match_point' && (
           <div>
-            <label className="block text-[13px] text-gray-600 mb-1">기본 승점 배점</label>
+            <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">기본 승점 배점</label>
             <div className="grid grid-cols-4 gap-2">
               {(['default_scoring_1st', 'default_scoring_2nd', 'default_scoring_3rd', 'default_scoring_4th'] as const).map((key, idx) => (
                 <div key={key}>
-                  <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">{idx + 1}위</div>
                   <input
                     type="text"
                     inputMode="numeric"
                     value={scoring[key]}
                     onChange={(e) => setScoring((prev) => ({ ...prev, [key]: e.target.value }))}
-                    className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                    className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full text-center"
                   />
                 </div>
               ))}
@@ -194,7 +194,7 @@ export default function GroupCreatePage() {
           </div>
         )}
 
-        {createError && <p className="text-red-600 m-0">{createError}</p>}
+        {createError && <p className="text-red-600 dark:text-red-400 m-0">{createError}</p>}
         <button
           type="submit"
           disabled={createGroupMutation.isPending}

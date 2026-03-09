@@ -190,7 +190,7 @@ export default function GroupManagePage() {
         error instanceof ApiError && error.isNotFound ? (
           <Navigate to="/not-found" replace />
         ) : (
-          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+          <p className="mt-6 text-red-600 dark:text-red-400">모임 정보를 불러올 수 없습니다.</p>
         )
       ) : group ? (
         <>
@@ -201,28 +201,28 @@ export default function GroupManagePage() {
             <h3 className="mt-0 mb-4 text-base">모임 설정</h3>
             <form onSubmit={handleSave} className="flex flex-col gap-3">
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1">이름 *</label>
+                <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">이름 *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => { setName(e.target.value); setSaveSuccess(false) }}
                   required
                   maxLength={100}
-                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                  className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
                 />
               </div>
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1">설명</label>
+                <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">설명</label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => { setDescription(e.target.value); setSaveSuccess(false) }}
                   maxLength={500}
-                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                  className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
                 />
               </div>
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1.5">가입 정책</label>
+                <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1.5">가입 정책</label>
                 <div className="flex gap-4 text-sm items-center">
                   <label className="cursor-pointer">
                     <input
@@ -249,11 +249,11 @@ export default function GroupManagePage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1">주간 랭킹 시작 요일</label>
+                <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">주간 랭킹 시작 요일</label>
                 <select
                   value={weeklyStartDay}
                   onChange={(e) => { setWeeklyStartDay(Number(e.target.value)); setSaveSuccess(false) }}
-                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                  className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
                 >
                   {WEEKDAYS.map((day, idx) => (
                     <option key={idx} value={idx}>{day}요일</option>
@@ -261,11 +261,11 @@ export default function GroupManagePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1">월간 랭킹 시작일</label>
+                <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">월간 랭킹 시작일</label>
                 <select
                   value={monthlyStartDay}
                   onChange={(e) => { setMonthlyStartDay(Number(e.target.value)); setSaveSuccess(false) }}
-                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                  className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
                 >
                   {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
                     <option key={d} value={d}>{d}일</option>
@@ -273,33 +273,33 @@ export default function GroupManagePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1">기본 랭킹 방식</label>
+                <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">기본 랭킹 방식</label>
                 <select
                   value={rankingType}
                   onChange={(e) => { setRankingType(e.target.value as RankingType); setSaveSuccess(false) }}
-                  className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                  className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
                 >
                   <option value="score">점수 합산 (score)</option>
                   <option value="match_point">승점 (match_point)</option>
                 </select>
               </div>
               <div>
-                <label className="block text-[13px] text-gray-600 mb-1">
+                <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">
                   기본 우마{' '}
-                  <span className={`font-normal ${umaSum === 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  <span className={`font-normal ${umaSum === 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     (합계: {umaSum > 0 ? '+' : ''}{umaSum})
                   </span>
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {(['default_uma_1st', 'default_uma_2nd', 'default_uma_3rd', 'default_uma_4th'] as const).map((key, idx) => (
                     <div key={key}>
-                      <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">{idx + 1}위</div>
                       <input
                         type="text"
                         inputMode="numeric"
                         value={uma[key]}
                         onChange={(e) => { setUma((prev) => ({ ...prev, [key]: e.target.value })); setSaveSuccess(false) }}
-                        className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                        className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full text-center"
                       />
                     </div>
                   ))}
@@ -307,25 +307,25 @@ export default function GroupManagePage() {
               </div>
               {rankingType === 'match_point' && (
                 <div>
-                  <label className="block text-[13px] text-gray-600 mb-1">기본 승점 배점</label>
+                  <label className="block text-[13px] text-gray-600 dark:text-gray-400 mb-1">기본 승점 배점</label>
                   <div className="grid grid-cols-4 gap-2">
                     {(['default_scoring_1st', 'default_scoring_2nd', 'default_scoring_3rd', 'default_scoring_4th'] as const).map((key, idx) => (
                       <div key={key}>
-                        <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">{idx + 1}위</div>
                         <input
                           type="text"
                           inputMode="numeric"
                           value={scoring[key]}
                           onChange={(e) => { setScoring((prev) => ({ ...prev, [key]: e.target.value })); setSaveSuccess(false) }}
-                          className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                          className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full text-center"
                         />
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              {saveError && <p className="text-red-600 m-0 text-sm">{saveError}</p>}
-              {saveSuccess && <p className="text-green-700 m-0 text-sm">저장되었습니다.</p>}
+              {saveError && <p className="text-red-600 dark:text-red-400 m-0 text-sm">{saveError}</p>}
+              {saveSuccess && <p className="text-green-700 dark:text-green-400 m-0 text-sm">저장되었습니다.</p>}
               <button
                 type="submit"
                 disabled={updateGroupMutation.isPending}
@@ -348,17 +348,17 @@ export default function GroupManagePage() {
               </button>
             </div>
             {events.length === 0 ? (
-              <p className="text-sm text-gray-400 m-0">아직 이벤트가 없습니다.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 m-0">아직 이벤트가 없습니다.</p>
             ) : (
               <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
                 {events.map((c) => (
                   <li
                     key={c.id}
                     onClick={() => navigate(`/events/${c.id}`)}
-                    className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm cursor-pointer"
+                    className="flex justify-between items-center border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm cursor-pointer"
                   >
                     <span>{c.name}</span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
                       {c.ranking_type === 'match_point' ? '승점' : '점수'}
                     </span>
                   </li>
@@ -378,7 +378,7 @@ export default function GroupManagePage() {
                 기록 관리 페이지
               </button>
             </div>
-            <p className="text-sm text-gray-400 m-0">게임 기록 수정 및 삭제는 기록 관리 페이지에서 할 수 있습니다.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 m-0">게임 기록 수정 및 삭제는 기록 관리 페이지에서 할 수 있습니다.</p>
           </section>
 
           {/* Invite Link */}
@@ -394,16 +394,16 @@ export default function GroupManagePage() {
             {inviteUrl && (
               <div className="mt-3 flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 break-all">{inviteUrl}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 break-all">{inviteUrl}</span>
                   <button
                     onClick={handleCopyInvite}
-                    className="shrink-0 text-xs px-2 py-0.5 cursor-pointer border border-gray-400 rounded"
+                    className="shrink-0 text-xs px-2 py-0.5 cursor-pointer border border-gray-400 dark:border-gray-500 rounded dark:text-gray-300"
                   >
                     {copied ? '복사됨!' : '복사'}
                   </button>
                 </div>
                 {inviteExpiresAt && (
-                  <p className="text-xs text-gray-400 m-0">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 m-0">
                     만료: {new Date(inviteExpiresAt).toLocaleString()}
                   </p>
                 )}
@@ -427,11 +427,11 @@ export default function GroupManagePage() {
                 return (
                   <li
                     key={m.id}
-                    className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm"
+                    className="flex justify-between items-center border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm"
                   >
                     <div className="flex flex-col">
                       <span className={isMemberOwner ? 'font-bold' : ''}>
-                        <Link to={`/users/${m.id}`} className="no-underline text-inherit">{getDisplayName(m)}</Link>{isMe && <span className="text-gray-400 text-xs"> (me)</span>}
+                        <Link to={`/users/${m.id}`} className="no-underline text-inherit">{getDisplayName(m)}</Link>{isMe && <span className="text-gray-400 dark:text-gray-500 text-xs"> (me)</span>}
                       </span>
                       {editNicknameUserId === m.id ? (
                         <span className="flex items-center gap-1 mt-1">
@@ -441,7 +441,7 @@ export default function GroupManagePage() {
                             onChange={(e) => setNicknameInput(e.target.value)}
                             maxLength={50}
                             placeholder="닉네임"
-                            className="border border-gray-300 rounded px-1.5 py-0.5 text-xs w-28"
+                            className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-xs w-28"
                           />
                           <button
                             onClick={async () => {
@@ -455,7 +455,7 @@ export default function GroupManagePage() {
                           </button>
                           <button
                             onClick={() => setEditNicknameUserId(null)}
-                            className="text-xs px-1.5 py-0.5 cursor-pointer bg-transparent border border-gray-300 rounded"
+                            className="text-xs px-1.5 py-0.5 cursor-pointer bg-transparent border border-gray-300 dark:border-gray-600 rounded dark:text-gray-300"
                           >
                             취소
                           </button>
@@ -463,28 +463,28 @@ export default function GroupManagePage() {
                       ) : (isMe || myRole === 'owner' || myRole === 'admin') ? (
                         <button
                           onClick={() => { setEditNicknameUserId(m.id); setNicknameInput(m.nickname ?? '') }}
-                          className="text-xs text-gray-400 bg-transparent border-none cursor-pointer p-0 mt-0.5 text-left"
+                          className="text-xs text-gray-400 dark:text-gray-500 bg-transparent border-none cursor-pointer p-0 mt-0.5 text-left"
                         >
                           {m.nickname ? `닉네임: ${m.nickname}` : '닉네임 설정'}
                         </button>
                       ) : m.nickname ? (
-                        <span className="text-xs text-gray-400 mt-0.5">닉네임: {m.nickname}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">닉네임: {m.nickname}</span>
                       ) : null}
                     </div>
                     <div className="flex gap-2 items-center">
                       <span className={`text-xs px-2 py-0.5 rounded ${
                         m.role === 'owner'
-                          ? 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                           : m.role === 'admin'
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'bg-gray-100 text-gray-600'
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                       }`}>
                         {ROLE_LABEL[m.role] ?? m.role}
                       </span>
                       {canChangeRole && (
                         <button
                           onClick={() => handleRoleChange(m.id, m.role === 'member' ? 'admin' : 'member')}
-                          className="text-xs px-2 py-0.5 cursor-pointer bg-transparent border border-gray-600 rounded"
+                          className="text-xs px-2 py-0.5 cursor-pointer bg-transparent border border-gray-600 dark:border-gray-400 rounded dark:text-gray-300"
                         >
                           {m.role === 'member' ? '관리자로 변경' : '멤버로 변경'}
                         </button>
@@ -492,7 +492,7 @@ export default function GroupManagePage() {
                       {canKick && (
                         <button
                           onClick={() => setKickTargetUserId(m.id)}
-                          className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded"
+                          className="text-xs px-2 py-0.5 cursor-pointer text-red-600 dark:text-red-400 bg-transparent border border-red-600 dark:border-red-500 rounded"
                         >
                           강퇴
                         </button>
@@ -500,7 +500,7 @@ export default function GroupManagePage() {
                       {isMe && myRole !== 'owner' && (
                         <button
                           onClick={() => setShowLeaveModal(true)}
-                          className="text-xs px-2 py-0.5 cursor-pointer text-red-600 bg-transparent border border-red-600 rounded"
+                          className="text-xs px-2 py-0.5 cursor-pointer text-red-600 dark:text-red-400 bg-transparent border border-red-600 dark:border-red-500 rounded"
                         >
                           탈퇴
                         </button>
@@ -514,12 +514,12 @@ export default function GroupManagePage() {
 
           {/* Danger Zone — owner only */}
           {myRole === 'owner' && (
-            <section className="mt-10 border-t border-gray-100 pt-6">
-              <h3 className="mt-0 mb-3 text-base text-red-600">위험 구역</h3>
+            <section className="mt-10 border-t border-gray-100 dark:border-gray-800 pt-6">
+              <h3 className="mt-0 mb-3 text-base text-red-600 dark:text-red-400">위험 구역</h3>
               <button
                 onClick={() => setShowDeleteModal(true)}
                 disabled={deleteGroupMutation.isPending}
-                className="px-5 py-2 text-sm cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
+                className="px-5 py-2 text-sm cursor-pointer text-red-600 dark:text-red-400 border border-red-600 dark:border-red-500 rounded bg-transparent"
               >
                 {deleteGroupMutation.isPending ? '삭제 중...' : '모임 삭제'}
               </button>

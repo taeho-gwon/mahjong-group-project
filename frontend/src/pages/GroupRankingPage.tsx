@@ -218,7 +218,7 @@ export default function GroupRankingPage() {
         ) : error instanceof ApiError && error.isNotFound ? (
           <Navigate to="/not-found" replace />
         ) : (
-          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+          <p className="mt-6 text-red-600 dark:text-red-400">모임 정보를 불러올 수 없습니다.</p>
         )
       ) : (
         <>
@@ -231,7 +231,7 @@ export default function GroupRankingPage() {
                 className={`text-sm px-3.5 py-1.5 rounded border cursor-pointer ${
                   activeTab === value
                     ? 'bg-blue-500 text-white border-blue-500'
-                    : 'bg-transparent border-gray-300 text-gray-700'
+                    : 'bg-transparent border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
                 }`}
               >
                 {label}
@@ -244,7 +244,7 @@ export default function GroupRankingPage() {
               <button
                 type="button"
                 onClick={() => setOffset((o) => o - 1)}
-                className="text-sm px-2.5 py-1 rounded border border-gray-300 bg-transparent cursor-pointer"
+                className="text-sm px-2.5 py-1 rounded border border-gray-300 dark:border-gray-600 bg-transparent cursor-pointer dark:text-gray-300"
               >
                 ← 이전
               </button>
@@ -252,7 +252,7 @@ export default function GroupRankingPage() {
                 <button
                   type="button"
                   onClick={() => setOffset(0)}
-                  className="text-xs px-2 py-0.5 rounded border border-gray-300 bg-transparent cursor-pointer text-blue-600"
+                  className="text-xs px-2 py-0.5 rounded border border-gray-300 dark:border-gray-600 bg-transparent cursor-pointer text-blue-600 dark:text-blue-400"
                 >
                   {activeTab === 'daily' ? '오늘' : activeTab === 'weekly' ? '이번 주' : '이번 달'}
                 </button>
@@ -261,23 +261,23 @@ export default function GroupRankingPage() {
                 type="button"
                 onClick={() => setOffset((o) => o + 1)}
                 disabled={offset >= 0}
-                className="text-sm px-2.5 py-1 rounded border border-gray-300 bg-transparent cursor-pointer disabled:opacity-30 disabled:cursor-default"
+                className="text-sm px-2.5 py-1 rounded border border-gray-300 dark:border-gray-600 bg-transparent cursor-pointer disabled:opacity-30 disabled:cursor-default dark:text-gray-300"
               >
                 다음 →
               </button>
             </div>
           )}
 
-          <p className="text-xs text-gray-400 mb-4 m-0">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 m-0">
             {formatPeriod(periodRange)}
           </p>
 
           {ranking.length === 0 ? (
-            <p className="text-sm text-gray-400 m-0">해당 기간에 게임 기록이 없습니다.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 m-0">해당 기간에 게임 기록이 없습니다.</p>
           ) : (
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b-2 border-gray-300 text-gray-600 text-[13px]">
+                <tr className="border-b-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-[13px]">
                   <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
                   <th className="px-2.5 py-2 text-left whitespace-nowrap">이름</th>
                   {isMatchPoint && <th className="px-2.5 py-2 text-center whitespace-nowrap">승점</th>}
@@ -294,24 +294,24 @@ export default function GroupRankingPage() {
                   const scoreStr = `${entry.totalScore > 0 ? '+' : ''}${entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}`
                   const isPositive = entry.totalScore >= 0
                   return (
-                    <tr key={entry.id} className="border-b border-gray-100">
-                      <td className="px-2.5 py-2.5 text-center text-gray-400 font-bold whitespace-nowrap">{idx + 1}</td>
+                    <tr key={entry.id} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 font-bold whitespace-nowrap">{idx + 1}</td>
                       <td className="px-2.5 py-2.5 text-left whitespace-nowrap">
                         <Link to={`/users/${entry.id}`} className="no-underline text-inherit">{entry.username}</Link>
                       </td>
                       {isMatchPoint && (
-                        <td className="px-2.5 py-2.5 text-center font-bold whitespace-nowrap text-blue-700">
+                        <td className="px-2.5 py-2.5 text-center font-bold whitespace-nowrap text-blue-700 dark:text-blue-400">
                           {entry.matchPoint}
                         </td>
                       )}
-                      <td className={`px-2.5 py-2.5 text-center whitespace-nowrap ${isMatchPoint ? 'text-gray-500' : `font-bold ${isPositive ? 'text-green-700' : 'text-red-600'}`}`}>
+                      <td className={`px-2.5 py-2.5 text-center whitespace-nowrap ${isMatchPoint ? 'text-gray-500 dark:text-gray-400' : `font-bold ${isPositive ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}`}>
                         {scoreStr}
                       </td>
                       <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[0]}</td>
                       <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[1]}</td>
                       <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[2]}</td>
                       <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[3]}</td>
-                      <td className="px-2.5 py-2.5 text-center text-gray-400 whitespace-nowrap">{entry.gameCount}</td>
+                      <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 whitespace-nowrap">{entry.gameCount}</td>
                     </tr>
                   )
                 })}

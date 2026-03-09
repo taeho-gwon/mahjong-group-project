@@ -34,9 +34,7 @@ class EventRepository(BaseRepository):
 
     async def count_by_group(self, group_id: int) -> int:
         result = await self.db.execute(
-            select(func.count())
-            .select_from(Event)
-            .where(Event.group_id == group_id)
+            select(func.count()).select_from(Event).where(Event.group_id == group_id)
         )
         return result.scalar_one()
 

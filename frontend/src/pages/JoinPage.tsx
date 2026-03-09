@@ -16,7 +16,7 @@ export default function JoinPage() {
   if (!token) {
     return (
       <div className="max-w-md mx-auto px-4 py-6">
-        <p className="text-red-600">유효하지 않은 초대 링크입니다.</p>
+        <p className="text-red-600 dark:text-red-400">유효하지 않은 초대 링크입니다.</p>
         <Link to="/">메인으로</Link>
       </div>
     )
@@ -46,7 +46,7 @@ export default function JoinPage() {
     return (
       <div className="max-w-md mx-auto px-4 py-6">
         <h2 className="mt-0 mb-4">모임 참가</h2>
-        <p className="text-sm text-gray-600 mb-4">이미 가입된 모임입니다.</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">이미 가입된 모임입니다.</p>
         <Link to="/" className="text-sm px-5 py-2 no-underline">메인으로 돌아가기</Link>
       </div>
     )
@@ -63,10 +63,10 @@ export default function JoinPage() {
           onChange={(e) => setNickname(e.target.value)}
           maxLength={50}
           placeholder="모임 내 닉네임 (비우면 기본 닉네임 사용)"
-          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+          className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
         />
       </div>
-      {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+      {error && <p className="text-red-600 dark:text-red-400 text-sm mb-4">{error}</p>}
       <button
         onClick={handleJoin}
         disabled={joining}
@@ -75,7 +75,7 @@ export default function JoinPage() {
         {joining ? '가입 중...' : '가입'}
       </button>
       <div className="mt-4">
-        <Link to="/" className="text-sm text-gray-500">메인으로</Link>
+        <Link to="/" className="text-sm text-gray-500 dark:text-gray-400">메인으로</Link>
       </div>
     </div>
   )

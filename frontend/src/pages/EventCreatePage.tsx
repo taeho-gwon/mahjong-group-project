@@ -89,7 +89,7 @@ export default function EventCreatePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {error && <p className="text-red-600 m-0">{error}</p>}
+        {error && <p className="text-red-600 dark:text-red-400 m-0">{error}</p>}
 
         <div>
           <label className="block font-bold mb-1.5 text-sm">이름</label>
@@ -99,7 +99,7 @@ export default function EventCreatePage() {
             onChange={(e) => setName(e.target.value)}
             placeholder="이벤트 이름"
             maxLength={100}
-            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+            className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
           />
         </div>
 
@@ -108,12 +108,12 @@ export default function EventCreatePage() {
           <select
             value={eventType}
             onChange={(e) => setEventType(e.target.value as EventType)}
-            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+            className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
           >
             <option value="regular">일반 이벤트 (regular)</option>
             <option value="independent">독립 이벤트 (independent)</option>
           </select>
-          <p className="mt-1.5 mb-0 text-xs text-gray-500">
+          <p className="mt-1.5 mb-0 text-xs text-gray-500 dark:text-gray-400">
             {EVENT_TYPE_DESC[eventType]}
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function EventCreatePage() {
           <select
             value={rankingType}
             onChange={(e) => setRankingType(e.target.value as RankingType)}
-            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+            className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
           >
             <option value="score">점수 합산 (score)</option>
             <option value="match_point">승점 (match_point)</option>
@@ -133,20 +133,20 @@ export default function EventCreatePage() {
         <div>
           <label className="block font-bold mb-1.5 text-sm">
             우마{' '}
-            <span className={`font-normal text-[13px] ${umaSum === 0 ? 'text-green-700' : 'text-red-600'}`}>
+            <span className={`font-normal text-[13px] ${umaSum === 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
               (합계: {umaSum > 0 ? '+' : ''}{umaSum})
             </span>
           </label>
           <div className="grid grid-cols-4 gap-2">
             {(['uma_1st', 'uma_2nd', 'uma_3rd', 'uma_4th'] as const).map((key, idx) => (
               <div key={key}>
-                <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">{idx + 1}위</div>
                 <input
                   type="text"
                   inputMode="numeric"
                   value={uma[key]}
                   onChange={(e) => setUma((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                  className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full text-center"
                 />
               </div>
             ))}
@@ -159,13 +159,13 @@ export default function EventCreatePage() {
             <div className="grid grid-cols-4 gap-2">
               {(['scoring_1st', 'scoring_2nd', 'scoring_3rd', 'scoring_4th'] as const).map((key, idx) => (
                 <div key={key}>
-                  <div className="text-xs text-gray-500 mb-1 text-center">{idx + 1}위</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">{idx + 1}위</div>
                   <input
                     type="text"
                     inputMode="numeric"
                     value={scoring[key]}
                     onChange={(e) => setScoring((prev) => ({ ...prev, [key]: e.target.value }))}
-                    className="border border-gray-300 rounded px-1.5 py-1.5 w-full text-center"
+                    className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full text-center"
                   />
                 </div>
               ))}

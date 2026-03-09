@@ -49,13 +49,13 @@ export default function RegisterPage() {
             onChange={(e) => setUsername(e.target.value)}
             required
             maxLength={50}
-            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+            className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
           />
           {!usernameValid && (
-            <p className="mt-1 mb-0 text-xs text-red-600">영문, 숫자, 한글, _, - 만 사용 가능</p>
+            <p className="mt-1 mb-0 text-xs text-red-600 dark:text-red-400">영문, 숫자, 한글, _, - 만 사용 가능</p>
           )}
           {usernameValid && (
-            <p className="mt-1 mb-0 text-xs text-gray-400">영문/숫자/한글/_, - 사용 가능</p>
+            <p className="mt-1 mb-0 text-xs text-gray-400 dark:text-gray-500">영문/숫자/한글/_, - 사용 가능</p>
           )}
         </div>
         <div>
@@ -67,9 +67,9 @@ export default function RegisterPage() {
             required
             minLength={8}
             maxLength={100}
-            className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+            className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
           />
-          <p className="mt-1 mb-0 text-xs text-gray-400">8자 이상</p>
+          <p className="mt-1 mb-0 text-xs text-gray-400 dark:text-gray-500">8자 이상</p>
         </div>
         <input
           type="password"
@@ -78,9 +78,9 @@ export default function RegisterPage() {
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
           maxLength={100}
-          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
+          className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm"
         />
-        {error && <p className="text-red-600 m-0 text-sm">{error}</p>}
+        {error && <p className="text-red-600 dark:text-red-400 m-0 text-sm">{error}</p>}
         <button type="submit" disabled={loading} className="px-4 py-2.5 text-sm cursor-pointer">
           {loading ? 'Registering...' : 'Register'}
         </button>

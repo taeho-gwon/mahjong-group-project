@@ -4,9 +4,12 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api.router import router
 from app.config import settings
+from app.utils.rate_limit import limiter
 
 _LOG_DIR = Path(__file__).parent.parent / "logs"
 _LOG_DIR.mkdir(exist_ok=True)
@@ -33,6 +36,8 @@ for _name in ("uvicorn", "uvicorn.access"):
     logging.getLogger(_name).addHandler(_file_handler)
 
 app = FastAPI(title="Mahjong Group Service")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

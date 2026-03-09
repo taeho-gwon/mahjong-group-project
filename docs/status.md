@@ -1,6 +1,6 @@
 # 프로젝트 대시보드
 
-> 마일스톤, API 동기화, ADR 인덱스만 관리.
+> 마일스톤, ADR 인덱스만 관리.
 > **활성 작업은 `docs/backlog.md` 참조.**
 > 마지막 업데이트: 2026-03-03
 
@@ -28,22 +28,6 @@
 | **aggregate migration** | ✅ | DevOps | initial_schema 재생성으로 반영 |
 | **배포 인프라 마무리** | ✅ | DevOps | entrypoint + nginx 보안/gzip/캐싱 |
 | **BE 기술부채 해결** | ✅ | BE | 입력검증, 권한체크, 테스트 보강 (53개) |
-
----
-
-## API 계약 동기화
-
-| 엔드포인트 | 문서 반영 | 최종 확인 |
-|------------|----------|-----------|
-| Auth 전체 (/register, /login, /refresh, /me) | ✅ | 2026-03-01 |
-| Group CRUD 전체 | ✅ | 2026-03-01 |
-| Event CRUD 전체 (aggregate 포함) | ✅ | 2026-03-02 |
-| GameRecord CRUD 전체 | ✅ | 2026-03-01 |
-| GET /users/{id} | ✅ | 2026-03-01 |
-| POST /groups/{id}/invite-link | ✅ | 2026-03-01 |
-| POST /events/{id}/close | ✅ | 2026-03-02 |
-| GET /announcements | ✅ | 2026-03-02 |
-| GET /announcements/{id} | ✅ | 2026-03-02 |
 
 ---
 

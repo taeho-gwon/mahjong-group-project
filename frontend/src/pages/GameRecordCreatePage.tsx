@@ -127,11 +127,11 @@ export default function GameRecordCreatePage() {
         error instanceof ApiError && error.isNotFound ? (
           <Navigate to="/not-found" replace />
         ) : (
-          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+          <p className="mt-6 text-red-600 dark:text-red-400">모임 정보를 불러올 수 없습니다.</p>
         )
       ) : (
         <>
-          {formError && <p className="text-red-600 mb-4">{formError}</p>}
+          {formError && <p className="text-red-600 dark:text-red-400 mb-4">{formError}</p>}
 
           {selectableEvents.length > 0 && (
             <div className="mb-5">
@@ -139,7 +139,7 @@ export default function GameRecordCreatePage() {
               <select
                 value={selectedEventId ?? ''}
                 onChange={(e) => setSelectedEventId(e.target.value ? Number(e.target.value) : null)}
-                className="border border-gray-300 rounded-md px-4 py-2.5 text-sm w-full"
+                className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm w-full"
               >
                 <option value="">없음 (전체에 포함)</option>
                 {selectableEvents.map((c) => (
@@ -152,10 +152,10 @@ export default function GameRecordCreatePage() {
           <table className="w-full border-collapse mb-6">
             <thead>
               <tr>
-                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 text-[13px] text-gray-600">포지션</th>
-                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 text-[13px] text-gray-600">이름 검색</th>
-                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 text-[13px] text-gray-600">플레이어 선택</th>
-                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 text-[13px] text-gray-600">점수</th>
+                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 dark:border-gray-600 text-[13px] text-gray-600 dark:text-gray-400">포지션</th>
+                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 dark:border-gray-600 text-[13px] text-gray-600 dark:text-gray-400">이름 검색</th>
+                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 dark:border-gray-600 text-[13px] text-gray-600 dark:text-gray-400">플레이어 선택</th>
+                <th className="text-left px-2.5 py-2 border-b-2 border-gray-300 dark:border-gray-600 text-[13px] text-gray-600 dark:text-gray-400">점수</th>
               </tr>
             </thead>
             <tbody>
@@ -165,23 +165,23 @@ export default function GameRecordCreatePage() {
                 const taken = selectedPlayerIds(key)
                 return (
                   <tr key={key}>
-                    <td className="px-2.5 py-2 align-middle border-b border-gray-100">
+                    <td className="px-2.5 py-2 align-middle border-b border-gray-100 dark:border-gray-800">
                       <strong>{label}</strong>
                     </td>
-                    <td className="px-2.5 py-2 align-middle border-b border-gray-100">
+                    <td className="px-2.5 py-2 align-middle border-b border-gray-100 dark:border-gray-800">
                       <input
                         type="text"
                         value={pos.search}
                         onChange={(e) => updatePosition(key, { search: e.target.value, playerId: null })}
                         placeholder="이름 검색"
-                        className="border border-gray-300 rounded px-1.5 py-1.5 w-full"
+                        className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full"
                       />
                     </td>
-                    <td className="px-2.5 py-2 align-middle border-b border-gray-100">
+                    <td className="px-2.5 py-2 align-middle border-b border-gray-100 dark:border-gray-800">
                       <select
                         value={pos.playerId ?? ''}
                         onChange={(e) => updatePosition(key, { playerId: e.target.value ? Number(e.target.value) : null })}
-                        className="border border-gray-300 rounded px-1.5 py-1.5 w-full"
+                        className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-full"
                       >
                         <option value="">-- 선택 --</option>
                         {filtered.map((m) => (
@@ -191,13 +191,13 @@ export default function GameRecordCreatePage() {
                         ))}
                       </select>
                     </td>
-                    <td className="px-2.5 py-2 align-middle border-b border-gray-100">
+                    <td className="px-2.5 py-2 align-middle border-b border-gray-100 dark:border-gray-800">
                       <input
                         type="number"
                         value={pos.point}
                         onChange={(e) => updatePosition(key, { point: e.target.value })}
                         placeholder="점수"
-                        className="border border-gray-300 rounded px-1.5 py-1.5 w-20"
+                        className="border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1.5 w-20"
                       />
                     </td>
                   </tr>
@@ -214,9 +214,9 @@ export default function GameRecordCreatePage() {
             return (
               <div className="mb-4 text-sm">
                 {pointSum === 0 ? null : isValidSum ? (
-                  <span className="text-green-700">합계: {pointSum.toLocaleString()} ✅</span>
+                  <span className="text-green-700 dark:text-green-400">합계: {pointSum.toLocaleString()} ✅</span>
                 ) : (
-                  <span className="text-red-600">합계: {pointSum.toLocaleString()} ❌ (100,000이어야 합니다)</span>
+                  <span className="text-red-600 dark:text-red-400">합계: {pointSum.toLocaleString()} ❌ (100,000이어야 합니다)</span>
                 )}
               </div>
             )

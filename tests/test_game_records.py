@@ -42,6 +42,10 @@ async def _setup_game(client: AsyncClient) -> dict:
     )
     group_id = group_r.json()["id"]
 
+    # All players join the public group
+    for p in (p2, p3, p4):
+        await client.post(f"/api/groups/{group_id}/join", headers=p["headers"])
+
     event_r = await client.post(
         "/api/events",
         json={**_EVENT_PAYLOAD, "group_id": group_id},
@@ -179,9 +183,7 @@ async def test_get_game_record_success(client: AsyncClient) -> None:
 
 async def test_get_game_record_not_found(client: AsyncClient) -> None:
     ctx = await _setup_game(client)
-    r = await client.get(
-        "/api/game-records/99999", headers=ctx["creator_headers"]
-    )
+    r = await client.get("/api/game-records/99999", headers=ctx["creator_headers"])
     assert r.status_code == 404
 
 
@@ -221,9 +223,10 @@ async def test_create_game_record_non_member_forbidden(client: AsyncClient) -> N
     ctx = await _setup_game(client)
     payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
 
-    # player2 is not a group member
+    # outsider is not a group member (creator must be a member)
+    outsider = await _login(client, "outsider_creator")
     r = await client.post(
-        "/api/game-records", json=payload, headers=ctx["other_headers"]
+        "/api/game-records", json=payload, headers=outsider["headers"]
     )
     assert r.status_code == 403
 
@@ -260,12 +263,8 @@ async def test_list_game_records_non_member_forbidden(
     client: AsyncClient,
 ) -> None:
     ctx = await _setup_game(client)
-    payload = _record_payload(
-        ctx["player_ids"], ctx["group_id"], ctx["event_id"]
-    )
-    await client.post(
-        "/api/game-records", json=payload, headers=ctx["creator_headers"]
-    )
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
+    await client.post("/api/game-records", json=payload, headers=ctx["creator_headers"])
 
     # outsider is not a member
     outsider = await _login(client, "outsider")
@@ -280,18 +279,14 @@ async def test_get_game_record_non_member_forbidden(
     client: AsyncClient,
 ) -> None:
     ctx = await _setup_game(client)
-    payload = _record_payload(
-        ctx["player_ids"], ctx["group_id"], ctx["event_id"]
-    )
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
     create_r = await client.post(
         "/api/game-records", json=payload, headers=ctx["creator_headers"]
     )
     record_id = create_r.json()["id"]
 
     outsider = await _login(client, "outsider")
-    r = await client.get(
-        f"/api/game-records/{record_id}", headers=outsider["headers"]
-    )
+    r = await client.get(f"/api/game-records/{record_id}", headers=outsider["headers"])
     assert r.status_code == 403
 
 
@@ -305,6 +300,67 @@ async def test_create_game_record_duplicate_players(client: AsyncClient) -> None
         "/api/game-records", json=payload, headers=ctx["creator_headers"]
     )
     assert r.status_code == 422
+
+
+async def test_create_game_record_non_member_player(client: AsyncClient) -> None:
+    """Players who are not group members cannot be included in a game record."""
+    ctx = await _setup_game(client)
+    # Create a 5th user who is NOT a group member
+    outsider = await _login(client, "outsider_player")
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
+    # Replace one player with the non-member
+    payload["north_player_id"] = outsider["id"]
+
+    r = await client.post(
+        "/api/game-records", json=payload, headers=ctx["creator_headers"]
+    )
+    assert r.status_code == 400
+    assert "not members" in r.json()["detail"]
+
+
+async def test_update_game_record_partial_point_invalid_sum(
+    client: AsyncClient,
+) -> None:
+    """Partial point update should validate sum against existing record values."""
+    ctx = await _setup_game(client)
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
+    create_r = await client.post(
+        "/api/game-records", json=payload, headers=ctx["creator_headers"]
+    )
+    record_id = create_r.json()["id"]
+
+    # Original: east=40000, south=30000, west=20000, north=10000 (sum=100000)
+    # Update only east_point to 50000 → merged sum = 50000+30000+20000+10000 = 110000
+    r = await client.put(
+        f"/api/game-records/{record_id}",
+        json={"east_point": 50000},
+        headers=ctx["creator_headers"],
+    )
+    assert r.status_code == 400
+    assert "100000" in r.json()["detail"]
+
+
+async def test_update_game_record_partial_point_valid_sum(
+    client: AsyncClient,
+) -> None:
+    """Partial point update with valid merged sum should succeed."""
+    ctx = await _setup_game(client)
+    payload = _record_payload(ctx["player_ids"], ctx["group_id"], ctx["event_id"])
+    create_r = await client.post(
+        "/api/game-records", json=payload, headers=ctx["creator_headers"]
+    )
+    record_id = create_r.json()["id"]
+
+    # Original: east=40000, south=30000, west=20000, north=10000
+    # Update east=50000, north=0 → merged sum = 50000+30000+20000+0 = 100000
+    r = await client.put(
+        f"/api/game-records/{record_id}",
+        json={"east_point": 50000, "north_point": 0},
+        headers=ctx["creator_headers"],
+    )
+    assert r.status_code == 200
+    assert r.json()["east_point"] == 50000
+    assert r.json()["north_point"] == 0
 
 
 async def test_update_game_record_duplicate_players(client: AsyncClient) -> None:

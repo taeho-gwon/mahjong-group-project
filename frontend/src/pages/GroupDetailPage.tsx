@@ -73,7 +73,7 @@ export default function GroupDetailPage() {
         ) : error instanceof ApiError && error.isNotFound ? (
           <Navigate to="/not-found" replace />
         ) : (
-          <p className="mt-6 text-red-600">모임 정보를 불러올 수 없습니다.</p>
+          <p className="mt-6 text-red-600 dark:text-red-400">모임 정보를 불러올 수 없습니다.</p>
         )
       ) : group ? (
         <>
@@ -86,15 +86,15 @@ export default function GroupDetailPage() {
               )}
             </div>
             {group.description && (
-              <p className="m-0 mb-4 text-gray-600 text-sm">{group.description}</p>
+              <p className="m-0 mb-4 text-gray-600 dark:text-gray-400 text-sm">{group.description}</p>
             )}
-            <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
+            <div className="text-[13px] text-gray-600 dark:text-gray-400 leading-loose border-t border-gray-100 dark:border-gray-800 pt-3">
               <div>
                 <strong>가입 정책:</strong>{' '}
                 <span className={`inline-block text-xs px-2 py-0.5 rounded ${
                   group.join_policy === 'public'
-                    ? 'bg-green-50 text-green-700'
-                    : 'bg-red-50 text-red-600'
+                    ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
                 }`}>
                   {group.join_policy === 'public' ? '공개' : '비공개'}
                 </span>
@@ -111,17 +111,17 @@ export default function GroupDetailPage() {
               <h3 className="m-0">이벤트</h3>
             </div>
             {activeEvents.length === 0 ? (
-              <p className="text-sm text-gray-400 m-0">활성 이벤트가 없습니다.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 m-0">활성 이벤트가 없습니다.</p>
             ) : (
               <ul className="list-none p-0 m-0 flex flex-col gap-1.5">
                 {activeEvents.map((c) => (
                   <li
                     key={c.id}
                     onClick={() => navigate(`/events/${c.id}`)}
-                    className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm cursor-pointer"
+                    className="flex justify-between items-center border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm cursor-pointer"
                   >
                     <span>{c.name}</span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
                       {c.ranking_type === 'match_point' ? '승점' : '점수'}
                     </span>
                   </li>
@@ -133,7 +133,7 @@ export default function GroupDetailPage() {
               <div className="mt-4">
                 <button
                   onClick={() => setShowClosed((prev) => !prev)}
-                  className="text-sm text-gray-500 bg-transparent border-none cursor-pointer p-0"
+                  className="text-sm text-gray-500 dark:text-gray-400 bg-transparent border-none cursor-pointer p-0"
                 >
                   {showClosed ? '▾' : '▸'} 완료된 이벤트 ({closedEvents.length})
                 </button>
@@ -143,13 +143,13 @@ export default function GroupDetailPage() {
                       <li
                         key={c.id}
                         onClick={() => navigate(`/events/${c.id}`)}
-                        className="flex justify-between items-center border border-gray-200 rounded-md px-4 py-2.5 text-sm cursor-pointer opacity-60"
+                        className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-md px-4 py-2.5 text-sm cursor-pointer opacity-60"
                       >
                         <span className="flex items-center gap-2">
                           {c.name}
                           <span className="bg-gray-500 text-white text-xs px-1.5 py-0.5 rounded">마감</span>
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
                           {c.ranking_type === 'match_point' ? '승점' : '점수'}
                         </span>
                       </li>
@@ -170,15 +170,15 @@ export default function GroupDetailPage() {
               }).map((m) => (
                 <li
                   key={m.id}
-                  className="flex justify-between items-center border border-gray-300 rounded-md px-4 py-2.5 text-sm"
+                  className="flex justify-between items-center border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm"
                 >
                   <Link to={`/users/${m.id}`} className={`no-underline text-inherit ${m.role === 'owner' ? 'font-bold' : ''}`}>{getDisplayName(m)}</Link>
                   <span className={`text-xs px-2 py-0.5 rounded ${
                     m.role === 'owner'
-                      ? 'bg-yellow-100 text-yellow-700'
+                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                       : m.role === 'admin'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'bg-gray-100 text-gray-600'
+                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                   }`}>
                     {ROLE_LABEL[m.role] ?? m.role}
                   </span>
@@ -189,11 +189,11 @@ export default function GroupDetailPage() {
 
           {/* Leave Group */}
           {myRole && myRole !== 'owner' && (
-            <section className="mt-10 border-t border-gray-100 pt-6">
+            <section className="mt-10 border-t border-gray-100 dark:border-gray-800 pt-6">
               <button
                 onClick={() => setShowLeaveModal(true)}
                 disabled={leaveGroupMutation.isPending}
-                className="text-sm px-4 py-2 cursor-pointer text-red-600 border border-red-600 rounded bg-transparent"
+                className="text-sm px-4 py-2 cursor-pointer text-red-600 dark:text-red-400 border border-red-600 dark:border-red-500 rounded bg-transparent"
               >
                 {leaveGroupMutation.isPending ? '탈퇴 중...' : '모임 탈퇴'}
               </button>

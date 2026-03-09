@@ -10,6 +10,7 @@ from app.main import app
 from app.models.base import (
     Base,  # noqa: F401 — triggers all model registration via app import
 )
+from app.utils.rate_limit import limiter
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
@@ -23,6 +24,7 @@ TestSessionLocal = async_sessionmaker(test_engine, expire_on_commit=False)
 
 @pytest.fixture(autouse=True)
 async def setup_db() -> None:
+    limiter.reset()
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

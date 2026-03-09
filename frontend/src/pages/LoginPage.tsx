@@ -40,7 +40,7 @@ export default function LoginPage() {
           onChange={(e) => setUsername(e.target.value)}
           required
           maxLength={50}
-          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
+          className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm"
         />
         <input
           type="password"
@@ -49,9 +49,9 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
           maxLength={100}
-          className="border border-gray-300 rounded-md px-4 py-2.5 text-sm"
+          className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm"
         />
-        {error && <p className="text-red-600 m-0 text-sm">{error}</p>}
+        {error && <p className="text-red-600 dark:text-red-400 m-0 text-sm">{error}</p>}
         <button type="submit" disabled={loading} className="px-4 py-2.5 text-sm cursor-pointer">
           {loading ? 'Logging in...' : 'Login'}
         </button>

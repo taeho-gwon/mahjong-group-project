@@ -100,7 +100,7 @@ export default function EventDetailPage() {
         error instanceof ApiError && error.isNotFound ? (
           <Navigate to="/not-found" replace />
         ) : (
-          <p className="text-red-600">이벤트 정보를 불러올 수 없습니다.</p>
+          <p className="text-red-600 dark:text-red-400">이벤트 정보를 불러올 수 없습니다.</p>
         )
       ) : event ? (
         <>
@@ -109,19 +109,19 @@ export default function EventDetailPage() {
               <h2 className="mt-0 mb-0">{event.name}</h2>
               <span className={`text-xs px-2 py-0.5 rounded ${
                 event.event_type === 'independent'
-                  ? 'bg-purple-50 text-purple-700'
-                  : 'bg-blue-50 text-blue-700'
+                  ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                  : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
               }`}>
                 {event.event_type === 'independent' ? '독립' : '일반'}
               </span>
               {event.event_type === 'independent' && (
-                <span className="text-xs text-gray-400">그룹 랭킹 미합산</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">그룹 랭킹 미합산</span>
               )}
               {event.is_closed && (
                 <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">마감</span>
               )}
             </div>
-            <div className="text-[13px] text-gray-600 leading-loose border-t border-gray-100 pt-3">
+            <div className="text-[13px] text-gray-600 dark:text-gray-400 leading-loose border-t border-gray-100 dark:border-gray-800 pt-3">
               <div>
                 <strong>랭킹 방식:</strong>{' '}
                 {event.ranking_type === 'match_point' ? '승점 (match_point)' : '점수 합산 (score)'}
@@ -146,11 +146,11 @@ export default function EventDetailPage() {
           <section className="mb-8">
             <h3 className="mt-0 mb-3">랭킹</h3>
             {ranking.length === 0 ? (
-              <p className="text-sm text-gray-400 m-0">아직 게임 기록이 없습니다.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 m-0">아직 게임 기록이 없습니다.</p>
             ) : (
               <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="border-b-2 border-gray-300 text-gray-600 text-[13px]">
+                  <tr className="border-b-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-[13px]">
                     <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
                     <th className="px-2.5 py-2 text-left whitespace-nowrap">이름</th>
                     <th className="px-2.5 py-2 text-center whitespace-nowrap">{event.ranking_type === 'match_point' ? '승점' : '점수'}</th>
@@ -170,15 +170,15 @@ export default function EventDetailPage() {
                       ? entry.matchPoint >= 0
                       : entry.totalScore >= 0
                     return (
-                      <tr key={entry.id} className="border-b border-gray-100">
-                        <td className="px-2.5 py-2.5 text-center text-gray-400 font-bold whitespace-nowrap">{idx + 1}</td>
+                      <tr key={entry.id} className="border-b border-gray-100 dark:border-gray-800">
+                        <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 font-bold whitespace-nowrap">{idx + 1}</td>
                         <td className="px-2.5 py-2.5 text-left whitespace-nowrap"><Link to={`/users/${entry.id}`} className="no-underline text-inherit">{entry.username}</Link></td>
-                        <td className={`px-2.5 py-2.5 text-center font-bold whitespace-nowrap ${isPositive ? 'text-green-700' : 'text-red-600'}`}>{mainScore}</td>
+                        <td className={`px-2.5 py-2.5 text-center font-bold whitespace-nowrap ${isPositive ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{mainScore}</td>
                         <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[0]}</td>
                         <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[1]}</td>
                         <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[2]}</td>
                         <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[3]}</td>
-                        <td className="px-2.5 py-2.5 text-center text-gray-400 whitespace-nowrap">{entry.gameCount}</td>
+                        <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 whitespace-nowrap">{entry.gameCount}</td>
                       </tr>
                     )
                   })}
@@ -190,14 +190,14 @@ export default function EventDetailPage() {
           <section>
             <h3 className="mt-0 mb-3">게임 기록</h3>
             {records.length === 0 ? (
-              <p className="text-sm text-gray-400 m-0">아직 게임 기록이 없습니다.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 m-0">아직 게임 기록이 없습니다.</p>
             ) : (
               <ul className="list-none p-0 m-0 flex flex-col gap-2">
                 {[...records].sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()).map((rec) => (
-                  <li key={rec.id} className="border border-gray-300 rounded-md px-4 py-3 text-sm">
+                  <li key={rec.id} className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm">
                     <div className="mb-1.5 flex items-center gap-2">
-                      <span className="text-xs text-gray-300 font-mono">#{rec.id}</span>
-                      <span className="text-xs text-gray-400">{new Date(rec.played_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-gray-300 dark:text-gray-600 font-mono">#{rec.id}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(rec.played_at).toLocaleDateString()}</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2 text-center">
                       {[
@@ -207,9 +207,9 @@ export default function EventDetailPage() {
                         { label: '북', player: rec.north_player, point: rec.north_point },
                       ].map(({ label, player, point }) => (
                         <div key={label}>
-                          <div className="text-xs text-gray-400 mb-0.5">{label}</div>
+                          <div className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">{label}</div>
                           <Link to={`/users/${player.id}`} className="font-medium no-underline text-inherit">{nameMap.get(player.id) ?? player.username}</Link>
-                          <div className="text-xs text-gray-600">{point.toLocaleString()}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{point.toLocaleString()}</div>
                         </div>
                       ))}
                     </div>

@@ -54,11 +54,24 @@ class GameRecordService:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You must be a member of the group to create a game record",
                 )
+            player_ids = [
+                data.east_player_id,
+                data.south_player_id,
+                data.west_player_id,
+                data.north_player_id,
+            ]
+            member_ids = await self.group_repo.get_member_user_ids(
+                data.group_id, player_ids
+            )
+            non_members = [pid for pid in player_ids if pid not in member_ids]
+            if non_members:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Players {non_members} are not members of the group",
+                )
         return await self.game_record_repo.create(created_by_id, data)
 
-    async def _require_group_member(
-        self, group_id: int | None, user_id: int
-    ) -> None:
+    async def _require_group_member(self, group_id: int | None, user_id: int) -> None:
         if group_id is None:
             return
         member = await self.group_repo.get_member(group_id, user_id)
@@ -77,9 +90,7 @@ class GameRecordService:
             )
         return record
 
-    async def get_game_record(
-        self, record_id: int, user_id: int
-    ) -> GameRecord:
+    async def get_game_record(self, record_id: int, user_id: int) -> GameRecord:
         record = await self._get_game_record(record_id)
         await self._require_group_member(record.group_id, user_id)
         return record
@@ -119,6 +130,17 @@ class GameRecordService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="All four players must be different",
+            )
+        # Validate point sum: merge provided points with existing record values
+        points = [
+            p if p is not None else getattr(record, f"{d}_point")
+            for d, p in ((d, getattr(data, f"{d}_point")) for d in directions)
+        ]
+        has_any_point = any(getattr(data, f"{d}_point") is not None for d in directions)
+        if has_any_point and sum(points) != 100000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Sum of points must be 100000, got {sum(points)}",
             )
         return await self.game_record_repo.update(record, data)
 

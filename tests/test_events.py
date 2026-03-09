@@ -112,9 +112,7 @@ async def test_list_events_non_member_forbidden(client: AsyncClient) -> None:
     group_id = await _create_group(client, owner_headers)
     await _create_event(client, owner_headers, group_id)
 
-    r = await client.get(
-        f"/api/events?group_id={group_id}", headers=other_headers
-    )
+    r = await client.get(f"/api/events?group_id={group_id}", headers=other_headers)
     assert r.status_code == 403
 
 
@@ -124,9 +122,7 @@ async def test_get_event_non_member_forbidden(client: AsyncClient) -> None:
     group_id = await _create_group(client, owner_headers)
     event_id = await _create_event(client, owner_headers, group_id)
 
-    r = await client.get(
-        f"/api/events/{event_id}", headers=other_headers
-    )
+    r = await client.get(f"/api/events/{event_id}", headers=other_headers)
     assert r.status_code == 403
 
 
@@ -197,12 +193,9 @@ async def test_update_event_by_admin_allowed(client: AsyncClient) -> None:
 
     # Join and promote to admin
     await client.post(f"/api/groups/{group_id}/join", headers=admin_headers)
-    detail_r = await client.get(
-        f"/api/groups/{group_id}", headers=owner_headers
-    )
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     admin_id = next(
-        m["id"] for m in detail_r.json()["members"]
-        if m["username"] == "admin_user"
+        m["id"] for m in detail_r.json()["members"] if m["username"] == "admin_user"
     )
     await client.put(
         f"/api/groups/{group_id}/members/{admin_id}/role",
@@ -228,12 +221,9 @@ async def test_delete_event_by_owner_of_other_creator(
 
     # Join and promote to admin, then admin creates event
     await client.post(f"/api/groups/{group_id}/join", headers=admin_headers)
-    detail_r = await client.get(
-        f"/api/groups/{group_id}", headers=owner_headers
-    )
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     admin_id = next(
-        m["id"] for m in detail_r.json()["members"]
-        if m["username"] == "admin_user"
+        m["id"] for m in detail_r.json()["members"] if m["username"] == "admin_user"
     )
     await client.put(
         f"/api/groups/{group_id}/members/{admin_id}/role",
@@ -302,12 +292,9 @@ async def test_create_event_by_admin_allowed(client: AsyncClient) -> None:
     await client.post(f"/api/groups/{group_id}/join", headers=admin_headers)
 
     # Promote to admin: get member id
-    detail_r = await client.get(
-        f"/api/groups/{group_id}", headers=owner_headers
-    )
+    detail_r = await client.get(f"/api/groups/{group_id}", headers=owner_headers)
     admin_id = next(
-        m["id"] for m in detail_r.json()["members"]
-        if m["username"] == "admin_user"
+        m["id"] for m in detail_r.json()["members"] if m["username"] == "admin_user"
     )
     await client.put(
         f"/api/groups/{group_id}/members/{admin_id}/role",
