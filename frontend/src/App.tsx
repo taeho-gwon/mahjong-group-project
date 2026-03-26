@@ -13,6 +13,7 @@ import GroupManagePage from './pages/GroupManagePage'
 import JoinPage from './pages/JoinPage'
 import GameRecordCreatePage from './pages/GameRecordCreatePage'
 import GameRecordEditPage from './pages/GameRecordEditPage'
+import GameRecordListPage from './pages/GameRecordListPage'
 import GameRecordManagePage from './pages/GameRecordManagePage'
 import EventCreatePage from './pages/EventCreatePage'
 import EventDetailPage from './pages/EventDetailPage'
@@ -53,6 +54,7 @@ function App() {
             <Route path="/events/:eventId" element={<EventDetailPage />} />
             <Route path="/events/:eventId/manage" element={<EventManagePage />} />
             <Route path="/game-records/:recordId/edit" element={<GameRecordEditPage />} />
+            <Route path="/groups/:groupId/records" element={<GameRecordListPage />} />
             <Route path="/groups/:groupId/records/manage" element={<GameRecordManagePage />} />
             <Route path="/users/:userId" element={<UserProfilePage />} />
           </Route>

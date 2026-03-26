@@ -46,6 +46,12 @@ export default function GroupDetailPage() {
           >
             랭킹
           </button>
+          <button
+            onClick={() => navigate(`/groups/${id}/records`)}
+            className="text-sm px-3.5 py-1.5 cursor-pointer"
+          >
+            기록
+          </button>
           {myRole !== null && (
             <button
               onClick={() => navigate(`/groups/${id}/games/new`)}
