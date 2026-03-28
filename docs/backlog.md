@@ -7,9 +7,11 @@
 
 | ID | Title | Agent | Status | Depends | Notes |
 |----|-------|-------|--------|---------|-------|
+| 65 | 프론트엔드 배포 시 이전 빌드 assets 유지 | DevOps | Todo | - | 문제: 배포 시 Dockerfile 멀티스테이지 빌드가 이전 assets를 삭제하여, 브라우저 캐시에 남은 index.html이 옛 해시 JS를 요청하면 404 발생 (모바일은 강제 새로고침 불가). 해결: Docker 볼륨 또는 named volume으로 /usr/share/nginx/html/assets/를 관리하여 이전 N회 빌드의 assets를 유지. 또는 배포 스크립트에서 이전 빌드 파일을 복사 후 새 빌드 덮어쓰기. no-cache 헤더는 이미 적용됨 — 새 방문자는 문제없고, 배포 직전 캐시된 사용자만 영향. |
 
 
-<!-- next-id: 65 -->
+
+<!-- next-id: 67 -->
 
 ## Icebox
 

@@ -1,6 +1,6 @@
 [project]
 name = "mahjong-group-project"
-version = "0.1.4"
+version = "0.1.5"
 description = "Mahjong Group Management Service"
 requires-python = ">=3.13"
 dependencies = [

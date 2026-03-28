@@ -88,6 +88,10 @@ export default function GameRecordCreatePage() {
       setFormError('모든 포지션의 점수를 입력하세요.')
       return
     }
+    if ([east, south, west, north].some((p) => !/^-?\d+$/.test(p.point))) {
+      setFormError('점수는 정수만 입력 가능합니다.')
+      return
+    }
 
     setFormError('')
     try {
@@ -193,7 +197,7 @@ export default function GameRecordCreatePage() {
                     </td>
                     <td className="px-2.5 py-2 align-middle border-b border-gray-100 dark:border-gray-800">
                       <input
-                        type="number"
+                        type="text"
                         value={pos.point}
                         onChange={(e) => updatePosition(key, { point: e.target.value })}
                         placeholder="점수"
