@@ -38,6 +38,9 @@ export default function NavBar() {
           >
             {icon}
           </button>
+          <Link to="/help" className="text-sm no-underline text-gray-600 dark:text-gray-400">
+            도움말
+          </Link>
           {accessToken ? (
             <>
               <Link to="/mypage" className="text-sm no-underline text-gray-600 dark:text-gray-400">

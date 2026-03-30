@@ -21,6 +21,7 @@ import EventManagePage from './pages/EventManagePage'
 import GroupRankingPage from './pages/GroupRankingPage'
 import MemberStatsPage from './pages/MemberStatsPage'
 import UserProfilePage from './pages/UserProfilePage'
+import HelpPage from './pages/HelpPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ForbiddenPage from './pages/ForbiddenPage'
 
@@ -60,6 +61,7 @@ function App() {
             <Route path="/groups/:groupId/records/manage" element={<GameRecordManagePage />} />
             <Route path="/users/:userId" element={<UserProfilePage />} />
           </Route>
+          <Route path="/help" element={<HelpPage />} />
           <Route path="/forbidden" element={<ForbiddenPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
