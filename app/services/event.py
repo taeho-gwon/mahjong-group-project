@@ -84,6 +84,26 @@ class EventService:
             )
         return await self.event_repo.close(event)
 
+    async def reopen_event(self, event_id: int, user_id: int) -> Event:
+        event = await self._get_event(event_id)
+        if not event.is_closed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Event is already open",
+            )
+        if event.group_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot reopen an event without a group",
+            )
+        member = await self.group_repo.get_member(event.group_id, user_id)
+        if member is None or member.role not in (MemberRole.owner, MemberRole.admin):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only group owner or admin can reopen an event",
+            )
+        return await self.event_repo.reopen(event)
+
     async def update_event(
         self, event_id: int, user_id: int, data: EventUpdate
     ) -> Event:

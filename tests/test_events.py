@@ -451,6 +451,52 @@ async def test_close_event_non_admin_forbidden(client: AsyncClient) -> None:
     assert r.status_code == 403
 
 
+# --- Reopen Event Tests ---
+
+
+async def test_reopen_event_success(client: AsyncClient) -> None:
+    """Owner reopens a closed event -> 200, is_closed=False."""
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    event_id = await _create_event(client, headers, group_id)
+
+    await client.post(f"/api/events/{event_id}/close", headers=headers)
+    r = await client.post(f"/api/events/{event_id}/reopen", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["is_closed"] is False
+
+
+async def test_reopen_event_already_open(client: AsyncClient) -> None:
+    """Reopening an already open event -> 400."""
+    headers = await _login(client, "owner")
+    group_id = await _create_group(client, headers)
+    event_id = await _create_event(client, headers, group_id)
+
+    r = await client.post(f"/api/events/{event_id}/reopen", headers=headers)
+    assert r.status_code == 400
+
+
+async def test_reopen_event_non_admin_forbidden(client: AsyncClient) -> None:
+    """Non-admin member tries to reopen -> 403."""
+    owner_headers = await _login(client, "owner")
+    member_headers = await _login(client, "member_user")
+    group_id = await _create_group(client, owner_headers)
+    event_id = await _create_event(client, owner_headers, group_id)
+
+    await client.post(f"/api/groups/{group_id}/join", headers=member_headers)
+    await client.post(f"/api/events/{event_id}/close", headers=owner_headers)
+
+    r = await client.post(f"/api/events/{event_id}/reopen", headers=member_headers)
+    assert r.status_code == 403
+
+
+async def test_reopen_event_not_found(client: AsyncClient) -> None:
+    """Reopening a non-existent event -> 404."""
+    headers = await _login(client, "owner")
+    r = await client.post("/api/events/99999/reopen", headers=headers)
+    assert r.status_code == 404
+
+
 async def test_update_closed_event_blocked(client: AsyncClient) -> None:
     """Updating a closed event -> 400."""
     headers = await _login(client, "owner")

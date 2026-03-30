@@ -61,6 +61,15 @@ async def close_event(
     return await event_service.close_event(event_id, user.id)
 
 
+@router.post("/{event_id}/reopen", response_model=EventResponse)
+async def reopen_event(
+    event_id: int,
+    user: User = Depends(get_current_user),
+    event_service: EventService = Depends(get_event_service),
+) -> EventResponse:
+    return await event_service.reopen_event(event_id, user.id)
+
+
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event(
     event_id: int,

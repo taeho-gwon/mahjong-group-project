@@ -9,6 +9,7 @@ import { useMe } from '../hooks/useMe'
 import { useUpdateEvent } from '../hooks/mutations/useUpdateEvent'
 import { useDeleteEvent } from '../hooks/mutations/useDeleteEvent'
 import { useCloseEvent } from '../hooks/mutations/useCloseEvent'
+import { useReopenEvent } from '../hooks/mutations/useReopenEvent'
 import { useEventGameRecordCount } from '../hooks/useEventGameRecordCount'
 import { ApiError } from '../api/errors'
 import ConfirmModal from '../components/ConfirmModal'
@@ -25,6 +26,7 @@ export default function EventManagePage() {
   const updateEventMutation = useUpdateEvent(id!)
   const deleteEventMutation = useDeleteEvent(event?.group_id)
   const closeEventMutation = useCloseEvent(event?.group_id)
+  const reopenEventMutation = useReopenEvent(event?.group_id)
   const { data: recordCount = 0 } = useEventGameRecordCount(id)
 
   const [name, setName] = useState('')
@@ -36,6 +38,7 @@ export default function EventManagePage() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCloseModal, setShowCloseModal] = useState(false)
+  const [showReopenModal, setShowReopenModal] = useState(false)
   const [pendingEventType, setPendingEventType] = useState<EventType | null>(null)
 
   const myRole = group && me ? group.members.find((m) => m.id === me.id)?.role ?? null : null
@@ -117,6 +120,16 @@ export default function EventManagePage() {
     }
   }
 
+  async function handleReopen() {
+    setShowReopenModal(false)
+    try {
+      await reopenEventMutation.mutateAsync(id!)
+      navigate(`/events/${eventId}`, { replace: true })
+    } catch {
+      // error toast handled by mutation hook
+    }
+  }
+
   const isClosed = event?.is_closed ?? false
   const canDelete = !!event
 
@@ -143,10 +156,25 @@ export default function EventManagePage() {
       ) : myRole ? (
         <>
           {isClosed && (
-            <div className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm px-4 py-3 rounded-md mb-6">
-              이 이벤트는 마감되었습니다. 수정할 수 없습니다.
+            <div className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm px-4 py-3 rounded-md mb-6 flex items-center justify-between">
+              <span>이 이벤트는 마감되었습니다. 수정할 수 없습니다.</span>
+              <button
+                onClick={() => setShowReopenModal(true)}
+                disabled={reopenEventMutation.isPending}
+                className="px-4 py-1.5 text-sm cursor-pointer rounded border border-gray-400 dark:border-gray-500 bg-transparent"
+              >
+                {reopenEventMutation.isPending ? '재개 중...' : '이벤트 재개'}
+              </button>
             </div>
           )}
+          <ConfirmModal
+            open={showReopenModal}
+            title="이벤트 재개"
+            description="이벤트를 재개하시겠습니까?"
+            confirmLabel="재개"
+            onConfirm={handleReopen}
+            onCancel={() => setShowReopenModal(false)}
+          />
           <fieldset disabled={isClosed} className="border-none p-0 m-0">
           <form onSubmit={handleSave} className="flex flex-col gap-5">
             <div>

@@ -51,6 +51,12 @@ class EventRepository(BaseRepository):
         await self.db.refresh(event)
         return event
 
+    async def reopen(self, event: Event) -> Event:
+        event.is_closed = False
+        await self.db.commit()
+        await self.db.refresh(event)
+        return event
+
     async def delete(self, event: Event) -> None:
         await self.db.delete(event)
         await self.db.commit()

@@ -94,3 +94,9 @@ export async function closeEvent(id: number): Promise<EventResponse> {
   if (!res.ok) await throwApiError(res)
   return res.json()
 }
+
+export async function reopenEvent(id: number): Promise<EventResponse> {
+  const res = await apiFetch(`/events/${id}/reopen`, { method: 'POST' })
+  if (!res.ok) await throwApiError(res)
+  return res.json()
+}
