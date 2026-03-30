@@ -106,3 +106,20 @@ class MemberStatsResponse(BaseModel):
     rank: int | None = None
     ranking_score: float
     placement_counts: PlacementCounts
+
+
+class GroupRankingEntryResponse(BaseModel):
+    rank: int
+    user_id: int
+    username: str
+    display_name: str
+    ranking_score: float
+    total_score: float
+    match_point: float
+    total_games: int
+    placement_counts: PlacementCounts
+
+
+class GroupRankingResponse(BaseModel):
+    items: list[GroupRankingEntryResponse]
+    ranking_type: str

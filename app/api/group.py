@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import get_current_user, get_game_record_service, get_group_service
 from app.models.user import User
-from app.schemas.game_record import MemberStatsResponse
+from app.schemas.game_record import GroupRankingResponse, MemberStatsResponse
 from app.schemas.group import (
     GroupCreate,
     GroupDetailResponse,
@@ -152,6 +152,19 @@ async def update_member_role(
 ) -> MemberInfo:
     return await group_service.update_member_role(
         group_id, current_user.id, user_id, data
+    )
+
+
+@router.get("/{group_id}/ranking", response_model=GroupRankingResponse)
+async def get_group_ranking(
+    group_id: int,
+    period: Literal["daily", "weekly", "monthly", "all"] = Query(default="all"),
+    offset: int = Query(default=0),
+    current_user: User = Depends(get_current_user),
+    game_record_service: GameRecordService = Depends(get_game_record_service),
+) -> GroupRankingResponse:
+    return await game_record_service.get_group_ranking(
+        group_id, current_user.id, period, offset
     )
 
 

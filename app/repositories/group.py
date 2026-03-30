@@ -174,6 +174,15 @@ class GroupRepository(BaseRepository):
         await self.db.refresh(group)
         return group
 
+    async def get_members_with_users(self, group_id: int) -> list[GroupMember]:
+        """Return all members of a group with their user relationship loaded."""
+        result = await self.db.execute(
+            select(GroupMember)
+            .where(GroupMember.group_id == group_id)
+            .options(selectinload(GroupMember.user))
+        )
+        return list(result.scalars().all())
+
     async def list_shared_groups(self, user_id_a: int, user_id_b: int) -> list[Group]:
         m1 = aliased(GroupMember)
         m2 = aliased(GroupMember)

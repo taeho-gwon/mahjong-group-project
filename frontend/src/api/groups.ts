@@ -188,6 +188,37 @@ export async function updateMemberNickname(
   return res.json()
 }
 
+export interface GroupRankingItem {
+  rank: number
+  user_id: number
+  username: string
+  display_name: string
+  ranking_score: number
+  total_score: number
+  match_point: number
+  total_games: number
+  placement_counts: PlacementCounts
+}
+
+export interface GroupRankingResponse {
+  items: GroupRankingItem[]
+  ranking_type: RankingType
+}
+
+export async function getGroupRanking(
+  groupId: number,
+  period?: string,
+  offset?: number,
+): Promise<GroupRankingResponse> {
+  const searchParams = new URLSearchParams()
+  if (period !== undefined) searchParams.set('period', period)
+  if (offset !== undefined) searchParams.set('offset', String(offset))
+  const qs = searchParams.toString()
+  const res = await apiFetch(`/groups/${groupId}/ranking${qs ? `?${qs}` : ''}`)
+  if (!res.ok) await throwApiError(res)
+  return res.json()
+}
+
 export async function createGroup(data: {
   name: string
   description?: string | null

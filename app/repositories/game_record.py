@@ -120,13 +120,10 @@ class GameRecordRepository(BaseRepository):
         if event_id is not None:
             stmt = stmt.where(GameRecord.event_id == event_id)
         else:
-            stmt = (
-                stmt.outerjoin(Event, GameRecord.event_id == Event.id)
-                .where(
-                    or_(
-                        Event.event_type == EventType.regular,
-                        GameRecord.event_id.is_(None),
-                    )
+            stmt = stmt.outerjoin(Event, GameRecord.event_id == Event.id).where(
+                or_(
+                    Event.event_type == EventType.regular,
+                    GameRecord.event_id.is_(None),
                 )
             )
 

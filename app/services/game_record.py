@@ -10,6 +10,8 @@ from app.repositories.group import GroupRepository
 from app.schemas.game_record import (
     GameRecordCreate,
     GameRecordUpdate,
+    GroupRankingEntryResponse,
+    GroupRankingResponse,
     MemberStatsResponse,
     PaginatedGameRecordResponse,
     PlacementCounts,
@@ -248,6 +250,103 @@ class GameRecordService:
                 third=user_stats["placements"][2],
                 fourth=user_stats["placements"][3],
             ),
+        )
+
+    async def get_group_ranking(
+        self,
+        group_id: int,
+        current_user_id: int,
+        period: PeriodType = "all",
+        offset: int = 0,
+    ) -> GroupRankingResponse:
+        """Calculate group ranking for all members."""
+        # Verify group exists
+        group = await self.group_repo.get_by_id(group_id)
+        if not group:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Group not found",
+            )
+
+        # Private group access check
+        from app.models.group import JoinPolicy
+
+        if group.join_policy == JoinPolicy.private:
+            member = await self.group_repo.get_member(group_id, current_user_id)
+            if not member:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only members can view private group ranking",
+                )
+
+        # Calculate period date range
+        date_range = get_period_range(
+            period, offset, group.weekly_start_day, group.monthly_start_day
+        )
+        start_date = date_range[0] if date_range else None
+        end_date = date_range[1] if date_range else None
+
+        # Fetch all game records in scope (group-wide, regular events only)
+        records = await self.game_record_repo.list_by_group_with_events(
+            group_id, None, start_date, end_date
+        )
+
+        # Calculate stats for all players
+        player_stats = self._compute_player_stats(records, group, None)
+
+        # Build display name map: group nickname > user nickname > username
+        members = await self.group_repo.get_members_with_users(group_id)
+        display_name_map: dict[int, tuple[str, str]] = {}
+        for m in members:
+            display_name = m.nickname or m.user.nickname or m.user.username
+            display_name_map[m.user_id] = (m.user.username, display_name)
+
+        # Determine ranking type
+        ranking_type = group.default_ranking_type
+
+        # Sort all players
+        all_entries = list(player_stats.items())
+        if ranking_type == RankingType.match_point:
+            all_entries.sort(
+                key=lambda x: (x[1]["match_point"], x[1]["total_score"]),
+                reverse=True,
+            )
+        else:
+            all_entries.sort(key=lambda x: x[1]["total_score"], reverse=True)
+
+        # Build response items
+        items: list[GroupRankingEntryResponse] = []
+        for rank_idx, (user_id, stats) in enumerate(all_entries):
+            username, display_name = display_name_map.get(
+                user_id, (f"user_{user_id}", f"user_{user_id}")
+            )
+            ranking_score = (
+                stats["match_point"]
+                if ranking_type == RankingType.match_point
+                else stats["total_score"]
+            )
+            items.append(
+                GroupRankingEntryResponse(
+                    rank=rank_idx + 1,
+                    user_id=user_id,
+                    username=username,
+                    display_name=display_name,
+                    ranking_score=ranking_score,
+                    total_score=stats["total_score"],
+                    match_point=stats["match_point"],
+                    total_games=stats["game_count"],
+                    placement_counts=PlacementCounts(
+                        first=stats["placements"][0],
+                        second=stats["placements"][1],
+                        third=stats["placements"][2],
+                        fourth=stats["placements"][3],
+                    ),
+                )
+            )
+
+        return GroupRankingResponse(
+            items=items,
+            ranking_type=ranking_type.value,
         )
 
     @staticmethod

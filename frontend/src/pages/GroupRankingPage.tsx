@@ -1,13 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useGroupDetail } from '../hooks/useGroupDetail'
-import { useEvents } from '../hooks/useEvents'
-import { useGroupGameRecords } from '../hooks/useGroupGameRecords'
-import { getDisplayName } from '../api/groups'
+import { useGroupRanking } from '../hooks/useGroupRanking'
 import { ApiError } from '../api/errors'
-import type { EventResponse } from '../api/events'
-import type { GameRecordResponse } from '../api/gameRecords'
 
 type PeriodTab = 'daily' | 'weekly' | 'monthly' | 'all'
 
@@ -18,185 +14,25 @@ const PERIOD_LABELS: { value: PeriodTab; label: string }[] = [
   { value: 'all', label: '전체' },
 ]
 
-import type { GroupDetailResponse } from '../api/groups'
-
-interface RankingEntry {
-  id: number
-  username: string
-  totalScore: number
-  matchPoint: number
-  rankCounts: [number, number, number, number]
-  gameCount: number
-}
-
-function getPeriodRange(
-  tab: PeriodTab,
-  weeklyStartDay: number,
-  monthlyStartDay: number,
-  offset: number,
-): { start: Date; end: Date } | null {
-  if (tab === 'all') return null
-
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-
-  if (tab === 'daily') {
-    const start = new Date(now)
-    start.setDate(start.getDate() + offset)
-    const end = new Date(start)
-    end.setDate(end.getDate() + 1)
-    return { start, end }
-  }
-
-  if (tab === 'weekly') {
-    const jsDay = now.getDay()
-    const jsStartDay = (weeklyStartDay + 1) % 7
-    let diff = jsDay - jsStartDay
-    if (diff < 0) diff += 7
-    const start = new Date(now)
-    start.setDate(start.getDate() - diff + offset * 7)
-    const end = new Date(start)
-    end.setDate(end.getDate() + 7)
-    return { start, end }
-  }
-
-  if (tab === 'monthly') {
-    const year = now.getFullYear()
-    const month = now.getMonth()
-    const day = now.getDate()
-
-    let baseMonth: number
-    if (day >= monthlyStartDay) {
-      baseMonth = month
-    } else {
-      baseMonth = month - 1
-    }
-    const start = new Date(year, baseMonth + offset, monthlyStartDay)
-    const end = new Date(year, baseMonth + offset + 1, monthlyStartDay)
-    return { start, end }
-  }
-
-  return null
-}
-
-function formatPeriod(range: { start: Date; end: Date } | null): string {
-  if (!range) return '전체 기간'
-  const fmt = (d: Date) => d.toLocaleDateString()
-  const endDisplay = new Date(range.end)
-  endDisplay.setDate(endDisplay.getDate() - 1)
-  return `${fmt(range.start)} ~ ${fmt(endDisplay)}`
-}
-
-function computeGroupRanking(
-  records: GameRecordResponse[],
-  eventsById: Map<number, EventResponse>,
-  nameMap: Map<number, string>,
-  group: GroupDetailResponse,
-): RankingEntry[] {
-  const playerMap = new Map<number, RankingEntry>()
-  const defaultUma = [group.default_uma_1st, group.default_uma_2nd, group.default_uma_3rd, group.default_uma_4th]
-  const defaultScoring = [group.default_scoring_1st, group.default_scoring_2nd, group.default_scoring_3rd, group.default_scoring_4th]
-
-  for (const rec of records) {
-    const event = rec.event_id ? eventsById.get(rec.event_id) : null
-    const uma = event
-      ? [event.uma_1st, event.uma_2nd, event.uma_3rd, event.uma_4th]
-      : defaultUma
-    const scoring = event
-      ? [event.scoring_1st, event.scoring_2nd, event.scoring_3rd, event.scoring_4th]
-      : defaultScoring
-
-    const seats = [
-      { player: rec.east_player, point: rec.east_point },
-      { player: rec.south_player, point: rec.south_point },
-      { player: rec.west_player, point: rec.west_point },
-      { player: rec.north_player, point: rec.north_point },
-    ]
-    seats.sort((a, b) => b.point - a.point)
-    seats.forEach(({ player, point }, rank) => {
-      const entry = playerMap.get(player.id) ?? {
-        id: player.id,
-        username: nameMap.get(player.id) ?? player.username,
-        totalScore: 0,
-        matchPoint: 0,
-        rankCounts: [0, 0, 0, 0] as [number, number, number, number],
-        gameCount: 0,
-      }
-      entry.totalScore += (point - 25000) / 1000 + uma[rank]
-      entry.matchPoint += scoring[rank]
-      entry.rankCounts[rank] += 1
-      entry.gameCount += 1
-      playerMap.set(player.id, entry)
-    })
-  }
-
-  const entries = [...playerMap.values()]
-  if (group.default_ranking_type === 'match_point') {
-    entries.sort((a, b) => b.matchPoint - a.matchPoint || b.totalScore - a.totalScore)
-  } else {
-    entries.sort((a, b) => b.totalScore - a.totalScore)
-  }
-  return entries
-}
-
 export default function GroupRankingPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const groupId = id ? Number(id) : undefined
 
-  const { data: group, isLoading: groupLoading, isError, error } = useGroupDetail(groupId)
-  const { data: events = [] } = useEvents(groupId)
-  const { data: allRecords = [], isLoading: recordsLoading } = useGroupGameRecords(groupId)
-
+  const { isLoading: groupLoading, isError: groupError, error } = useGroupDetail(groupId)
   const [activeTab, setActiveTab] = useState<PeriodTab>('all')
   const [offset, setOffset] = useState(0)
 
-  const regularEventIds = useMemo(() => {
-    const ids = new Set<number>()
-    for (const e of events) {
-      if (e.event_type === 'regular') ids.add(e.id)
-    }
-    return ids
-  }, [events])
-
-  const eventsById = useMemo(() => {
-    const map = new Map<number, EventResponse>()
-    for (const e of events) map.set(e.id, e)
-    return map
-  }, [events])
-
-  const periodRange = useMemo(
-    () => getPeriodRange(activeTab, group?.weekly_start_day ?? 0, group?.monthly_start_day ?? 1, offset),
-    [activeTab, group?.weekly_start_day, group?.monthly_start_day, offset],
+  const { data: ranking, isLoading: rankingLoading, isError: rankingError } = useGroupRanking(
+    groupId,
+    activeTab,
+    activeTab !== 'all' ? offset : undefined,
   )
 
-  const filteredRecords = useMemo(() => {
-    // Include records from regular events or records without event (event_id = null)
-    const byEvent = allRecords.filter(
-      (r) => r.event_id === null || regularEventIds.has(r.event_id),
-    )
-    if (!periodRange) return byEvent
-    return byEvent.filter((r) => {
-      const playedAt = new Date(r.played_at)
-      return playedAt >= periodRange.start && playedAt < periodRange.end
-    })
-  }, [allRecords, regularEventIds, periodRange])
-
-  const nameMap = useMemo(() => {
-    const map = new Map<number, string>()
-    if (group) {
-      for (const m of group.members) map.set(m.id, getDisplayName(m))
-    }
-    return map
-  }, [group])
-
-  const ranking = useMemo(
-    () => group ? computeGroupRanking(filteredRecords, eventsById, nameMap, group) : [],
-    [filteredRecords, eventsById, nameMap, group],
-  )
-
-  const isMatchPoint = group?.default_ranking_type === 'match_point'
-  const isLoading = groupLoading || recordsLoading
+  const isMatchPoint = ranking?.ranking_type === 'match_point'
+  const isLoading = groupLoading || rankingLoading
+  const isError = groupError || rankingError
+  const items = ranking?.items ?? []
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -268,11 +104,7 @@ export default function GroupRankingPage() {
             </div>
           )}
 
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 m-0">
-            {formatPeriod(periodRange)}
-          </p>
-
-          {ranking.length === 0 ? (
+          {items.length === 0 ? (
             <p className="text-sm text-gray-400 dark:text-gray-500 m-0">해당 기간에 게임 기록이 없습니다.</p>
           ) : (
             <table className="w-full border-collapse text-sm">
@@ -290,28 +122,29 @@ export default function GroupRankingPage() {
                 </tr>
               </thead>
               <tbody>
-                {ranking.map((entry, idx) => {
-                  const scoreStr = `${entry.totalScore > 0 ? '+' : ''}${entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}`
-                  const isPositive = entry.totalScore >= 0
+                {items.map((entry) => {
+                  const score = entry.ranking_score
+                  const scoreStr = `${score > 0 ? '+' : ''}${score % 1 === 0 ? score : score.toFixed(1)}`
+                  const isPositive = score >= 0
                   return (
-                    <tr key={entry.id} className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 font-bold whitespace-nowrap">{idx + 1}</td>
+                    <tr key={entry.user_id} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 font-bold whitespace-nowrap">{entry.rank}</td>
                       <td className="px-2.5 py-2.5 text-left whitespace-nowrap">
-                        <Link to={`/groups/${id}/members/${entry.id}/stats`} className="no-underline text-inherit">{entry.username}</Link>
+                        <Link to={`/groups/${id}/members/${entry.user_id}/stats`} className="no-underline text-inherit">{entry.display_name}</Link>
                       </td>
                       {isMatchPoint && (
                         <td className="px-2.5 py-2.5 text-center font-bold whitespace-nowrap text-blue-700 dark:text-blue-400">
-                          {entry.matchPoint}
+                          {entry.match_point}
                         </td>
                       )}
                       <td className={`px-2.5 py-2.5 text-center whitespace-nowrap ${isMatchPoint ? 'text-gray-500 dark:text-gray-400' : `font-bold ${isPositive ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}`}>
                         {scoreStr}
                       </td>
-                      <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[0]}</td>
-                      <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[1]}</td>
-                      <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[2]}</td>
-                      <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[3]}</td>
-                      <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 whitespace-nowrap">{entry.gameCount}</td>
+                      <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.placement_counts.first}</td>
+                      <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.placement_counts.second}</td>
+                      <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.placement_counts.third}</td>
+                      <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.placement_counts.fourth}</td>
+                      <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 whitespace-nowrap">{entry.total_games}</td>
                     </tr>
                   )
                 })}
