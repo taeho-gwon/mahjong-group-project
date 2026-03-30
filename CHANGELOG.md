@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1] - 2026-03-31
+
+### Features
+- **도움말 페이지**: 사용법 안내 (그룹/이벤트/기록/랭킹/성적)
+
+### Bug Fixes
+- 동점 시 같은 순위 표시 (standard competition ranking)
+- 기간 필터 KST 기준으로 변경 (UTC → Asia/Seoul)
+
 ## [0.2.0] - 2026-03-30
 
 ### Features
