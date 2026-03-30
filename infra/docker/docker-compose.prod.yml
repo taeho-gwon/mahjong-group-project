@@ -45,6 +45,7 @@ services:
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - frontend_assets:/usr/share/nginx/html/assets
     depends_on:
       - backend
     logging:
@@ -55,3 +56,4 @@ services:
 
 volumes:
   postgres_data:
+  frontend_assets:
