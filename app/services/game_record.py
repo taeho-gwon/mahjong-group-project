@@ -236,8 +236,9 @@ class GameRecordService:
             all_entries.sort(key=lambda x: x[1]["total_score"], reverse=True)
             ranking_score = user_stats["total_score"]
 
+        ranks = self._assign_ranks(all_entries, ranking_type)
         rank = next(
-            i + 1 for i, (uid, _) in enumerate(all_entries) if uid == target_user_id
+            ranks[i] for i, (uid, _) in enumerate(all_entries) if uid == target_user_id
         )
 
         return MemberStatsResponse(
@@ -314,6 +315,9 @@ class GameRecordService:
         else:
             all_entries.sort(key=lambda x: x[1]["total_score"], reverse=True)
 
+        # Assign ranks with tie handling
+        ranks = self._assign_ranks(all_entries, ranking_type)
+
         # Build response items
         items: list[GroupRankingEntryResponse] = []
         for rank_idx, (user_id, stats) in enumerate(all_entries):
@@ -327,7 +331,7 @@ class GameRecordService:
             )
             items.append(
                 GroupRankingEntryResponse(
-                    rank=rank_idx + 1,
+                    rank=ranks[rank_idx],
                     user_id=user_id,
                     username=username,
                     display_name=display_name,
@@ -348,6 +352,32 @@ class GameRecordService:
             items=items,
             ranking_type=ranking_type.value,
         )
+
+    @staticmethod
+    def _assign_ranks(
+        sorted_entries: list[tuple[int, dict]],
+        ranking_type: RankingType,
+    ) -> list[int]:
+        """Assign standard competition ranks (1, 1, 3, ...) to sorted entries.
+
+        For score type: tied when total_score is equal.
+        For match_point type: tied when (match_point, total_score) are equal.
+        """
+        ranks: list[int] = []
+        for i, (_, stats) in enumerate(sorted_entries):
+            if i == 0:
+                ranks.append(1)
+            else:
+                prev_stats = sorted_entries[i - 1][1]
+                if ranking_type == RankingType.match_point:
+                    is_tied = (
+                        stats["match_point"] == prev_stats["match_point"]
+                        and stats["total_score"] == prev_stats["total_score"]
+                    )
+                else:
+                    is_tied = stats["total_score"] == prev_stats["total_score"]
+                ranks.append(ranks[i - 1] if is_tied else i + 1)
+        return ranks
 
     @staticmethod
     def _compute_player_stats(

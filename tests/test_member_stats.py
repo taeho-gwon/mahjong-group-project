@@ -304,3 +304,82 @@ async def test_member_stats_independent_event_excluded(
     )
     assert r2.status_code == 200
     assert r2.json()["total_games"] == 1
+
+
+async def test_member_stats_tied_rank(client: AsyncClient) -> None:
+    """Two players with the same score should share the same rank."""
+    p1 = await _login(client, "player1")
+    p2 = await _login(client, "player2")
+    p3 = await _login(client, "player3")
+    p4 = await _login(client, "player4")
+
+    group_r = await client.post(
+        "/api/groups", json=_GROUP_PAYLOAD, headers=p1["headers"]
+    )
+    group_id = group_r.json()["id"]
+
+    for p in (p2, p3, p4):
+        await client.post(f"/api/groups/{group_id}/join", headers=p["headers"])
+
+    event_r = await client.post(
+        "/api/events",
+        json={**_EVENT_PAYLOAD, "group_id": group_id},
+        headers=p1["headers"],
+    )
+    event_id = event_r.json()["id"]
+
+    # Game 1: p1=1st(40k), p2=2nd(30k), p3=3rd(20k), p4=4th(10k)
+    await client.post(
+        "/api/game-records",
+        json={
+            "east_player_id": p1["id"],
+            "south_player_id": p2["id"],
+            "west_player_id": p3["id"],
+            "north_player_id": p4["id"],
+            "east_point": 40000,
+            "south_point": 30000,
+            "west_point": 20000,
+            "north_point": 10000,
+            "group_id": group_id,
+            "event_id": event_id,
+        },
+        headers=p1["headers"],
+    )
+
+    # Game 2: p2=1st(40k), p1=2nd(30k), p4=3rd(20k), p3=4th(10k)
+    # p1 total: 45+15=60, p2 total: 15+45=60 -> tied
+    await client.post(
+        "/api/game-records",
+        json={
+            "east_player_id": p2["id"],
+            "south_player_id": p1["id"],
+            "west_player_id": p4["id"],
+            "north_player_id": p3["id"],
+            "east_point": 40000,
+            "south_point": 30000,
+            "west_point": 20000,
+            "north_point": 10000,
+            "group_id": group_id,
+            "event_id": event_id,
+        },
+        headers=p1["headers"],
+    )
+
+    r1 = await client.get(
+        f"/api/groups/{group_id}/members/{p1['id']}/stats",
+        headers=p1["headers"],
+    )
+    r2 = await client.get(
+        f"/api/groups/{group_id}/members/{p2['id']}/stats",
+        headers=p1["headers"],
+    )
+    r3 = await client.get(
+        f"/api/groups/{group_id}/members/{p3['id']}/stats",
+        headers=p1["headers"],
+    )
+
+    # p1 and p2 should share rank 1
+    assert r1.json()["rank"] == 1
+    assert r2.json()["rank"] == 1
+    # p3 should be rank 3 (not 2, due to skip)
+    assert r3.json()["rank"] == 3

@@ -255,3 +255,80 @@ async def test_group_ranking_display_name_priority(client: AsyncClient) -> None:
     assert items[p3["id"]]["display_name"] == "GroupNick3"
     # p4: no nickname -> username
     assert items[p4["id"]]["display_name"] == "player4"
+
+
+async def test_group_ranking_tied_players(client: AsyncClient) -> None:
+    """Two players with the same score should share the same rank, next rank skipped."""
+    p1 = await _login(client, "player1")
+    p2 = await _login(client, "player2")
+    p3 = await _login(client, "player3")
+    p4 = await _login(client, "player4")
+
+    group_r = await client.post(
+        "/api/groups", json=_GROUP_PAYLOAD, headers=p1["headers"]
+    )
+    group_id = group_r.json()["id"]
+
+    for p in (p2, p3, p4):
+        await client.post(f"/api/groups/{group_id}/join", headers=p["headers"])
+
+    event_r = await client.post(
+        "/api/events",
+        json={**_EVENT_PAYLOAD, "group_id": group_id},
+        headers=p1["headers"],
+    )
+    event_id = event_r.json()["id"]
+
+    # Game: p1=1st(40k), p2=2nd(30k), p3=3rd(20k), p4=4th(10k)
+    await client.post(
+        "/api/game-records",
+        json={
+            "east_player_id": p1["id"],
+            "south_player_id": p2["id"],
+            "west_player_id": p3["id"],
+            "north_player_id": p4["id"],
+            "east_point": 40000,
+            "south_point": 30000,
+            "west_point": 20000,
+            "north_point": 10000,
+            "group_id": group_id,
+            "event_id": event_id,
+        },
+        headers=p1["headers"],
+    )
+
+    # Game: p2=1st(40k), p1=2nd(30k), p4=3rd(20k), p3=4th(10k)
+    # After 2 games: p1 and p2 should have the same total_score
+    # p1: game1 1st(15+30=45) + game2 2nd(5+10=15) = 60
+    # p2: game1 2nd(5+10=15) + game2 1st(15+30=45) = 60
+    await client.post(
+        "/api/game-records",
+        json={
+            "east_player_id": p2["id"],
+            "south_player_id": p1["id"],
+            "west_player_id": p4["id"],
+            "north_player_id": p3["id"],
+            "east_point": 40000,
+            "south_point": 30000,
+            "west_point": 20000,
+            "north_point": 10000,
+            "group_id": group_id,
+            "event_id": event_id,
+        },
+        headers=p1["headers"],
+    )
+
+    r = await client.get(
+        f"/api/groups/{group_id}/ranking",
+        headers=p1["headers"],
+    )
+    assert r.status_code == 200
+    items = r.json()["items"]
+    assert len(items) == 4
+
+    # p1 and p2 tied at rank 1
+    assert items[0]["rank"] == 1
+    assert items[1]["rank"] == 1
+    # p3 and p4 also tied (symmetric games), both rank 3
+    assert items[2]["rank"] == 3
+    assert items[3]["rank"] == 3
