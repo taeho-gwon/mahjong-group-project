@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
+from app.models.event import Event, EventType
 from app.models.game_record import GameRecord
 from app.repositories.base import BaseRepository
 from app.schemas.game_record import GameRecordCreate, GameRecordUpdate
@@ -91,3 +94,46 @@ class GameRecordRepository(BaseRepository):
     async def delete(self, record: GameRecord) -> None:
         await self.db.delete(record)
         await self.db.commit()
+
+    async def list_by_group_with_events(
+        self,
+        group_id: int,
+        event_id: int | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list[GameRecord]:
+        """Fetch game records for a group with their event info loaded.
+
+        If event_id is provided, filter to that event only.
+        Otherwise, filter to records belonging to regular events
+        OR records with no event (event_id IS NULL).
+        Optionally filter by played_at range [start_date, end_date).
+        """
+        stmt = (
+            select(GameRecord)
+            .options(
+                selectinload(GameRecord.event),
+            )
+            .where(GameRecord.group_id == group_id)
+        )
+
+        if event_id is not None:
+            stmt = stmt.where(GameRecord.event_id == event_id)
+        else:
+            stmt = (
+                stmt.outerjoin(Event, GameRecord.event_id == Event.id)
+                .where(
+                    or_(
+                        Event.event_type == EventType.regular,
+                        GameRecord.event_id.is_(None),
+                    )
+                )
+            )
+
+        if start_date is not None:
+            stmt = stmt.where(GameRecord.played_at >= start_date)
+        if end_date is not None:
+            stmt = stmt.where(GameRecord.played_at < end_date)
+
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

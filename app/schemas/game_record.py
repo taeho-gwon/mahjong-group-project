@@ -92,3 +92,17 @@ class PaginatedGameRecordResponse(BaseModel):
     total: int
     page: int
     size: int
+
+
+class PlacementCounts(BaseModel):
+    first: int = 0
+    second: int = 0
+    third: int = 0
+    fourth: int = 0
+
+
+class MemberStatsResponse(BaseModel):
+    total_games: int
+    rank: int | None = None
+    ranking_score: float
+    placement_counts: PlacementCounts

@@ -19,6 +19,7 @@ import EventCreatePage from './pages/EventCreatePage'
 import EventDetailPage from './pages/EventDetailPage'
 import EventManagePage from './pages/EventManagePage'
 import GroupRankingPage from './pages/GroupRankingPage'
+import MemberStatsPage from './pages/MemberStatsPage'
 import UserProfilePage from './pages/UserProfilePage'
 import NotFoundPage from './pages/NotFoundPage'
 import ForbiddenPage from './pages/ForbiddenPage'
@@ -50,6 +51,7 @@ function App() {
             <Route path="/groups/:id/manage" element={<GroupManagePage />} />
             <Route path="/groups/:id/games/new" element={<GameRecordCreatePage />} />
             <Route path="/groups/:id/ranking" element={<GroupRankingPage />} />
+            <Route path="/groups/:groupId/members/:userId/stats" element={<MemberStatsPage />} />
             <Route path="/groups/:id/events/new" element={<EventCreatePage />} />
             <Route path="/events/:eventId" element={<EventDetailPage />} />
             <Route path="/events/:eventId/manage" element={<EventManagePage />} />

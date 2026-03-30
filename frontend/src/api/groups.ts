@@ -144,6 +144,37 @@ export async function joinByInvite(token: string, nickname?: string | null): Pro
   return res.json()
 }
 
+export interface PlacementCounts {
+  first: number
+  second: number
+  third: number
+  fourth: number
+}
+
+export interface MemberStatsResponse {
+  total_games: number
+  rank: number | null
+  ranking_score: number
+  placement_counts: PlacementCounts
+}
+
+export async function getMemberStats(
+  groupId: number,
+  userId: number,
+  eventId?: number,
+  period?: string,
+  offset?: number,
+): Promise<MemberStatsResponse> {
+  const searchParams = new URLSearchParams()
+  if (eventId !== undefined) searchParams.set('event_id', String(eventId))
+  if (period !== undefined) searchParams.set('period', period)
+  if (offset !== undefined) searchParams.set('offset', String(offset))
+  const qs = searchParams.toString()
+  const res = await apiFetch(`/groups/${groupId}/members/${userId}/stats${qs ? `?${qs}` : ''}`)
+  if (!res.ok) await throwApiError(res)
+  return res.json()
+}
+
 export async function updateMemberNickname(
   groupId: number,
   userId: number,

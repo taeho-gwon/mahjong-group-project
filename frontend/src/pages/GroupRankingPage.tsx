@@ -297,7 +297,7 @@ export default function GroupRankingPage() {
                     <tr key={entry.id} className="border-b border-gray-100 dark:border-gray-800">
                       <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 font-bold whitespace-nowrap">{idx + 1}</td>
                       <td className="px-2.5 py-2.5 text-left whitespace-nowrap">
-                        <Link to={`/users/${entry.id}`} className="no-underline text-inherit">{entry.username}</Link>
+                        <Link to={`/groups/${id}/members/${entry.id}/stats`} className="no-underline text-inherit">{entry.username}</Link>
                       </td>
                       {isMatchPoint && (
                         <td className="px-2.5 py-2.5 text-center font-bold whitespace-nowrap text-blue-700 dark:text-blue-400">

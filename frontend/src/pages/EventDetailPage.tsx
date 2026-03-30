@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import Spinner from '../components/Spinner'
 import { useEvent } from '../hooks/useEvent'
@@ -67,6 +68,8 @@ export default function EventDetailPage() {
   const { data: records = [] } = useEventGameRecords(id)
   const { data: group } = useGroupDetail(event?.group_id ?? undefined)
   const { data: user } = useMe()
+
+  const [activeTab, setActiveTab] = useState<'ranking' | 'records'>('ranking')
 
   const myRole = group && user ? group.members.find((m) => m.id === user.id)?.role ?? null : null
   const nameMap = new Map<number, string>()
@@ -143,81 +146,100 @@ export default function EventDetailPage() {
             </div>
           </section>
 
-          <section className="mb-8">
-            <h3 className="mt-0 mb-3">랭킹</h3>
-            {ranking.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 m-0">아직 게임 기록이 없습니다.</p>
-            ) : (
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-[13px]">
-                    <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
-                    <th className="px-2.5 py-2 text-left whitespace-nowrap">이름</th>
-                    <th className="px-2.5 py-2 text-center whitespace-nowrap">{event.ranking_type === 'match_point' ? '승점' : '점수'}</th>
-                    <th className="px-2.5 py-2 text-center whitespace-nowrap">1위</th>
-                    <th className="px-2.5 py-2 text-center whitespace-nowrap">2위</th>
-                    <th className="px-2.5 py-2 text-center whitespace-nowrap">3위</th>
-                    <th className="px-2.5 py-2 text-center whitespace-nowrap">4위</th>
-                    <th className="px-2.5 py-2 text-center whitespace-nowrap">게임</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranking.map((entry, idx) => {
-                    const mainScore = event.ranking_type === 'match_point'
-                      ? `${entry.matchPoint}pt`
-                      : `${entry.totalScore > 0 ? '+' : ''}${entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}`
-                    const isPositive = event.ranking_type === 'match_point'
-                      ? entry.matchPoint >= 0
-                      : entry.totalScore >= 0
-                    return (
-                      <tr key={entry.id} className="border-b border-gray-100 dark:border-gray-800">
-                        <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 font-bold whitespace-nowrap">{idx + 1}</td>
-                        <td className="px-2.5 py-2.5 text-left whitespace-nowrap"><Link to={`/users/${entry.id}`} className="no-underline text-inherit">{entry.username}</Link></td>
-                        <td className={`px-2.5 py-2.5 text-center font-bold whitespace-nowrap ${isPositive ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{mainScore}</td>
-                        <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[0]}</td>
-                        <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[1]}</td>
-                        <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[2]}</td>
-                        <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[3]}</td>
-                        <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 whitespace-nowrap">{entry.gameCount}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </section>
+          <div className="flex gap-2 mb-6">
+            {([['ranking', '랭킹'], ['records', '기록']] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setActiveTab(value)}
+                className={`text-sm px-3.5 py-1.5 rounded border cursor-pointer ${
+                  activeTab === value
+                    ? 'bg-blue-500 text-white border-blue-500'
+                    : 'bg-transparent border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-          <section>
-            <h3 className="mt-0 mb-3">게임 기록</h3>
-            {records.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 m-0">아직 게임 기록이 없습니다.</p>
-            ) : (
-              <ul className="list-none p-0 m-0 flex flex-col gap-2">
-                {[...records].sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()).map((rec) => (
-                  <li key={rec.id} className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm">
-                    <div className="mb-1.5 flex items-center gap-2">
-                      <span className="text-xs text-gray-300 dark:text-gray-600 font-mono">#{rec.id}</span>
-                      <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(rec.played_at).toLocaleDateString()}</span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      {[
-                        { label: '동', player: rec.east_player, point: rec.east_point },
-                        { label: '남', player: rec.south_player, point: rec.south_point },
-                        { label: '서', player: rec.west_player, point: rec.west_point },
-                        { label: '북', player: rec.north_player, point: rec.north_point },
-                      ].map(({ label, player, point }) => (
-                        <div key={label}>
-                          <div className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">{label}</div>
-                          <Link to={`/users/${player.id}`} className="font-medium no-underline text-inherit">{nameMap.get(player.id) ?? player.username}</Link>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">{point.toLocaleString()}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          {activeTab === 'ranking' && (
+            <section>
+              {ranking.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 m-0">아직 게임 기록이 없습니다.</p>
+              ) : (
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-[13px]">
+                      <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
+                      <th className="px-2.5 py-2 text-left whitespace-nowrap">이름</th>
+                      <th className="px-2.5 py-2 text-center whitespace-nowrap">{event.ranking_type === 'match_point' ? '승점' : '점수'}</th>
+                      <th className="px-2.5 py-2 text-center whitespace-nowrap">1위</th>
+                      <th className="px-2.5 py-2 text-center whitespace-nowrap">2위</th>
+                      <th className="px-2.5 py-2 text-center whitespace-nowrap">3위</th>
+                      <th className="px-2.5 py-2 text-center whitespace-nowrap">4위</th>
+                      <th className="px-2.5 py-2 text-center whitespace-nowrap">게임</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ranking.map((entry, idx) => {
+                      const mainScore = event.ranking_type === 'match_point'
+                        ? `${entry.matchPoint}pt`
+                        : `${entry.totalScore > 0 ? '+' : ''}${entry.totalScore % 1 === 0 ? entry.totalScore : entry.totalScore.toFixed(1)}`
+                      const isPositive = event.ranking_type === 'match_point'
+                        ? entry.matchPoint >= 0
+                        : entry.totalScore >= 0
+                      return (
+                        <tr key={entry.id} className="border-b border-gray-100 dark:border-gray-800">
+                          <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 font-bold whitespace-nowrap">{idx + 1}</td>
+                          <td className="px-2.5 py-2.5 text-left whitespace-nowrap"><Link to={event.group_id ? `/groups/${event.group_id}/members/${entry.id}/stats?eventId=${event.id}` : `/users/${entry.id}`} className="no-underline text-inherit">{entry.username}</Link></td>
+                          <td className={`px-2.5 py-2.5 text-center font-bold whitespace-nowrap ${isPositive ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{mainScore}</td>
+                          <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[0]}</td>
+                          <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[1]}</td>
+                          <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[2]}</td>
+                          <td className="px-2.5 py-2.5 text-center whitespace-nowrap">{entry.rankCounts[3]}</td>
+                          <td className="px-2.5 py-2.5 text-center text-gray-400 dark:text-gray-500 whitespace-nowrap">{entry.gameCount}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </section>
+          )}
+
+          {activeTab === 'records' && (
+            <section>
+              {records.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 m-0">아직 게임 기록이 없습니다.</p>
+              ) : (
+                <ul className="list-none p-0 m-0 flex flex-col gap-2">
+                  {[...records].sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime()).map((rec) => (
+                    <li key={rec.id} className="border border-gray-300 dark:border-gray-600 rounded-md px-4 py-3 text-sm">
+                      <div className="mb-1.5 flex items-center gap-2">
+                        <span className="text-xs text-gray-300 dark:text-gray-600 font-mono">#{rec.id}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(rec.played_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 text-center">
+                        {[
+                          { label: '동', player: rec.east_player, point: rec.east_point },
+                          { label: '남', player: rec.south_player, point: rec.south_point },
+                          { label: '서', player: rec.west_player, point: rec.west_point },
+                          { label: '북', player: rec.north_player, point: rec.north_point },
+                        ].map(({ label, player, point }) => (
+                          <div key={label}>
+                            <div className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">{label}</div>
+                            <Link to={`/users/${player.id}`} className="font-medium no-underline text-inherit">{nameMap.get(player.id) ?? player.username}</Link>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">{point.toLocaleString()}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
         </>
       ) : null}
     </div>

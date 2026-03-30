@@ -1,7 +1,10 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query, status
 
-from app.api.deps import get_current_user, get_group_service
+from app.api.deps import get_current_user, get_game_record_service, get_group_service
 from app.models.user import User
+from app.schemas.game_record import MemberStatsResponse
 from app.schemas.group import (
     GroupCreate,
     GroupDetailResponse,
@@ -15,6 +18,7 @@ from app.schemas.group import (
     NicknameUpdate,
     PaginatedGroupResponse,
 )
+from app.services.game_record import GameRecordService
 from app.services.group import GroupService
 
 router = APIRouter(prefix="/groups", tags=["groups"])
@@ -148,4 +152,19 @@ async def update_member_role(
 ) -> MemberInfo:
     return await group_service.update_member_role(
         group_id, current_user.id, user_id, data
+    )
+
+
+@router.get("/{group_id}/members/{user_id}/stats", response_model=MemberStatsResponse)
+async def get_member_stats(
+    group_id: int,
+    user_id: int,
+    event_id: int | None = Query(default=None),
+    period: Literal["daily", "weekly", "monthly", "all"] = Query(default="all"),
+    offset: int = Query(default=0),
+    current_user: User = Depends(get_current_user),
+    game_record_service: GameRecordService = Depends(get_game_record_service),
+) -> MemberStatsResponse:
+    return await game_record_service.get_member_stats(
+        group_id, user_id, current_user.id, event_id, period, offset
     )

@@ -65,7 +65,7 @@ export default function GroupDetailPage() {
               onClick={() => navigate(`/groups/${id}/manage`)}
               className="text-sm px-3.5 py-1.5 cursor-pointer"
             >
-              Manage
+              관리
             </button>
           )}
         </div>
@@ -178,7 +178,7 @@ export default function GroupDetailPage() {
                   key={m.id}
                   className="flex justify-between items-center border border-gray-300 dark:border-gray-600 rounded-md px-4 py-2.5 text-sm"
                 >
-                  <Link to={`/users/${m.id}`} className={`no-underline text-inherit ${m.role === 'owner' ? 'font-bold' : ''}`}>{getDisplayName(m)}</Link>
+                  <Link to={`/groups/${id}/members/${m.id}/stats`} className={`no-underline text-inherit ${m.role === 'owner' ? 'font-bold' : ''}`}>{getDisplayName(m)}</Link>
                   <span className={`text-xs px-2 py-0.5 rounded ${
                     m.role === 'owner'
                       ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
