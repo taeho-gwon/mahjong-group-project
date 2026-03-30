@@ -51,7 +51,6 @@ export default function GameRecordListPage() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-[13px]">
-                <th className="px-2.5 py-2 text-center whitespace-nowrap">#</th>
                 <th className="px-2.5 py-2 text-left whitespace-nowrap">날짜</th>
                 <th className="px-2.5 py-2 text-left whitespace-nowrap">이벤트</th>
                 <th className="px-2.5 py-2 text-center whitespace-nowrap">동</th>
@@ -63,11 +62,8 @@ export default function GameRecordListPage() {
             <tbody>
               {sortedRecords.map((rec) => (
                 <tr key={rec.id} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="px-2.5 py-2.5 align-middle text-center whitespace-nowrap text-xs text-gray-400 dark:text-gray-500 font-mono">
-                    {rec.id}
-                  </td>
                   <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
-                    {new Date(rec.played_at).toLocaleDateString()}
+                    {new Date(rec.played_at).toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(' ', ' ')}
                   </td>
                   <td className="px-2.5 py-2.5 align-middle whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
                     {rec.event_id ? (eventMap.get(rec.event_id) ?? `#${rec.event_id}`) : '전체 (미지정)'}
