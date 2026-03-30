@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime, time, timedelta
 from typing import Literal
+from zoneinfo import ZoneInfo
+
+KST = ZoneInfo("Asia/Seoul")
 
 PeriodType = Literal["daily", "weekly", "monthly", "all"]
 
@@ -34,7 +37,7 @@ def get_period_range(
     if period == "all":
         return None
 
-    today = date.today()
+    today = datetime.now(KST).date()
 
     if period == "daily":
         start = today + timedelta(days=offset)
@@ -74,7 +77,10 @@ def get_period_range(
     else:
         return None
 
+    # Build KST midnight datetimes, then convert to UTC for storage/query
+    start_kst = datetime.combine(start, time.min, tzinfo=KST)
+    end_kst = datetime.combine(end, time.min, tzinfo=KST)
     return (
-        datetime.combine(start, time.min, tzinfo=UTC),
-        datetime.combine(end, time.min, tzinfo=UTC),
+        start_kst.astimezone(UTC),
+        end_kst.astimezone(UTC),
     )
